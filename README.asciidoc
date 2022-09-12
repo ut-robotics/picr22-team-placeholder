@@ -5,3 +5,5 @@ This is where we're going to write down what we've done so far.
 == Entries
 
 * 8.09.2022 - *Timo:* Creating the blog file, writing code to read response from mainboard and adding `robot.py` to GitHub.
+* 12.09.2022 - *Timo:* Updating `robot.py` to switch to `while` loop, testing wheel moving. 
+* 12.09.2022 - *Jens:* Debugging, helping with electronics. Found out why one of the motors didn't work - bolts were too long.
