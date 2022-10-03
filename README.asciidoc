@@ -11,5 +11,8 @@ This is where we're going to write down what we've done so far.
 * 13.09.2022 - *Artur:* Drilled a big hole for cable management. (1h)
 * 15.09.2022 - *Artur:* Debugged why one motor was not driving backwards. (1.5h)
 * 19.09.2022 - *Artur:* Finished debugging, turns out some isolation scraped off and it was getting shorted out in the backwards direction. (2.5h)
+* 19.09.2022 - *Timo:* Presented the project. (2h)
 * 22.09.2022 - *Artur:* Debugged thrower problems, turns out mainboard voltage regulator was broken, so no signal passed from the isolator to the thrower. (4h)
+* 22.09.2022 - *Timo:* Testing different remote control solutions to find the best one for our use case. (2h)
 * 26.09.2022 - *Artur:* Redid the robot wiring to fit the batteries better, and got the battery training. (2.5h)
+* 26.09.2022 - *Timo:* SSH setup, to control the computer remotely. (2h)
