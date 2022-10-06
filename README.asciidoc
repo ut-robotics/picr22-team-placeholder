@@ -17,3 +17,5 @@ This is where we're going to write down what we've done so far.
 * 26.09.2022 - *Artur:* Redid the robot wiring to fit the batteries better, and got the battery training. (2.5h)
 * 26.09.2022 - *Timo:* SSH setup, to control the computer remotely. (2h)
 * 03.10.2022 - *Timo:* Testing robot, doing the presentation. (2h)
+* 03.10.2022 - *Artur:* Testing robot, doing the presentation, debugging. (2h)
+* 06.10.2022 - *Timo:* More SSH setup, can now see camera via SSH. Screwed in some bolts so the robot wouldn't fall apart (2h)
