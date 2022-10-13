@@ -27,10 +27,8 @@ class OmniRobot(IRobotMotion):
         pidControlFrequency = 100  # Hz
         # right, left, middle
         self.wheelAngles = [120, 240, 0]
-        self.wheelSpeedToMainboardUnits = gearboxReductionRatio * \
-            encoderEdgesPerMotorRevolution / \
-            (2 * math.pi* wheelRadius * pidControlFrequency)
-        self.wheelDistanceFromCenter = 0.15  # TODO - verify
+        self.wheelSpeedToMainboardUnits = gearboxReductionRatio * encoderEdgesPerMotorRevolution / (2 * math.pi* wheelRadius * pidControlFrequency)
+        self.wheelDistanceFromCenter = 0.11 # metres
 
     # opening the serial connection
     def open(self):
@@ -69,6 +67,7 @@ class OmniRobot(IRobotMotion):
             self.wheelSpeedToMainboardUnits
         return wheelAngularSpeedInMainboardUnits
 
+    # TODO - fix X and Y movement, rot works
     # movement calculation + sending
     def move(self, x_speed, y_speed, rot_speed, thrower_speed=0, disableFailsafe=0):
         robot_speed = math.sqrt(x_speed**2 + y_speed**2)
