@@ -25,10 +25,11 @@ class OmniRobot(IRobotMotion):
         encoderEdgesPerMotorRevolution = 64
         wheelRadius = 0.035  # metres
         pidControlFrequency = 100  # Hz
-        self.wheelAngles = [0, 120, 240]
+        # right, left, middle
+        self.wheelAngles = [120, 240, 0]
         self.wheelSpeedToMainboardUnits = gearboxReductionRatio * \
             encoderEdgesPerMotorRevolution / \
-            (2 * math.PI * wheelRadius * pidControlFrequency)
+            (2 * math.pi* wheelRadius * pidControlFrequency)
         self.wheelDistanceFromCenter = 0.15  # TODO - verify
 
     # opening the serial connection
@@ -51,9 +52,9 @@ class OmniRobot(IRobotMotion):
         # Tere Timo ja Jens!!!!!!!!!!
         sent_data = struct.pack(
             '<hhhHBH', speeds[0], speeds[1], speeds[2], throwerSpeed, disableFailsafe, delimiter)
-        self.serial.write(sent_data)
+        self.ser.write(sent_data)
         print("sent:", sent_data)
-        received_data = self.serial.read(8)
+        received_data = self.ser.read(8)
         actual_speed1, actual_speed2, actual_speed3, _ = struct.unpack(
             '<hhhH', received_data)
         print("received", actual_speed1, actual_speed2, actual_speed3)
@@ -69,13 +70,13 @@ class OmniRobot(IRobotMotion):
         return wheelAngularSpeedInMainboardUnits
 
     # movement calculation + sending
-    def move(self, x_speed, y_speed, rot_speed, thrower_speed=0):
+    def move(self, x_speed, y_speed, rot_speed, thrower_speed=0, disableFailsafe=0):
         robot_speed = math.sqrt(x_speed**2 + y_speed**2)
         robot_angle = math.atan2(y_speed, x_speed)  # verify
         speeds = [int(self.get_wheel_speed(i, robot_speed,
                       robot_angle, rot_speed)) for i in range(3)]
         print("Speeds:", speeds)
-        self.send(speeds, thrower_speed)
+        self.send(speeds, thrower_speed, disableFailsafe=disableFailsafe)
 
     def stop(self):
         self.move(0, 0, 0)
