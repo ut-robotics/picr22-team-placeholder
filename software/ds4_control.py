@@ -9,16 +9,17 @@ class RobotDS4(Controller):
         Controller.__init__(self, **kwargs)
         self.robot = motion.OmniRobot()
         self.robot.open()
+        self.speed = 0.5
         print("Controller connected.")
 
     # steering
     def on_left_arrow_press(self):
         print("Left - Move")
-        self.robot.move(50, 0, 0, 0)
+        self.robot.move(self.speed, 0, 0, 0, disableFailsafe=1)
 
     def on_right_arrow_press(self):
         print("Right - move")
-        self.robot.move(-50, 0, 0, 0)
+        self.robot.move(-self.speed, 0, 0, 0, disableFailsafe=1)
 
     def on_left_right_arrow_release(self):
         self.robot.stop()
@@ -26,7 +27,7 @@ class RobotDS4(Controller):
 
     # triggers had duplicated signals, so I opted for bumpers for now
     def on_R1_press(self):
-        self.robot.move(0, 50, 0, 0)
+        self.robot.move(0, self.speed, 0, 0, disableFailsafe=1)
         print("R1 - forward")
 
     def on_R1_release(self):
@@ -35,7 +36,7 @@ class RobotDS4(Controller):
 
     def on_L1_press(self):
         print("L1 - reverse")
-        self.robot.move(0, -50, 0, 0)
+        self.robot.move(0, -self.speed, 0, 0, disableFailsafe=1)
 
     def on_L1_release(self):
         print("L1 - stop")
