@@ -1,8 +1,5 @@
-import turtle
 import math
 import numpy as np
-import time
-import tkinter as tk
 import struct
 import serial
 
@@ -26,7 +23,7 @@ class OmniRobot(IRobotMotion):
         wheelRadius = 0.035  # metres
         pidControlFrequency = 100  # Hz
         # right, left, middle
-        self.wheelAngles = [120, 240, 0]
+        self.wheelAngles = np.radians([120, 240, 0])
         self.wheelSpeedToMainboardUnits = gearboxReductionRatio * encoderEdgesPerMotorRevolution / (2 * math.pi* wheelRadius * pidControlFrequency)
         self.wheelDistanceFromCenter = 0.11 # metres
 
