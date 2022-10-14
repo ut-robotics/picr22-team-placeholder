@@ -20,3 +20,4 @@ This is where we're going to write down what we've done so far.
 * 03.10.2022 - *Artur:* Testing robot, doing the presentation, debugging. (2h)
 * 06.10.2022 - *Timo:* More SSH setup, can now see camera via SSH. Screwed in some bolts so the robot wouldn't fall apart (2h)
 * 13.10.2022 - *Timo:* Movement code, DualShock 4 support (6h)
+* 14.10.2022 - *Timo:* Debugging movement, looking into camera code. (1.5h)
