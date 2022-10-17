@@ -22,3 +22,8 @@ This is where we're going to write down what we've done so far.
 * 13.10.2022 - *Timo:* Movement code, DualShock 4 support (6h)
 * 14.10.2022 - *Timo:* Debugging movement, looking into camera code. (1.5h)
 * 15.10.2022 - *Timo:* Movement testing, rewriting controller code, putting wheels back on the robot. (2.5h)
+* 15.10.2022 - *Artur:* Checking robot MAC address, importing libraries, creating missing components, getting familiarised with Altium Designer. (5h)
+* 16.10.2022 - *Artur:* Working on the schematic, browsing through datasheets. (4h)
+* 16.10.2022 - *Jens:* Started work on thrower. (1.5h)
+* 17.10.2022 - *Artur:* Working on the schematic, browsing throught some more datasheets. (3.5h)
+* 17.10.2022 - *Jens:* Researched thrower design. (0.5h)
