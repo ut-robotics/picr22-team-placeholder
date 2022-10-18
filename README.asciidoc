@@ -29,3 +29,4 @@ This is where we're going to write down what we've done so far.
 * 17.10.2022 - *Jens:* Researched thrower design. (0.5h)
 * 17.10.2022 - *Timo:* Fixed one of the wheels falling off. (0.5h)
 * 17.10.2022 - *Jens:* Fixed one of the wheels falling off. (0.5h)
+* 18.10.2022 - *Timo:* Cleaned up and improved DS4 control code. (1.5h)
