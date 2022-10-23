@@ -117,40 +117,6 @@ GenerateClassCluster=0
 DocumentUniqueId=YYROQIBR
 
 [Document5]
-DocumentPath=Libraries\CM1223-02SO\Components - 15.10.22 - 22.05.PcbLib
-AnnotationEnabled=1
-AnnotateStartValue=1
-AnnotationIndexControlEnabled=0
-AnnotateSuffix=
-AnnotateScope=All
-AnnotateOrder=-1
-DoLibraryUpdate=1
-DoDatabaseUpdate=1
-ClassGenCCAutoEnabled=1
-ClassGenCCAutoRoomEnabled=1
-ClassGenNCAutoScope=None
-DItemRevisionGUID=
-GenerateClassCluster=0
-DocumentUniqueId=
-
-[Document6]
-DocumentPath=Libraries\CM1223-02SO\Components - 15.10.22 - 22.05.SchLib
-AnnotationEnabled=1
-AnnotateStartValue=1
-AnnotationIndexControlEnabled=0
-AnnotateSuffix=
-AnnotateScope=All
-AnnotateOrder=-1
-DoLibraryUpdate=1
-DoDatabaseUpdate=1
-ClassGenCCAutoEnabled=1
-ClassGenCCAutoRoomEnabled=1
-ClassGenNCAutoScope=None
-DItemRevisionGUID=
-GenerateClassCluster=0
-DocumentUniqueId=
-
-[Document7]
 DocumentPath=Libraries\TSOP-5\Components - 15.10.22 - 22.46.PcbLib
 AnnotationEnabled=1
 AnnotateStartValue=1
@@ -167,7 +133,7 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=
 
-[Document8]
+[Document6]
 DocumentPath=Libraries\TSOP-5\Components - 15.10.22 - 22.46.SchLib
 AnnotationEnabled=1
 AnnotateStartValue=1
