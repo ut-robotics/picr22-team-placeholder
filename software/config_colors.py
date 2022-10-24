@@ -4,6 +4,7 @@ import _pickle as pickle
 import camera
 import image_processor
 from Color import *
+global prev_lookup
 
 def nothing(x):
     pass
@@ -18,7 +19,7 @@ try:
         colors_lookup = pickle.load(fh)
 except:
     colors_lookup	= np.zeros(0x1000000, dtype=np.uint8)
-
+prev_lookup = np.zeros(0x1000000, dtype=np.uint8)
 #camera instance for normal web cameras
 #cap = camera.OpenCVCamera(id = 2)
 # camera instance for realsense cameras
@@ -46,10 +47,12 @@ keyDict = {
 }
 
 def change_color(noise, brush_size, mouse_x, mouse_y):
+    global prev_lookup
     ob	= rgb[
         max(0, mouse_y-brush_size):min(cap.rgb_height, mouse_y+brush_size+1),
         max(0, mouse_x-brush_size):min(cap.rgb_width, mouse_x+brush_size+1),:].reshape((-1,3)).astype('int32')
     noises		= range(-noise, noise+1)
+    prev_lookup = np.copy(colors_lookup)
     for r in noises:
         for g in noises:
             for b in noises:
@@ -92,6 +95,9 @@ while(True):
 
     if k == ord('q'):
         break
+    elif k == ord('u'):
+        print("undo once")
+        colors_lookup = np.copy(prev_lookup)
     elif k in keyDict:
         col = keyDict[k]
         print(col)
