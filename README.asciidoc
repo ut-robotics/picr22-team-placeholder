@@ -32,3 +32,5 @@ This is where we're going to write down what we've done so far.
 * 18.10.2022 - *Timo:* Cleaned up and improved DS4 control code. (1.5h)
 * 24.10.2022 - *Timo:* Looking into camera stuff. (1.5h)
 * 28.10.2022 - *Jens:* Print out test parts. (3h)
+* 30.10.2022 - *Artur:* Fixing schematic issues. (5h)
+* 31.10.2022 - *Artur:* Starting with PCB design, debugging library footprint issues. (3h)
