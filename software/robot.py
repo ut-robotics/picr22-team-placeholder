@@ -40,7 +40,7 @@ class AwesomeRobot(IRobotMotion):
 
 if __name__ == "__main__":
     robot = AwesomeRobot('/dev/ttyACM0')
-    while True:
-        robot.send(10, 10, 10,0)
+    while True: #mid, left, right
+        robot.send(0, 10, 0,0)
         time.sleep(0.1)
         
