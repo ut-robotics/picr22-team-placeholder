@@ -34,3 +34,4 @@ This is where we're going to write down what we've done so far.
 * 28.10.2022 - *Jens:* Print out test parts. (3h)
 * 30.10.2022 - *Artur:* Fixing schematic issues. (6h)
 * 31.10.2022 - *Artur:* Starting with PCB design, debugging library footprint issues. (3h)
+* 31.10.2022 - *Timo:* Fixing deadzone issues with DS4 controller. Fixed the basic autonomous code. Added mode switching to controller. Started work on a state machine. (3h)
