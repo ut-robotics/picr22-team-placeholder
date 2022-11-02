@@ -139,6 +139,7 @@ class RobotDS4Backend(Controller):
     def on_share_press(self):
         self.robot.stop()
         self.remote_controlled = not self.remote_controlled
+        print("Remote control:", self.remote_controlled)
 
     # quit
     def on_playstation_button_press(self):

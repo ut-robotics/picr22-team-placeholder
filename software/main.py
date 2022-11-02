@@ -12,6 +12,7 @@ class State(Enum):
     BallFound = 2
     Orbiting = 3
     BallThrow = 4
+    Debug = 99 # state for temporarily testing code
 
 
 class Basket(Enum):
@@ -20,7 +21,7 @@ class Basket(Enum):
 
 
 def main_loop():
-    debug = True
+    debug = False # whether to show camera image or not
     # camera instance for normal web cameras
     #cam = camera.OpenCVCamera(id = 2)
     # camera instance for realsense cameras
@@ -56,7 +57,6 @@ def main_loop():
             frame_cnt += 1
             frame += 1
             if frame % 30 == 0:
-                print(controller)
                 frame = 0
                 end = time.time()
                 fps = 30 / (end - start)
@@ -76,18 +76,20 @@ def main_loop():
                     break
                 elif controller.is_remote_controlled():
                     continue
-
             # autonomous code here
             ball_count = len(processedData.balls)
-            print("ball_count: {}".format(ball_count))
-
+            #print("ball_count: {}".format(ball_count))
+            #print("CURRENT STATE -", current_state)
+            
             # the state machine, very WIP
             if current_state == State.Searching:
                 if ball_count != 0:
                     current_state = State.BallFound
-                robot.move(0, 0, max_speed*3, 0)
+                robot.move(0, 0, max_speed, 0)
 
             if current_state == State.BallFound:
+                if ball_count == 0:
+                    current_state = State.Searching
                 for ball in processedData.balls:
                     if ball.x > (middle_point + deadzone):
                         print("right")
@@ -96,10 +98,10 @@ def main_loop():
                         print("left")
                         robot.move(0, 0, max_speed, 0)
                     else:
-                        current_state = State.Orbiting
+                        #current_state = State.Orbiting
+                        current_state = State.BallThrow
                     print(ball.x)
 
-            # TODO - threshold the baskets
             if current_state == State.Orbiting:
                 if ball_count == 0:
                     current_state == State.Searching
@@ -108,16 +110,28 @@ def main_loop():
                 elif basket_color == Basket.BLUE:
                     basket = processedData.basket_b
                 if basket.exists:
-                    pass  # TODO - align properly and prepare throwing
+                    current_state = State.BallThrow
                 else:
                     pass  # TODO - orbit here
+                    robot.move(max_speed * 0.25, 0, max_speed, 0) # TODO - this doesnt work at all, figure out how to actually write orbit code
 
             if current_state == State.BallThrow:
                 print("straight")
                 robot.move(0, max_speed, 0, 0)
                 # TODO - actually get a thrower and implement thrower logic
                 print("throw")
-                current_state == State.Searching
+                current_state = State.Searching
+
+            # USE THIS STATE ONLY FOR DEBUGGING STUFF, not intended for actual use
+            if current_state == State.Debug:
+                if basket_color == Basket.MAGENTA:
+                    basket = processedData.basket_m
+                elif basket_color == Basket.BLUE:
+                    basket = processedData.basket_b
+                if basket.exists:
+                    print(f'X: {basket.x}, Y: {basket.y}, distance: {basket.distance}, size: {basket.size}')
+                else:
+                    print("no basket :(((")
 
     except KeyboardInterrupt:
         print("closing....")
