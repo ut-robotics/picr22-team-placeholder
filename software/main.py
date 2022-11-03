@@ -42,13 +42,18 @@ def main_loop():
     frame = 0
     frame_cnt = 0
     max_speed = 1
+    throw_wait = 5 #wait for 5 seconds
+    min_distance = 50 # how far the ball has to be to prepare for throw
+    
     # initialize controller
     controller = RobotDS4(robot=robot)
     controller.start()
     # the funny state machine
     current_state = State.Searching
+    next_state = None # used for wait
     # TODO - unhardcode this value eventually
     basket_color = Basket.BLUE
+    prev_ball_count = 0
     try:
         while True:
             # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
@@ -73,7 +78,7 @@ def main_loop():
                 if k == ord('q'):
                     break
             
-            #print("CURRENT STATE -", current_state)
+            print("CURRENT STATE -", current_state)
 
             # stop button
             if controller.is_stopped():
@@ -91,8 +96,9 @@ def main_loop():
                 
             # autonomous code here
             ball_count = len(processedData.balls)
-            print("ball_count: {}".format(ball_count))
-            
+            if prev_ball_count != ball_count:
+                print("ball_count: {}".format(ball_count))
+                prev_ball_count = ball_count
             # the state machine, very WIP
             if current_state == State.Searching:
                 if ball_count != 0:
@@ -110,9 +116,13 @@ def main_loop():
                         print("left")
                         robot.move(0, 0, max_speed, 0)
                     else:
-                        #current_state = State.Orbiting
-                        current_state = State.BallThrow
-                    print(ball.x)
+                        if ball.distance > min_distance:
+                            print("ball close, distance:", ball.distance)
+
+                            #current_state = State.Orbiting
+                            current_state = State.BallThrow
+                        else:
+                            robot.move(0, max_speed, 0, 0)
 
             if current_state == State.Orbiting:
                 if ball_count == 0:
@@ -122,9 +132,10 @@ def main_loop():
                 elif basket_color == Basket.BLUE:
                     basket = processedData.basket_b
                 if basket.exists:
-                    current_state = State.BallThrow
-                else:
-                    pass  # TODO - orbit here
+                    current_state = State.Wait
+                    next_state = State.BallThrow
+                    wait_end = time.time() + throw_wait
+                else: # TODO - orbit here
                     robot.move(max_speed * 0.25, 0, max_speed, 0) # TODO - this doesnt work at all, figure out how to actually write orbit code
 
             if current_state == State.BallThrow:
@@ -133,6 +144,12 @@ def main_loop():
                 # TODO - actually get a thrower and implement thrower logic
                 print("throw")
                 current_state = State.Searching
+            
+            if current_state == State.Wait:
+                if time.time() >= wait_end:
+                    current_state = next_state
+                    next_state = None
+    
 
             # USE THIS STATE ONLY FOR DEBUGGING STUFF, not intended for actual use
             if current_state == State.Debug:
