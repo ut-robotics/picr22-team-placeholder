@@ -4,7 +4,6 @@ from helper import map_range
 from pyPS4Controller.controller import Controller
 from enum import Enum
 
-
 class Axis(Enum):
     X = 1
     Y = 2
@@ -147,11 +146,11 @@ class RobotDS4Backend(Controller):
 
     # quit
     def on_playstation_button_press(self):
-        print("QUIT")
-        self.robot.stop()
-        self.robot.close()
-        self.stop = True
+        self.stop_controller()
 
+    def stop_controller(self):
+        print("QUIT")
+        self.stop = True
 
 class RobotDS4:
     def __init__(self, max_speed=1, analog_deadzone=400, default_thrower_speed=50, robot=None):
@@ -162,7 +161,7 @@ class RobotDS4:
         self.robot = robot
 
     def start(self):
-        Thread(target=self.listen, args=()).start()
+        self.thread = Thread(target=self.listen, args=()).start()
 
     def listen(self):
         self.controller = RobotDS4Backend(max_speed=self.max_speed, analog_deadzone=self.analog_deadzone,
@@ -176,9 +175,4 @@ class RobotDS4:
         return self.controller.stop
     
     def stop(self):
-        self.controller.stop = True
-
-
-if __name__ == "__main__":
-    controller = RobotDS4()
-    controller.start()
+        self.controller.stop_controller()

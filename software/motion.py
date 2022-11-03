@@ -45,9 +45,12 @@ class OmniRobot():
 
     # closing serial connection
     def close(self):
-        self.stop()
-        self.ser.close()
-        print("Serial closed")
+        if self.ser.isOpen():
+            self.stop()
+            self.ser.close()
+            print("Serial closed")
+        else:
+            print("Serial not open!")
 
     # writing and reading to and from serial
 
@@ -56,11 +59,10 @@ class OmniRobot():
         sent_data = struct.pack(
             '<hhhHBH', speeds[0], speeds[1], speeds[2], throwerSpeed, disableFailsafe, delimiter)
         self.ser.write(sent_data)
-        print("sent:", sent_data)
         received_data = self.ser.read(8)
         actual_speed1, actual_speed2, actual_speed3, _ = struct.unpack(
             '<hhhH', received_data)
-        print("received", actual_speed1, actual_speed2, actual_speed3)
+        print(f"Sent speed: {speeds}, Actual speed: [{actual_speed1}, {actual_speed2}, {actual_speed3}]")
         # i hate python - Artur
 
     # wheel speed calculation
@@ -74,11 +76,11 @@ class OmniRobot():
 
     # movement calculation + sending
     def move(self, x_speed, y_speed, rot_speed, thrower_speed=0, disableFailsafe=0):
+        """speed is in metres"""
         robot_speed = math.sqrt(x_speed**2 + y_speed**2)
         robot_angle = math.atan2(y_speed, x_speed)  # verify
         speeds = [int(self.get_wheel_speed(i, robot_speed,
                       robot_angle, rot_speed)) for i in range(3)]
-        print("Speeds:", speeds)
         self.send(speeds, thrower_speed, disableFailsafe=disableFailsafe)
 
     def stop(self):

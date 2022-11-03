@@ -5,7 +5,7 @@ import cv2
 import time
 from ds4_control import RobotDS4
 from enum import Enum
-
+import sys
 
 class State(Enum):
     Searching = 1
@@ -45,8 +45,6 @@ def main_loop():
     # initialize controller
     controller = RobotDS4(robot=robot)
     controller.start()
-    if controller == None:
-        print("Failed to initialize controller!")
     # the funny state machine
     current_state = State.Searching
     # TODO - unhardcode this value eventually
@@ -75,15 +73,22 @@ def main_loop():
                 if k == ord('q'):
                     break
             
-            print("CURRENT STATE -", current_state)
+            #print("CURRENT STATE -", current_state)
+
+            # stop button
+            if controller.is_stopped():
+                break
+
+
+            # verify if robot is remote controlled, no autonomous stuff if robot is remote controlled
+            if controller.is_remote_controlled():
+                current_state = State.RemoteControl
             if current_state == State.RemoteControl:
-                continue
-            # no autonomous mode if robot is remote controlled
-            if controller != None:
-                if controller.is_stopped():
-                    break
-                elif controller.is_remote_controlled():
-                    current_state == State.RemoteControl
+                if not controller.is_remote_controlled():
+                    current_state = State.Searching
+                else:
+                    continue
+                
             # autonomous code here
             ball_count = len(processedData.balls)
             print("ball_count: {}".format(ball_count))
@@ -142,12 +147,13 @@ def main_loop():
 
     except KeyboardInterrupt:
         print("closing....")
-        robot.stop()
-        robot.close()
-        controller.stop
     finally:
+        # TODO - thread doesnt want to stop until a button gets pressed on controller, verify if old code worked, old as in pre 03.11.2022
+        robot.close()
+        controller.stop()
         cv2.destroyAllWindows()
         processor.stop()
+        print("fianlly")
 
 
 main_loop()
