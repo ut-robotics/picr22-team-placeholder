@@ -16,7 +16,7 @@ class OmniRobot():
         wheelRadius = 0.035  # metres
         pidControlFrequency = 100  # Hz
         # middle, left, right
-        self.wheelAngles = np.radians([0, 240, 120])
+        self.wheelAngles = np.radians([240, 0, 120])
         self.wheelSpeedToMainboardUnits = gearboxReductionRatio * encoderEdgesPerMotorRevolution / (2 * math.pi* wheelRadius * pidControlFrequency)
         self.wheelDistanceFromCenter = 0.11 # metres
 

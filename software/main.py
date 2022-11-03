@@ -101,19 +101,23 @@ def main_loop():
                 print("ball_count: {}".format(ball_count))
                 prev_ball_count = ball_count
             # last element is always the largest
-            ball = processedData.balls[-1]
+            if ball_count > 0:
+                ball = processedData.balls[-1]
+            else:
+                ball = None # no ball
             # the state machine, very WIP
             if current_state == State.Searching:
                 if ball_count != 0:
                     current_state = State.BallFound
-                robot.move(0, 0, max_speed*3, 0)
-                current_state = State.Wait
-                wait_end = time.time() + scan_time
-                next_state = State.Searching
+                robot.move(0, 0, max_speed, 0)
+                #current_state = State.Wait
+                #wait_end = time.time() + scan_time
+                #next_state = State.Searching
 
             if current_state == State.BallFound:
                 if ball_count == 0:
                     current_state = State.Searching
+                    continue
 
                 if ball.x > (middle_point + camera_deadzone):
                     print("right")

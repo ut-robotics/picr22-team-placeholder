@@ -71,6 +71,7 @@ class RobotDS4Backend(Controller):
         self.thrower_speed = self.thrower_speed_param
         self.send_movement()
 
+    # TODO - didnt seem to work
     def on_triangle_release(self):
         print("Triangle - Thrower stop")
         self.axis_stop("thrower")
