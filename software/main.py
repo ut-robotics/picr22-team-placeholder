@@ -29,16 +29,19 @@ def main_loop():
     processor = image_processor.ImageProcessor(cam, debug=debug)
     processor.start()
     middle_point = cam.rgb_width // 2
-    deadzone = 60
+    # the middle area of the camera image
+    camera_deadzone = 60
+    # start the robot
     robot = motion.OmniRobot()
     robot.open()
+    
     start = time.time()
     fps = 0
     frame = 0
     frame_cnt = 0
     max_speed = 1
     # initialize controller
-    controller = RobotDS4()
+    controller = RobotDS4(robot=robot)
     controller.start()
     if controller == None:
         print("Failed to initialize controller!")
@@ -91,10 +94,10 @@ def main_loop():
                 if ball_count == 0:
                     current_state = State.Searching
                 for ball in processedData.balls:
-                    if ball.x > (middle_point + deadzone):
+                    if ball.x > (middle_point + camera_deadzone):
                         print("right")
                         robot.move(0, 0, -max_speed, 0)
-                    elif ball.x < (middle_point - deadzone):
+                    elif ball.x < (middle_point - camera_deadzone):
                         print("left")
                         robot.move(0, 0, max_speed, 0)
                     else:
@@ -137,6 +140,7 @@ def main_loop():
         print("closing....")
         robot.stop()
         robot.close()
+        controller.stop
     finally:
         cv2.destroyAllWindows()
         processor.stop()

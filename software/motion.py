@@ -2,20 +2,13 @@ import math
 import numpy as np
 import struct
 import serial
+import serial.tools.list_ports
 
+class SerialPortNotFound(Exception): 
+     def __init__(self): 
+         super().__init__("Serial port not found") 
 
-class IRobotMotion:
-    def open(self):
-        pass
-
-    def close(self):
-        pass
-
-    def move(self, x_speed, y_speed, rot_speed):
-        pass
-
-
-class OmniRobot(IRobotMotion):
+class OmniRobot():
     # initializee
     def __init__(self):
         gearboxReductionRatio = 18.75
@@ -27,10 +20,25 @@ class OmniRobot(IRobotMotion):
         self.wheelSpeedToMainboardUnits = gearboxReductionRatio * encoderEdgesPerMotorRevolution / (2 * math.pi* wheelRadius * pidControlFrequency)
         self.wheelDistanceFromCenter = 0.11 # metres
 
+    def find_serial_port(self):
+        serial_port = None       
+        ports = serial.tools.list_ports.comports()
+        devices = {}
+        STM_32_HWID = "USB VID:PID=0483:5740"
+        for port, _, hwid in sorted(ports):
+            devices[hwid] = port
+        for hwid in devices.keys():
+            if STM_32_HWID in hwid:
+                serial_port = devices[hwid]
+                break
+        if serial_port is None:
+            raise SerialPortNotFound
+        return serial_port
+
     # opening the serial connection
     def open(self):
         self.ser = serial.Serial()
-        self.ser.port = '/dev/ttyACM0'
+        self.ser.port = self.find_serial_port()
         self.ser.baudrate = 9600
         self.ser.open()
         print("Serial opened")
@@ -64,7 +72,6 @@ class OmniRobot(IRobotMotion):
             self.wheelSpeedToMainboardUnits
         return wheelAngularSpeedInMainboardUnits
 
-    # TODO - fix X and Y movement, rot works
     # movement calculation + sending
     def move(self, x_speed, y_speed, rot_speed, thrower_speed=0, disableFailsafe=0):
         robot_speed = math.sqrt(x_speed**2 + y_speed**2)

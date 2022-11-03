@@ -13,10 +13,14 @@ class Axis(Enum):
 
 
 class RobotDS4Backend(Controller):
-    def __init__(self, max_speed, analog_deadzone, default_thrower_speed, **kwargs):
+    def __init__(self, max_speed, analog_deadzone, default_thrower_speed, robot, **kwargs):
         Controller.__init__(self, **kwargs)
-        self.robot = motion.OmniRobot()
-        self.robot.open()
+        # if there is no connection with the robot, open one
+        if robot == None: 
+            self.robot = motion.OmniRobot()
+            self.robot.open()
+        else:
+            self.robot = robot
         # parameters
         self.max_speed = max_speed
         self.analog_deadzone = analog_deadzone
@@ -150,18 +154,19 @@ class RobotDS4Backend(Controller):
 
 
 class RobotDS4:
-    def __init__(self, max_speed=1, analog_deadzone=400, default_thrower_speed=50):
+    def __init__(self, max_speed=1, analog_deadzone=400, default_thrower_speed=50, robot=None):
         self.controller = None
         self.analog_deadzone = analog_deadzone
         self.max_speed = max_speed
         self.default_thrower_speed = default_thrower_speed
+        self.robot = robot
 
     def start(self):
         Thread(target=self.listen, args=()).start()
 
     def listen(self):
         self.controller = RobotDS4Backend(max_speed=self.max_speed, analog_deadzone=self.analog_deadzone,
-                                          default_thrower_speed=self.default_thrower_speed, interface="/dev/input/js0", connecting_using_ds4drv=False)
+                                          default_thrower_speed=self.default_thrower_speed, robot=self.robot, interface="/dev/input/js0", connecting_using_ds4drv=False)
         self.controller.listen(timeout=60)
 
     def is_remote_controlled(self):
@@ -169,6 +174,9 @@ class RobotDS4:
 
     def is_stopped(self):
         return self.controller.stop
+    
+    def stop(self):
+        self.controller.stop = True
 
 
 if __name__ == "__main__":
