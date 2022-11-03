@@ -12,6 +12,8 @@ class State(Enum):
     BallFound = 2
     Orbiting = 3
     BallThrow = 4
+    Wait = 5
+    RemoteControl = 6
     Debug = 99 # state for temporarily testing code
 
 
@@ -72,17 +74,19 @@ def main_loop():
                 k = cv2.waitKey(1) & 0xff
                 if k == ord('q'):
                     break
-
+            
+            print("CURRENT STATE -", current_state)
+            if current_state == State.RemoteControl:
+                continue
             # no autonomous mode if robot is remote controlled
             if controller != None:
                 if controller.is_stopped():
                     break
                 elif controller.is_remote_controlled():
-                    continue
+                    current_state == State.RemoteControl
             # autonomous code here
             ball_count = len(processedData.balls)
-            #print("ball_count: {}".format(ball_count))
-            #print("CURRENT STATE -", current_state)
+            print("ball_count: {}".format(ball_count))
             
             # the state machine, very WIP
             if current_state == State.Searching:

@@ -85,5 +85,5 @@ class OmniRobot():
         self.move(0, 0, 0)
 
     # for testing motors
-    def motor_test(self, thrower=0):
-        self.send([10, 10, 10], thrower)
+    def motor_test(self, speed=10, thrower=0):
+        self.send([speed, speed, speed], thrower)

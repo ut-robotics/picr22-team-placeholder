@@ -4,8 +4,7 @@ import _pickle as pickle
 import camera
 import image_processor
 from Color import *
-global prev_lookup
-
+MAX_HISTORY = 10 # how many times we can possibly undo
 def nothing(x):
     pass
 
@@ -19,7 +18,7 @@ try:
         colors_lookup = pickle.load(fh)
 except:
     colors_lookup	= np.zeros(0x1000000, dtype=np.uint8)
-prev_lookup = np.zeros(0x1000000, dtype=np.uint8)
+old_lookups = list()
 #camera instance for normal web cameras
 #cap = camera.OpenCVCamera(id = 2)
 # camera instance for realsense cameras
@@ -47,12 +46,13 @@ keyDict = {
 }
 
 def change_color(noise, brush_size, mouse_x, mouse_y):
-    global prev_lookup
     ob	= rgb[
         max(0, mouse_y-brush_size):min(cap.rgb_height, mouse_y+brush_size+1),
         max(0, mouse_x-brush_size):min(cap.rgb_width, mouse_x+brush_size+1),:].reshape((-1,3)).astype('int32')
     noises		= range(-noise, noise+1)
-    prev_lookup = np.copy(colors_lookup)
+    old_lookups.append(colors_lookup.copy())
+    if len(old_lookups) > MAX_HISTORY:
+        old_lookups.pop(0) # remove oldest item
     for r in noises:
         for g in noises:
             for b in noises:
@@ -71,7 +71,7 @@ cv2.namedWindow('rgb')
 cv2.setMouseCallback('rgb', choose_color)
 cv2.setMouseCallback('mask', choose_color)
 
-print("Quit: 'q', Save 's', Erase selected color 'e'")
+print("Quit: 'q', Save 's', Erase selected color 'e', Undo 'u'")
 print("Balls 'g', Magenta basket='m', Blue basket='b', Field='f', White='w', Black='d', Other='o'")
 
 cap.open()
@@ -96,8 +96,11 @@ while(True):
     if k == ord('q'):
         break
     elif k == ord('u'):
-        print("undo once")
-        colors_lookup = np.copy(prev_lookup)
+        if len(old_lookups) <= 0:
+            print("nowhere to undo")
+        else:
+            print("undo")
+            colors_lookup = np.copy(old_lookups.pop())
     elif k in keyDict:
         col = keyDict[k]
         print(col)
