@@ -73,7 +73,6 @@ class ImageProcessor():
     def stop(self):
         self.camera.close()
 
-    # TODO - detect lines, better ball detection
     def analyze_balls(self, t_balls, fragments) -> list:
         contours, hierarchy = cv2.findContours(t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
