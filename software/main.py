@@ -5,10 +5,10 @@ import cv2
 import time
 from ds4_control import RobotDS4
 from enum import Enum
-import sys
 
 
 class State(Enum):
+    """State machine enums"""
     Searching = 1
     BallFound = 2
     Orbiting = 3
@@ -19,12 +19,15 @@ class State(Enum):
 
 
 class Basket(Enum):
+    """Basket enums"""
     BLUE = 1
     MAGENTA = 2
 
 
 def main_loop():
-    debug = False  # whether to show camera image or not
+
+    # -- CAMERA STUFF --
+    debug = False  # Whether to show camera image or not
     # camera instance for normal web cameras
     #cam = camera.OpenCVCamera(id = 2)
     # camera instance for realsense cameras
@@ -34,54 +37,39 @@ def main_loop():
     middle_point = cam.rgb_width // 2
     # the middle area of the camera image
     camera_deadzone = 60
-    # start the robot
-    robot = motion.OmniRobot()
-    robot.open()
-
+    # FPS counter
     start = time.time()
     fps = 0
     frame = 0
     frame_cnt = 0
+
+    # -- ROBOT STUFF
+    # start the robot
+    robot = motion.OmniRobot()
+    robot.open()
     max_speed = 0.75
     throw_wait = 5  # wait for 5 seconds
     max_distance = 500  # how far the ball has to be to prepare for throw
     scan_time = 0.25  # time to scan for balls when in search mode
-
+    # TODO - unhardcode this value eventually
+    basket_color = Basket.BLUE
+    # the state machine
+    current_state = State.Searching
+    next_state = None  # used for wait
     # initialize controller
     controller = RobotDS4(robot=robot)
     controller.start()
-    # the funny state machine
-    current_state = State.Searching
-    next_state = None  # used for wait
-    # TODO - unhardcode this value eventually
-    basket_color = Basket.BLUE
+
+    # probably not needed, just for debugging right now to cut down on log spam
     prev_ball_count = 0
     try:
         while True:
             # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
             processedData = processor.process_frame(aligned_depth=False)
-            # This is where you add the driving behaviour of your robot. It should be able to filter out
-            # objects of interest and calculate the required motion for reaching the objects
-
-            # FPS counter
-            frame_cnt += 1
-            frame += 1
-            if frame % 30 == 0:
-                frame = 0
-                end = time.time()
-                fps = 30 / (end - start)
-                start = end
-                print("FPS: {}, framecount: {}".format(fps, frame_cnt))
-            # Debug stuff, turn off when we don't need camera
-            if debug:
-                debug_frame = processedData.debug_frame
-                cv2.imshow('debug', debug_frame)
-                k = cv2.waitKey(1) & 0xff
-                if k == ord('q'):
-                    break
 
             print("CURRENT STATE -", current_state)
 
+            # -- REMOTE CONTROL STUFF --
             # stop button
             if controller.is_stopped():
                 break
@@ -95,17 +83,22 @@ def main_loop():
                 else:
                     continue
 
-            # autonomous code here
+            # -- AUTONOMOUS STUFF --
+
             ball_count = len(processedData.balls)
             if prev_ball_count != ball_count:
+                # this is for debugging
                 print("ball_count: {}".format(ball_count))
                 prev_ball_count = ball_count
-            # last element is always the largest
+
+            # last element is always the largest and we want to chase the largest ball
             if ball_count > 0:
                 ball = processedData.balls[-1]
             else:
-                ball = None # no ball
-            # the state machine, very WIP
+                ball = None  # no ball
+
+            # the state machine, very WIP and not really functional yet
+
             if current_state == State.Searching:
                 if ball_count != 0:
                     current_state = State.BallFound
@@ -118,7 +111,6 @@ def main_loop():
                 if ball_count == 0:
                     current_state = State.Searching
                     continue
-
                 if ball.x > (middle_point + camera_deadzone):
                     print("right")
                     robot.move(0, 0, -max_speed, 0)
@@ -152,10 +144,10 @@ def main_loop():
                         print("left")
                         robot.move(max_speed * 0.25, 0, max_speed, 0)
 
+            # TODO - actually get a thrower and implement thrower logic
             if current_state == State.BallThrow:
                 print("straight")
                 robot.move(0, max_speed, 0, 0)
-                # TODO - actually get a thrower and implement thrower logic
                 print("throw")
                 current_state = State.Searching
 
@@ -166,20 +158,29 @@ def main_loop():
 
             # USE THIS STATE ONLY FOR DEBUGGING STUFF, not intended for actual use
             if current_state == State.Debug:
-                if basket_color == Basket.MAGENTA:
-                    basket = processedData.basket_m
-                elif basket_color == Basket.BLUE:
-                    basket = processedData.basket_b
-                if basket.exists:
-                    print(
-                        f'X: {basket.x}, Y: {basket.y}, distance: {basket.distance}, size: {basket.size}')
-                else:
-                    print("no basket :(((")
+                pass
+
+            # -- BOILERPLATE CAMERA CODE, DO NOT TOUCH UNLESS REALLY NECESSARY --
+            # FPS counter
+            frame_cnt += 1
+            frame += 1
+            if frame % 30 == 0:
+                frame = 0
+                end = time.time()
+                fps = 30 / (end - start)
+                start = end
+                print("FPS: {}, framecount: {}".format(fps, frame_cnt))
+            # Debug stuff, turn off when we don't need camera
+            if debug:
+                debug_frame = processedData.debug_frame
+                cv2.imshow('debug', debug_frame)
+                k = cv2.waitKey(1) & 0xff
+                if k == ord('q'):
+                    break
 
     except KeyboardInterrupt:
-        print("closing....")
+        print("Closing....")
     finally:
-        # TODO - thread doesnt want to stop until a button gets pressed on controller, verify if old code worked, old as in pre 03.11.2022
         robot.close()
         controller.stop()
         cv2.destroyAllWindows()

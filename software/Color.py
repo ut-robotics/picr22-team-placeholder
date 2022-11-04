@@ -1,6 +1,7 @@
 import enum
 import numpy as np
 
+
 class Color(enum.Enum):
     OTHER = 0, np.array([0, 0, 0], dtype=np.uint8)
     GREEN = 1, np.array([0, 255, 0], dtype=np.uint8)
