@@ -53,7 +53,7 @@ def main_loop():
     robot = motion.OmniRobot()
     robot.open()
     max_speed = 0.75
-    search_speed = 3
+    search_speed = 2
     throw_wait = 5  # wait for 5 seconds
     max_distance = 300  # how far the ball has to be to prepare for throw
     scan_wait_time = 1  # time to scan for balls when in search mode
@@ -75,7 +75,7 @@ def main_loop():
             # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
             processedData = processor.process_frame(aligned_depth=False)
 
-            print("CURRENT STATE -", current_state)
+            #print("CURRENT STATE -", current_state)
 
             # -- REMOTE CONTROL STUFF --
             # stop button
@@ -125,15 +125,19 @@ def main_loop():
                     print("--Wait-- Found ball.")
                     current_state = State.BallFound
                     next_state = None
+                    continue
                 if time.time() >= wait_end:
-                    current_state = next_state
+                    if next_state != None:
+                        current_state = next_state
+                    else:
+                        current_state = State.Searching 
                     next_state = None
                     if current_state == State.Searching:
                         search_end = time.time() + scan_move_time
                 else:
-                    print("--Wait-- Waiting for ",
-                          wait_end - time.time(), "seconds.")
-
+                    #print("--Wait-- Waiting for ",
+                    #      wait_end - time.time(), "seconds.")
+                    pass
             if current_state == State.BallFound:
                 if ball_count == 0:  # lost the ball
                     current_state, search_end = back_to_search(scan_move_time)
@@ -153,7 +157,7 @@ def main_loop():
                         current_state = State.Orbiting
                     else:
                         print("--BallFound-- ball far, distance:", ball.distance)
-                        robot.move(0, max_speed, 0, 0)
+                        robot.move(0, max_speed, 0)
 
             if current_state == State.Orbiting:
                 if ball_count == 0:
@@ -168,8 +172,8 @@ def main_loop():
 
                 # TODO - adjust based on the ball
                 if basket.exists:
-                    if middle_point - 30 < basket.x < middle_point + 30:
-                        current_state = State.BallThrow
+                    if middle_point - 10 < basket.x < middle_point + 10:
+                            current_state = State.BallThrow
                     else:
                         robot.move(max_speed*0.15, 0, max_speed*0.15)
                 else:

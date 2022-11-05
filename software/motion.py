@@ -81,8 +81,8 @@ class OmniRobot():
         received_data = self.ser.read(8)
         actual_speed1, actual_speed2, actual_speed3, _ = struct.unpack(
             '<hhhH', received_data)
-        print(
-            f"Sent speed: {speeds}, Actual speed: [{actual_speed1}, {actual_speed2}, {actual_speed3}]")
+        #print(
+        #    f"Sent speed: {speeds}, Actual speed: [{actual_speed1}, {actual_speed2}, {actual_speed3}]")
 
     def get_wheel_speed(self, motorID, robotSpeed, robotDirectionAngle, robotAngularVelocity):
         """Calculate wheel speed in mainboard units
