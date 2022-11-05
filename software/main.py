@@ -7,6 +7,7 @@ from ds4_control import RobotDS4
 from enum import Enum
 from Color import Color
 
+
 class State(Enum):
     """State machine enums"""
     Searching = 1
@@ -55,7 +56,7 @@ def main_loop():
     max_speed = 0.75
     search_speed = 2
     throw_wait = 5  # wait for 5 seconds
-    max_distance = 300  # how far the ball has to be to prepare for throw
+    min_distance = 340  # how far the ball has to be to prepare for throw, approx 10 cm
     scan_wait_time = 1  # time to scan for balls when in search mode
     scan_move_time = 0.2
     wait_end = 0
@@ -73,7 +74,25 @@ def main_loop():
     try:
         while True:
             # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
-            processedData = processor.process_frame(aligned_depth=False)
+            processedData = processor.process_frame(aligned_depth=True)
+
+            # -- BOILERPLATE CAMERA CODE, DO NOT TOUCH UNLESS REALLY NECESSARY --
+            # FPS counter
+            frame_cnt += 1
+            frame += 1
+            if frame % 30 == 0:
+                frame = 0
+                end = time.time()
+                fps = 30 / (end - start)
+                start = end
+                print("FPS: {}, framecount: {}".format(fps, frame_cnt))
+            # Debug stuff, turn off when we don't need camera
+            if debug:
+                debug_frame = processedData.debug_frame
+                cv2.imshow('debug', debug_frame)
+                k = cv2.waitKey(1) & 0xff
+                if k == ord('q'):
+                    break
 
             #print("CURRENT STATE -", current_state)
 
@@ -130,12 +149,12 @@ def main_loop():
                     if next_state != None:
                         current_state = next_state
                     else:
-                        current_state = State.Searching 
+                        current_state = State.Searching
                     next_state = None
                     if current_state == State.Searching:
                         search_end = time.time() + scan_move_time
                 else:
-                    #print("--Wait-- Waiting for ",
+                    # print("--Wait-- Waiting for ",
                     #      wait_end - time.time(), "seconds.")
                     pass
             if current_state == State.BallFound:
@@ -151,12 +170,13 @@ def main_loop():
                     robot.move(0, 0, max_speed, 0)
                 else:
                     # TODO - depth camera for distance (?)
-                    if ball.distance > max_distance:
+                    ball_distance = processedData.depth_frame[ball.y][ball.x]
+                    if ball_distance < min_distance:
                         # the greater the distance the closer the ball
-                        print("--BallFound-- ball close, distance:", ball.distance)
+                        print("--BallFound-- ball close, distance:", ball_distance)
                         current_state = State.Orbiting
                     else:
-                        print("--BallFound-- ball far, distance:", ball.distance)
+                        print("--BallFound-- ball far, distance:", ball_distance)
                         robot.move(0, max_speed, 0)
 
             if current_state == State.Orbiting:
@@ -173,7 +193,7 @@ def main_loop():
                 # TODO - adjust based on the ball
                 if basket.exists:
                     if middle_point - 10 < basket.x < middle_point + 10:
-                            current_state = State.BallThrow
+                        current_state = State.BallThrow
                     else:
                         robot.move(max_speed*0.15, 0, max_speed*0.15)
                 else:
@@ -182,29 +202,24 @@ def main_loop():
 
             # TODO - actually get a thrower
             if current_state == State.BallThrow:
-                print("--BallThrow-- Throwing ball")
+                if basket_color == Color.MAGENTA:
+                    basket = processedData.basket_m
+                elif basket_color == Color.BLUE:
+                    basket = processedData.basket_b
+                if basket.exists:  # TODO
+                    basket_distance = processedData.depth_frame[basket.y][basket.x]
+                    print("--BallThrow-- Throwing ball, basket distance:",
+                          basket_distance)
+                elif ball_count != 0:
+                    print("--BallThrow-- No basket, going back to orbiting.")
+                    current_state = State.Orbiting
+                else:
+                    print("--BallThrow-- No basket or ball, going back to throwing.")
+                    current_state = State.Searching
 
             # USE THIS STATE ONLY FOR DEBUGGING STUFF, not intended for actual use
             if current_state == State.Debug:
                 pass
-
-            # -- BOILERPLATE CAMERA CODE, DO NOT TOUCH UNLESS REALLY NECESSARY --
-            # FPS counter
-            frame_cnt += 1
-            frame += 1
-            if frame % 30 == 0:
-                frame = 0
-                end = time.time()
-                fps = 30 / (end - start)
-                start = end
-                print("FPS: {}, framecount: {}".format(fps, frame_cnt))
-            # Debug stuff, turn off when we don't need camera
-            if debug:
-                debug_frame = processedData.debug_frame
-                cv2.imshow('debug', debug_frame)
-                k = cv2.waitKey(1) & 0xff
-                if k == ord('q'):
-                    break
 
     except KeyboardInterrupt:
         print("Closing....")
