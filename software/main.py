@@ -5,7 +5,7 @@ import cv2
 import time
 from ds4_control import RobotDS4
 from enum import Enum
-
+from Color import Color
 
 class State(Enum):
     """State machine enums"""
@@ -16,12 +16,6 @@ class State(Enum):
     Wait = 5
     RemoteControl = 6
     Debug = 99  # state for temporarily testing code
-
-
-class Basket(Enum):
-    """Basket enums"""
-    BLUE = 1
-    MAGENTA = 2
 
 
 def back_to_search(scan_move_time):
@@ -66,7 +60,7 @@ def main_loop():
     scan_move_time = 0.2
     wait_end = 0
     # TODO - unhardcode this value eventually
-    basket_color = Basket.MAGENTA
+    basket_color = Color.MAGENTA
     # the state machine
     current_state = State.Searching
     next_state = None  # used for wait
@@ -167,9 +161,9 @@ def main_loop():
                     continue
 
                 print("--ORBITING-- starting orbiting")
-                if basket_color == Basket.MAGENTA:
+                if basket_color == Color.MAGENTA:
                     basket = processedData.basket_m
-                elif basket_color == Basket.BLUE:
+                elif basket_color == Color.BLUE:
                     basket = processedData.basket_b
 
                 # TODO - adjust based on the ball
