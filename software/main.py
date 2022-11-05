@@ -50,7 +50,8 @@ def main_loop():
     max_speed = 0.75
     throw_wait = 5  # wait for 5 seconds
     max_distance = 500  # how far the ball has to be to prepare for throw
-    scan_time = 0.5  # time to scan for balls when in search mode
+    scan_time = 1  # time to scan for balls when in search mode
+    wait_end = 0
     # TODO - unhardcode this value eventually
     basket_color = Basket.BLUE
     # the state machine
@@ -103,18 +104,21 @@ def main_loop():
             if current_state == State.Searching:
                 if ball_count != 0:
                     current_state = State.BallFound
-                if time.time() < search_end:
-                    robot.move(0, 0, max_speed, 0)
                 else:
-                    current_state = State.Wait
-                    wait_end = time.time() + scan_time
-                    next_state = State.Searching
+                    if time.time() < search_end:
+                        robot.move(0, 0, max_speed, 0)
+                    else:
+                        current_state = State.Wait
+                        wait_end = time.time() + scan_time
+                        next_state = State.Searching
 
             if current_state == State.BallFound:
+                # in case we lost the ball
                 if ball_count == 0:
                     current_state = State.Searching
                     search_end = time.time() + search_end
                     continue
+
                 if ball.x > (middle_point + camera_deadzone):
                     print("right")
                     robot.move(0, 0, -max_speed, 0)
@@ -130,13 +134,17 @@ def main_loop():
                         robot.move(0, max_speed, 0, 0)
 
             if current_state == State.Orbiting:
+                # in case we lost the ball
                 if ball_count == 0:
                     current_state == State.Searching
                     search_end = time.time() + search_end
+                    continue
+
                 if basket_color == Basket.MAGENTA:
                     basket = processedData.basket_m
                 elif basket_color == Basket.BLUE:
                     basket = processedData.basket_b
+
                 if basket.exists:
                     current_state = State.Wait
                     next_state = State.BallThrow
