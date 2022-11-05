@@ -50,7 +50,7 @@ def main_loop():
     max_speed = 0.75
     throw_wait = 5  # wait for 5 seconds
     max_distance = 500  # how far the ball has to be to prepare for throw
-    scan_time = 0.25  # time to scan for balls when in search mode
+    scan_time = 0.5  # time to scan for balls when in search mode
     # TODO - unhardcode this value eventually
     basket_color = Basket.BLUE
     # the state machine
@@ -59,7 +59,7 @@ def main_loop():
     # initialize controller
     controller = RobotDS4(robot=robot)
     controller.start()
-
+    search_end = time.time() + scan_time
     # probably not needed, just for debugging right now to cut down on log spam
     prev_ball_count = 0
     try:
@@ -80,6 +80,7 @@ def main_loop():
             if current_state == State.RemoteControl:
                 if not controller.is_remote_controlled():
                     current_state = State.Searching
+                    search_end = time.time() + search_end
                 else:
                     continue
 
@@ -102,14 +103,17 @@ def main_loop():
             if current_state == State.Searching:
                 if ball_count != 0:
                     current_state = State.BallFound
-                robot.move(0, 0, max_speed, 0)
-                #current_state = State.Wait
-                #wait_end = time.time() + scan_time
-                #next_state = State.Searching
+                if time.time() < search_end:
+                    robot.move(0, 0, max_speed, 0)
+                else:
+                    current_state = State.Wait
+                    wait_end = time.time() + scan_time
+                    next_state = State.Searching
 
             if current_state == State.BallFound:
                 if ball_count == 0:
                     current_state = State.Searching
+                    search_end = time.time() + search_end
                     continue
                 if ball.x > (middle_point + camera_deadzone):
                     print("right")
@@ -128,6 +132,7 @@ def main_loop():
             if current_state == State.Orbiting:
                 if ball_count == 0:
                     current_state == State.Searching
+                    search_end = time.time() + search_end
                 if basket_color == Basket.MAGENTA:
                     basket = processedData.basket_m
                 elif basket_color == Basket.BLUE:
@@ -150,11 +155,14 @@ def main_loop():
                 robot.move(0, max_speed, 0, 0)
                 print("throw")
                 current_state = State.Searching
+                search_end = time.time() + search_end
 
             if current_state == State.Wait:
                 if time.time() >= wait_end:
                     current_state = next_state
                     next_state = None
+                    if current_state == State.Searching:
+                        search_end = time.time() + search_end
 
             # USE THIS STATE ONLY FOR DEBUGGING STUFF, not intended for actual use
             if current_state == State.Debug:
