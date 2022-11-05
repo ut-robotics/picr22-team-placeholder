@@ -65,7 +65,7 @@ class RobotDS4Backend(Controller):
         elif axis == Axis.THROWER:
             self.thrower_speed = 0
         else:
-            print("Unknown axis", axis)
+            raise ValueError(f"Invalid axis", axis)
         self.send_movement()
 
     def on_up_arrow_press(self):
@@ -89,12 +89,10 @@ class RobotDS4Backend(Controller):
         self.thrower_speed = self.thrower_speed_param
         self.send_movement()
 
-    # TODO - might be broken, verify.
     def on_triangle_release(self):
         """Deactivating thrower"""
         print("Triangle - Thrower stop")
-        self.axis_stop("thrower")
-        self.send_movement()
+        self.axis_stop(Axis.THROWER)
 
     def on_R1_press(self):
         """Move right on the X-axis"""
