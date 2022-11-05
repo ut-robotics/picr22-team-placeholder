@@ -24,10 +24,21 @@ class Basket(Enum):
     MAGENTA = 2
 
 
+def back_to_search(scan_move_time):
+    """Returns to search state
+
+        Args:
+            scan_move_time (int): Time to move before stopping to scan
+    """
+    current_state = State.Searching
+    search_end = time.time() + scan_move_time
+    return current_state, search_end
+
+
 def main_loop():
 
     # -- CAMERA STUFF --
-    debug = False  # Whether to show camera image or not
+    debug = True  # Whether to show camera image or not
     # camera instance for normal web cameras
     #cam = camera.OpenCVCamera(id = 2)
     # camera instance for realsense cameras
@@ -48,19 +59,21 @@ def main_loop():
     robot = motion.OmniRobot()
     robot.open()
     max_speed = 0.75
+    search_speed = 3
     throw_wait = 5  # wait for 5 seconds
-    max_distance = 500  # how far the ball has to be to prepare for throw
-    scan_time = 1  # time to scan for balls when in search mode
+    max_distance = 300  # how far the ball has to be to prepare for throw
+    scan_wait_time = 1  # time to scan for balls when in search mode
+    scan_move_time = 0.2
     wait_end = 0
     # TODO - unhardcode this value eventually
-    basket_color = Basket.BLUE
+    basket_color = Basket.MAGENTA
     # the state machine
     current_state = State.Searching
     next_state = None  # used for wait
     # initialize controller
     controller = RobotDS4(robot=robot)
     controller.start()
-    search_end = time.time() + scan_time
+    search_end = time.time() + scan_move_time
     # probably not needed, just for debugging right now to cut down on log spam
     prev_ball_count = 0
     try:
@@ -80,8 +93,7 @@ def main_loop():
                 current_state = State.RemoteControl
             if current_state == State.RemoteControl:
                 if not controller.is_remote_controlled():
-                    current_state = State.Searching
-                    search_end = time.time() + search_end
+                    current_state, search_end = back_to_search(scan_move_time)
                 else:
                     continue
 
@@ -106,71 +118,73 @@ def main_loop():
                     current_state = State.BallFound
                 else:
                     if time.time() < search_end:
-                        robot.move(0, 0, max_speed, 0)
+                        print("--Searching-- Moving to look for ball")
+                        robot.move(0, 0, search_speed, 0)
                     else:
+                        print("--Searching-- Entering wait to scan surroundings")
                         current_state = State.Wait
-                        wait_end = time.time() + scan_time
+                        wait_end = time.time() + scan_wait_time
                         next_state = State.Searching
 
-            if current_state == State.BallFound:
-                # in case we lost the ball
-                if ball_count == 0:
-                    current_state = State.Searching
-                    search_end = time.time() + search_end
-                    continue
+            if current_state == State.Wait:
+                if next_state == State.Searching and ball_count != 0:
+                    print("--Wait-- Found ball.")
+                    current_state = State.BallFound
+                    next_state = None
+                if time.time() >= wait_end:
+                    current_state = next_state
+                    next_state = None
+                    if current_state == State.Searching:
+                        search_end = time.time() + scan_move_time
+                else:
+                    print("--Wait-- Waiting for ",
+                          wait_end - time.time(), "seconds.")
 
+            if current_state == State.BallFound:
+                if ball_count == 0:  # lost the ball
+                    current_state, search_end = back_to_search(scan_move_time)
+                    continue
+                print("--BallFound-- Ball found.")
                 if ball.x > (middle_point + camera_deadzone):
-                    print("right")
+                    print("--BallFound-- right")
                     robot.move(0, 0, -max_speed, 0)
                 elif ball.x < (middle_point - camera_deadzone):
-                    print("left")
+                    print("--BallFound-- left")
                     robot.move(0, 0, max_speed, 0)
                 else:
+                    # TODO - depth camera for distance (?)
                     if ball.distance > max_distance:
                         # the greater the distance the closer the ball
-                        print("ball close, distance:", ball.distance)
+                        print("--BallFound-- ball close, distance:", ball.distance)
                         current_state = State.Orbiting
                     else:
+                        print("--BallFound-- ball far, distance:", ball.distance)
                         robot.move(0, max_speed, 0, 0)
 
             if current_state == State.Orbiting:
-                # in case we lost the ball
                 if ball_count == 0:
-                    current_state == State.Searching
-                    search_end = time.time() + search_end
+                    current_state, search_end = back_to_search(scan_move_time)
                     continue
 
+                print("--ORBITING-- starting orbiting")
                 if basket_color == Basket.MAGENTA:
                     basket = processedData.basket_m
                 elif basket_color == Basket.BLUE:
                     basket = processedData.basket_b
 
+                # TODO - adjust based on the ball
                 if basket.exists:
-                    current_state = State.Wait
-                    next_state = State.BallThrow
-                    wait_end = time.time() + throw_wait
-                else:  # TODO - orbit here
-                    if ball.x > (middle_point + camera_deadzone):
-                        print("right")
-                        robot.move(max_speed * 0.25, 0, -max_speed, 0)
-                    elif ball.x < (middle_point - camera_deadzone):
-                        print("left")
-                        robot.move(max_speed * 0.25, 0, max_speed, 0)
+                    if middle_point - 30 < basket.x < middle_point + 30:
+                        current_state = State.BallThrow
+                    else:
+                        robot.move(max_speed*0.15, 0, max_speed*0.15)
+                else:
+                    # move faster to try and find the ball
+                    robot.move(max_speed*0.4, 0, max_speed*0.4)
 
-            # TODO - actually get a thrower and implement thrower logic
+            # TODO - actually get a thrower
             if current_state == State.BallThrow:
-                print("straight")
-                robot.move(0, max_speed, 0, 0)
-                print("throw")
-                current_state = State.Searching
-                search_end = time.time() + search_end
-
-            if current_state == State.Wait:
-                if time.time() >= wait_end:
-                    current_state = next_state
-                    next_state = None
-                    if current_state == State.Searching:
-                        search_end = time.time() + search_end
+                print("--BallThrow-- Throwing ball")
 
             # USE THIS STATE ONLY FOR DEBUGGING STUFF, not intended for actual use
             if current_state == State.Debug:
