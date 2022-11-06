@@ -40,3 +40,4 @@ This is where we're going to write down what we've done so far.
 * 03.11.2022 - *Timo:* Code cleanup and fixes. (6h)
 * 04.11.2022 - *Timo:* Documenting functions and removing unused stuff. (1h)
 * 05.11.2022 - *Timo:* Working on robot code. (6h)
+* 06.11.2022 - *Timo:* Working on state machine. (6.5h)
