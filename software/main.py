@@ -180,11 +180,11 @@ def main_loop():
                         robot.move(0, max_speed, 0)
 
             if current_state == State.Orbiting:
-                if ball_count == 0:
+                """if ball_count == 0:
                     current_state, search_end = back_to_search(scan_move_time)
                     continue
 
-                print("--ORBITING-- starting orbiting")
+                print("--ORBITING-- starting orbiting")"""
                 if basket_color == Color.MAGENTA:
                     basket = processedData.basket_m
                 elif basket_color == Color.BLUE:
@@ -192,13 +192,16 @@ def main_loop():
 
                 # TODO - adjust based on the ball
                 if basket.exists:
-                    if middle_point - 10 < basket.x < middle_point + 10:
-                        current_state = State.BallThrow
+                    if basket.x < middle_point - 5: # left
+                        robot.move(max_speed*0.15, 0, max_speed*0.5)
+                    elif basket.x > middle_point + 5: # right
+                        robot.move(-max_speed*0.15, 0, -max_speed*0.5)
                     else:
-                        robot.move(max_speed*0.15, 0, max_speed*0.15)
+                        current_state = State.BallThrow
+                    
                 else:
-                    # move faster to try and find the ball
-                    robot.move(max_speed*0.4, 0, max_speed*0.4)
+                    # move faster to try and find the basket
+                    robot.move(0.5, 0, 1.5)
 
             # TODO - actually get a thrower
             if current_state == State.BallThrow:
