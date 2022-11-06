@@ -7,6 +7,7 @@ from ds4_control import RobotDS4
 from enum import Enum
 from Color import Color
 
+
 class State(Enum):
     """State machine enums"""
     Searching = 1
@@ -18,6 +19,7 @@ class State(Enum):
     Wait = 7
     RemoteControl = 98
     Debug = 99  # state for temporarily testing code
+
 
 class Robot:
     current_state = State.Searching
@@ -35,7 +37,7 @@ class Robot:
 
     processed_data = 0
     ball_count = 0
-    ball = 0
+    ball = None
 
     def __init__(self,
                  debug: bool,
@@ -52,16 +54,14 @@ class Robot:
                  basket_color: Color):
         self.debug = debug
 
-        self.processor = image_processor.ImageProcessor(self.cam, debug=debug)
-        self.processor.start()
-
         if use_realsense:
             # camera instance for realsense cameras
             self.cam = camera.RealsenseCamera(exposure=100)
         else:
             # camera instance for normal web cameras
             self.cam = camera.OpenCVCamera(id=2)
-
+        self.processor = image_processor.ImageProcessor(self.cam, debug=debug)
+        self.processor.start()
         self.middle_point = self.cam.rgb_width // 2 + middle_offset
         self.camera_deadzone = camera_deadzone
 
@@ -86,16 +86,13 @@ class Robot:
 
         self.search_end = time() + scan_move_time
         self.wait_end = time() + scan_wait_time
+        self.main_loop()
 
     def back_to_search(self):
         """Returns to search state
-
-            Args:
-                scan_move_time (float): Time to move before stopping to scan
         """
-        current_state = State.Searching
-        search_end = time() + self.scan_move_time
-        return current_state, search_end
+        self.current_state = State.Searching
+        self.search_end = time() + self.scan_move_time
 
     def get_image_data(self):
         # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
@@ -118,7 +115,7 @@ class Robot:
             if k == ord('q'):
                 raise KeyboardInterrupt
 
-        # print("CURRENT STATE -", current_state)
+        print("CURRENT STATE -", self.current_state)
 
         # -- REMOTE CONTROL STUFF --
         # stop button
@@ -130,13 +127,17 @@ class Robot:
             self.current_state = State.RemoteControl
         if self.current_state == State.RemoteControl:
             if not self.controller.is_remote_controlled():
-                self.current_state, self.search_end = self.back_to_search()
+                self.back_to_search()
             else:
-                raise KeyboardInterrupt
+                return
 
         # -- AUTONOMOUS STUFF --
+        if self.ball_count == 0:
+            self.no_balls_frames += 1
+        else:
+            self.no_balls_frames = 0
 
-        self.ball_count = len(self.processedData.balls)
+        self.ball_count = len(self.processed_data.balls)
         if self.prev_ball_count != self.ball_count:
             # this is for debugging
             print("ball_count: {}".format(self.ball_count))
@@ -144,14 +145,14 @@ class Robot:
 
         # last element is always the largest and we want to chase the largest ball
         if self.ball_count > 0:
-            self.ball = self.processedData.balls[-1]
+            self.ball = self.processed_data.balls[-1]
         else:
-            self.ball = None  # no ball
+            self.ball = None
 
     def searching_state(self):
         """State for searching for the ball"""
         if self.ball_count != 0:
-            self.current_state = State.BallFound
+            self.current_state = State.BallAlign
 
         elif time() < self.search_end:
             print("--Searching-- Moving to look for ball")
@@ -180,9 +181,15 @@ class Robot:
 
     def ball_align_state(self):
         """State for aligning the robot with the ball's direction"""
-        if self.no_balls_frames > self.max_ball_miss:  # lost the ball, TODO - increment the value
-            self.current_state, self.search_end = self.back_to_search()
+        if self.no_balls_frames > self.max_ball_miss:  # lost the ball
+            print(
+                f"--BallAlign-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
+            self.back_to_search()
             return
+        if self.ball_count == 0:  # don't do anything when we cant see a ball
+            self.robot.stop()
+            return
+
         print("--BallAlign-- Ball found.")
         if self.ball.x > (self.middle_point + self.camera_deadzone):
             print("--BallAlign-- right")
@@ -193,6 +200,26 @@ class Robot:
 
         else:
             self.current_state = State.DriveToBall
+
+    def drive_to_ball_state(self):
+        """State for driving to the ball."""
+        if self.no_balls_frames > self.max_ball_miss:  # lost the ball
+            print(
+                f"--DriveToBall-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
+            self.back_to_search()
+            return
+        if self.ball_count == 0:  # don't do anything when we cant see a ball
+            self.robot.stop()
+            return
+        print("--DriveToBall-- Driving to ball.")
+        if self.ball.distance < self.min_distance - 20:
+            print("--DriveToBall-- ball too close, distance:", self.ball.distance)
+            self.robot.move(0, -self.max_speed, 0)
+        elif self.ball.distance > self.min_distance:
+            print("--DriveToBall-- ball far, distance:", self.ball.distance)
+            self.robot.move(0, self.max_speed, 0)
+        else:
+            self.current_state = State.Orbiting
 
     def orbiting_state(self):
         """State for orbiting around the ball and trying to find the basket."""
@@ -205,7 +232,8 @@ class Robot:
             if basket.x < self.middle_point - 5:  # left
                 self.robot.move(self.max_speed * 0.15, 0, self.max_speed * 0.5)
             elif basket.x > self.middle_point + 5:  # right
-                self.robot.move(-self.max_speed * 0.15, 0, -self.max_speed * 0.5)
+                self.robot.move(-self.max_speed * 0.15,
+                                0, -self.max_speed * 0.5)
             else:
                 self.current_state = State.BallThrow
         else:
@@ -227,14 +255,14 @@ class Robot:
                   basket.distance)
         elif self.ball_count != 0:
             print("--BallThrow-- No basket, going back to orbiting.")
-            current_state = State.Orbiting
+            self.current_state = State.Orbiting
         else:
             print("--BallThrow-- No basket or ball, going back to throwing.")
-            current_state = State.Searching
+            self.current_state = State.Searching
 
     def remote_control_state(self):
         if not self.controller.is_remote_controlled():
-            self.current_state, self.search_end = self.back_to_search()
+            self.back_to_search()
 
     def main_loop(self):
         try:
@@ -262,6 +290,12 @@ class Robot:
                 elif self.current_state == State.RemoteControl:
                     self.remote_control_state()
 
+                elif self.current_state == State.DriveToBall:
+                    self.drive_to_ball_state()
+                    
+                elif self.current_state == State.BallThrow:
+                    self.ball_throw_state()
+
         except KeyboardInterrupt:
             print("Closing....")
 
@@ -271,9 +305,10 @@ class Robot:
             cv2.destroyAllWindows()
             self.processor.stop()
 
+
 if __name__ == "__main__":
-    conf_debug = True
-    conf_camera_deadzone = 30
+    conf_debug = False
+    conf_camera_deadzone = 5
     conf_max_speed = 0.75
     conf_search_speed = 2
     conf_throw_wait = 5
@@ -286,4 +321,4 @@ if __name__ == "__main__":
     conf_basket_color = Color.MAGENTA
 
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_wait,
-                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, )
+                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color)
