@@ -85,23 +85,6 @@ GenerateClassCluster=0
 DocumentUniqueId=BQNBIQLV
 
 [Document3]
-DocumentPath=Libraries\STM32G441KB\MicroController.SchDoc
-AnnotationEnabled=1
-AnnotateStartValue=1
-AnnotationIndexControlEnabled=0
-AnnotateSuffix=
-AnnotateScope=All
-AnnotateOrder=3
-DoLibraryUpdate=0
-DoDatabaseUpdate=1
-ClassGenCCAutoEnabled=1
-ClassGenCCAutoRoomEnabled=0
-ClassGenNCAutoScope=None
-DItemRevisionGUID=
-GenerateClassCluster=0
-DocumentUniqueId=YYROQIBR
-
-[Document4]
 DocumentPath=Libraries\TSOP-5\Components - 15.10.22 - 22.46.PcbLib
 AnnotationEnabled=1
 AnnotateStartValue=1
@@ -118,7 +101,7 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=
 
-[Document5]
+[Document4]
 DocumentPath=Libraries\TSOP-5\Components - 15.10.22 - 22.46.SchLib
 AnnotationEnabled=1
 AnnotateStartValue=1
@@ -135,7 +118,7 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=QYYSLNBO
 
-[Document6]
+[Document5]
 DocumentPath=Board.PcbDoc
 AnnotationEnabled=1
 AnnotateStartValue=1
@@ -152,7 +135,7 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=OWULDDKX
 
-[Document7]
+[Document6]
 DocumentPath=picr22-team-placeholder-electronics.BomDoc
 AnnotationEnabled=1
 AnnotateStartValue=1
@@ -168,6 +151,23 @@ ClassGenNCAutoScope=None
 DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=
+
+[Document7]
+DocumentPath=MicroController.SchDoc
+AnnotationEnabled=1
+AnnotateStartValue=1
+AnnotationIndexControlEnabled=0
+AnnotateSuffix=
+AnnotateScope=All
+AnnotateOrder=-1
+DoLibraryUpdate=1
+DoDatabaseUpdate=1
+ClassGenCCAutoEnabled=1
+ClassGenCCAutoRoomEnabled=1
+ClassGenNCAutoScope=None
+DItemRevisionGUID=
+GenerateClassCluster=0
+DocumentUniqueId=YYROQIBR
 
 [GeneratedDocument1]
 DocumentPath=..\..\..\..\..\..\..\..\AppData\Local\Temp\Project Outputs for picr22-team-placeholder-electronics\Design Rule Check - Board.html
