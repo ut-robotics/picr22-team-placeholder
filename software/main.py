@@ -38,6 +38,7 @@ class Robot:
     processed_data = 0
     ball_count = 0
     ball = None
+    basket = None
 
     def __init__(self,
                  debug: bool,
@@ -142,11 +143,16 @@ class Robot:
             print("ball_count: {}".format(self.ball_count))
             self.prev_ball_count = self.ball_count
 
-        # last element is always the largest and we want to chase the largest ball
+        # first element is always the closest ball
         if self.ball_count > 0:
-            self.ball = self.processed_data.balls[-1]
+            self.ball = self.processed_data.balls[0]
         else:
             self.ball = None
+
+        if self.basket_color == Color.MAGENTA:
+            self.basket = self.processed_data.basket_m
+        elif self.basket_color == Color.BLUE:
+            self.basket = self.processed_data.basket_b
 
     def searching_state(self):
         """State for searching for the ball"""
@@ -219,47 +225,46 @@ class Robot:
             rot_speed = self.max_speed
         else:
             rot_speed = 0
-        if self.ball.distance < self.min_distance - 20:
+        if self.ball.distance < self.min_distance - 100:
             print("--DriveToBall-- ball too close, distance:", self.ball.distance)
-            self.robot.move(0, -self.max_speed, rot_speed)
-        elif self.ball.distance > self.min_distance:
+            self.robot.move(0, -self.max_speed * 0.25, rot_speed)
+        elif self.ball.distance > self.min_distance * 2:
             print("--DriveToBall-- ball far, distance:", self.ball.distance)
             self.robot.move(0, self.max_speed, rot_speed)
+        elif self.ball.distance > self.min_distance * 2:
+            self.robot.move(0, self.max_speed*0.5, rot_speed)
         else:
             self.current_state = State.BallAlign
 
     def orbiting_state(self):
         """State for orbiting around the ball and trying to find the basket."""
-        if self.basket_color == Color.MAGENTA:
-            basket = self.processed_data.basket_m
-        elif self.basket_color == Color.BLUE:
-            basket = self.processed_data.basket_b
-            # TODO - adjust based on the ball
-        if basket.exists:
-            if basket.x < self.middle_point - 5:  # left
-                self.robot.move(self.max_speed * 0.15, 0, self.max_speed * 0.5)
-            elif basket.x > self.middle_point + 5:  # right
-                self.robot.move(-self.max_speed * 0.15,
-                                0, -self.max_speed * 0.5)
-            else:
-                self.current_state = State.BallThrow
+        if self.basket.exists:
+            self.current_state = State.BasketBallAlign
         else:
             # move faster to try and find the basket
             self.robot.move(0.5, 0, 1.5)
 
-    def backet_ball_align_state(self):
+    def basket_ball_align_state(self):
         """State for aligning the ball and the basket."""
-        print("Unimplemented state BasketBallAlign.")
+        if self.basket.exists: # TODO - use ball
+            if self.basket.x < self.middle_point - 5:  # left
+                x_speed = self.max_speed * 0.15
+                y_speed = 0
+                rot_speed = self.max_speed * 0.5
+            elif self.basket.x > self.middle_point + 5:  # right
+                x_speed = -self.max_speed * 0.15
+                y_speed = 0
+                rot_speed = -self.max_speed * 0.5
+            self.robot.move(x_speed, y_speed, rot_speed)
+        else:
+            pass
+        
 
     def ball_throw_state(self):
         """State for throwing the ball into the basket"""
-        if self.basket_color == Color.MAGENTA:
-            basket = self.processed_data.basket_m
-        elif self.basket_color == Color.BLUE:
-            basket = self.processed_data.basket_b
-        if basket.exists:  # TODO
+        if self.basket.exists:  # TODO
             print("--BallThrow-- Throwing ball, basket distance:",
-                  basket.distance)
+                  self.basket.distance)
         elif self.ball_count != 0:
             print("--BallThrow-- No basket, going back to orbiting.")
             self.current_state = State.Orbiting
@@ -289,7 +294,7 @@ class Robot:
                     self.orbiting_state()
 
                 elif self.current_state == State.BasketBallAlign:
-                    self.backet_ball_align_state()
+                    self.basket_ball_align_state()
 
                 elif self.current_state == State.Orbiting:
                     self.orbiting_state()
