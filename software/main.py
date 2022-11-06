@@ -34,7 +34,7 @@ class Robot:
     # probably not needed, just for debugging right now to cut down on log spam
     prev_ball_count = 0
     no_balls_frames = 0
-
+    wait_end = 0
     processed_data = 0
     ball_count = 0
     ball = None
@@ -85,7 +85,6 @@ class Robot:
         self.basket_color = basket_color
 
         self.search_end = time() + scan_move_time
-        self.wait_end = time() + scan_wait_time
         self.main_loop()
 
     def back_to_search(self):
@@ -115,7 +114,7 @@ class Robot:
             if k == ord('q'):
                 raise KeyboardInterrupt
 
-        print("CURRENT STATE -", self.current_state)
+        #print("CURRENT STATE -", self.current_state)
 
         # -- REMOTE CONTROL STUFF --
         # stop button
@@ -152,7 +151,7 @@ class Robot:
     def searching_state(self):
         """State for searching for the ball"""
         if self.ball_count != 0:
-            self.current_state = State.BallAlign
+            self.current_state = State.DriveToBall
 
         elif time() < self.search_end:
             print("--Searching-- Moving to look for ball")
@@ -168,7 +167,7 @@ class Robot:
         """State for waiting"""
         if self.next_state == State.Searching and self.ball_count != 0:
             print("--Wait-- Found ball.")
-            self.current_state = State.BallAlign
+            self.current_state = State.DriveToBall
             return
         if time() >= self.wait_end:
             if self.next_state is not None:
@@ -199,7 +198,7 @@ class Robot:
             self.robot.move(0, 0, self.max_speed, 0)
 
         else:
-            self.current_state = State.DriveToBall
+            self.current_state = State.Orbiting
 
     def drive_to_ball_state(self):
         """State for driving to the ball."""
@@ -212,14 +211,22 @@ class Robot:
             self.robot.stop()
             return
         print("--DriveToBall-- Driving to ball.")
+        if self.ball.x > (self.middle_point + self.camera_deadzone):
+            print("--DriveToBall-- Keep right")
+            rot_speed = -self.max_speed
+        elif self.ball.x < (self.middle_point - self.camera_deadzone):
+            print("--DriveToBall-- Keep left")
+            rot_speed = self.max_speed
+        else:
+            rot_speed = 0
         if self.ball.distance < self.min_distance - 20:
             print("--DriveToBall-- ball too close, distance:", self.ball.distance)
-            self.robot.move(0, -self.max_speed, 0)
+            self.robot.move(0, -self.max_speed, rot_speed)
         elif self.ball.distance > self.min_distance:
             print("--DriveToBall-- ball far, distance:", self.ball.distance)
-            self.robot.move(0, self.max_speed, 0)
+            self.robot.move(0, self.max_speed, rot_speed)
         else:
-            self.current_state = State.Orbiting
+            self.current_state = State.BallAlign
 
     def orbiting_state(self):
         """State for orbiting around the ball and trying to find the basket."""
@@ -292,7 +299,7 @@ class Robot:
 
                 elif self.current_state == State.DriveToBall:
                     self.drive_to_ball_state()
-                    
+
                 elif self.current_state == State.BallThrow:
                     self.ball_throw_state()
 
@@ -307,7 +314,7 @@ class Robot:
 
 
 if __name__ == "__main__":
-    conf_debug = False
+    conf_debug = True
     conf_camera_deadzone = 5
     conf_max_speed = 0.75
     conf_search_speed = 2
