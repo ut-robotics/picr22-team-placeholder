@@ -247,7 +247,7 @@ class Robot:
             self.robot.stop()
             self.back_to_search_state()
             return
-            
+
         # TODO - put this into its own function, we reuse it a lot
         if self.no_balls_frames > self.max_ball_miss:  # lost the ball
             print(
@@ -268,7 +268,8 @@ class Robot:
                 self.current_state = State.BasketBallAlign
         else:
             # move faster to try and find the basket
-            self.robot.move(0.25, 0, self.max_speed * (self.ball.distance / 1000))
+            self.robot.move(0.25, 0, self.max_speed *
+                            (self.ball.distance / 1000))
 
     def basket_ball_align_state(self):
         """State for aligning the ball and the basket."""
@@ -280,15 +281,19 @@ class Robot:
         if self.ball_count == 0:  # don't do anything when we cant see a ball
             self.robot.stop()
             return
-        if self.basket.exists:  # TODO - use ball
+        if self.basket.exists:
             x_speed, y_speed, rot_speed = 0, 0, 0
+            if ((self.middle_point - self.camera_deadzone) < self.ball.x < (self.middle_point + self.camera_deadzone)) and ((self.middle_point - 2) < self.basket.x < (self.middle_point + 2)):
+                self.current_state = State.BallThrow
+                return
+            # ball adjustment
             if self.ball.x > (self.middle_point + self.camera_deadzone):
                 print("--BallBasket-- Ball right")
-                x_speed = -self.max_speed * 0.05
+                x_speed = self.max_speed * 0.1
             elif self.ball.x < (self.middle_point - self.camera_deadzone):
                 print("--BallBasket-- Ball left")
-                x_speed = self.max_speed * 0.05
-
+                x_speed = -self.max_speed * 0.1
+            # basket adjustment
             if self.basket.x < self.middle_point - 2:  # left
                 print("--BallBasket-- Basket left")
                 #x_speed = self.max_speed * 0.05
@@ -300,7 +305,7 @@ class Robot:
                 rot_speed = -self.max_speed * 0.25
                 self.robot.move(x_speed, y_speed, rot_speed)
             else:
-                self.current_state = State.BallThrow
+                self.robot.move(x_speed, y_speed, rot_speed)
         else:
             pass
 
