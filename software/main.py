@@ -283,10 +283,13 @@ class Robot:
             return
         if self.basket.exists:
             x_speed, y_speed, rot_speed = 0, 0, 0
-            if ((self.middle_point - self.camera_deadzone) < self.ball.x < (self.middle_point + self.camera_deadzone)) and ((self.middle_point - 2) < self.basket.x < (self.middle_point + 2)):
+            if ((self.middle_point - self.camera_deadzone) < self.ball.x < (self.middle_point + self.camera_deadzone)) and ((self.middle_point - self.camera_deadzone) < self.basket.x < (self.middle_point + self.camera_deadzone)):
                 self.current_state = State.BallThrow
                 return
             # ball adjustment
+            print("g", self.ball.distance)
+            if self.ball.distance > self.min_distance:
+                self.y_speed = self.max_speed * 0.532
             if self.ball.x > (self.middle_point + self.camera_deadzone):
                 print("--BallBasket-- Ball right")
                 x_speed = self.max_speed * 0.1
@@ -294,12 +297,12 @@ class Robot:
                 print("--BallBasket-- Ball left")
                 x_speed = -self.max_speed * 0.1
             # basket adjustment
-            if self.basket.x < self.middle_point - 2:  # left
+            if self.basket.x < self.middle_point - self.camera_deadzone:  # left
                 print("--BallBasket-- Basket left")
                 #x_speed = self.max_speed * 0.05
                 rot_speed = self.max_speed * 0.25
                 self.robot.move(x_speed, y_speed, rot_speed)
-            elif self.basket.x > self.middle_point + 2:  # right
+            elif self.basket.x > self.middle_point + self.camera_deadzone:  # right
                 print("--BallBasket-- Basket right")
                 #x_speed = -self.max_speed * 0.05
                 rot_speed = -self.max_speed * 0.25
