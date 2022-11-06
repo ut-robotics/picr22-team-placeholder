@@ -201,10 +201,10 @@ class Robot:
         print("--BallAlign-- Ball found.")
         if self.ball.x > (self.middle_point + self.camera_deadzone):
             print("--BallAlign-- right")
-            self.robot.move(0, 0, -self.max_speed, 0)
+            self.robot.move(0, 0, -self.max_speed*0.5, 0)
         elif self.ball.x < (self.middle_point - self.camera_deadzone):
             print("--BallAlign-- left")
-            self.robot.move(0, 0, self.max_speed, 0)
+            self.robot.move(0, 0, self.max_speed*0.5, 0)
 
         else:
             self.current_state = State.Orbiting
@@ -247,6 +247,17 @@ class Robot:
             self.robot.stop()
             self.back_to_search_state()
             return
+            
+        # TODO - put this into its own function, we reuse it a lot
+        if self.no_balls_frames > self.max_ball_miss:  # lost the ball
+            print(
+                f"--Orbiting-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
+            self.back_to_search_state()
+            return
+        if self.ball_count == 0:  # don't do anything when we cant see a ball
+            self.robot.stop()
+            return
+
         if self.basket.exists:
             if self.basket.x < self.middle_point - 5:  # left
                 self.robot.move(self.max_speed * 0.15, 0, self.max_speed * 0.5)
@@ -257,18 +268,35 @@ class Robot:
                 self.current_state = State.BasketBallAlign
         else:
             # move faster to try and find the basket
-            self.robot.move(0.5, 0, 1.5)
+            self.robot.move(0.25, 0, self.max_speed * (self.ball.distance / 1000))
 
     def basket_ball_align_state(self):
         """State for aligning the ball and the basket."""
+        if self.no_balls_frames > self.max_ball_miss:  # lost the ball
+            print(
+                f"--DriveToBall-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
+            self.back_to_search_state()
+            return
+        if self.ball_count == 0:  # don't do anything when we cant see a ball
+            self.robot.stop()
+            return
         if self.basket.exists:  # TODO - use ball
             x_speed, y_speed, rot_speed = 0, 0, 0
-            if self.basket.x < self.middle_point - 2:  # left
+            if self.ball.x > (self.middle_point + self.camera_deadzone):
+                print("--BallBasket-- Ball right")
+                x_speed = -self.max_speed * 0.05
+            elif self.ball.x < (self.middle_point - self.camera_deadzone):
+                print("--BallBasket-- Ball left")
                 x_speed = self.max_speed * 0.05
+
+            if self.basket.x < self.middle_point - 2:  # left
+                print("--BallBasket-- Basket left")
+                #x_speed = self.max_speed * 0.05
                 rot_speed = self.max_speed * 0.25
                 self.robot.move(x_speed, y_speed, rot_speed)
             elif self.basket.x > self.middle_point + 2:  # right
-                x_speed = -self.max_speed * 0.05
+                print("--BallBasket-- Basket right")
+                #x_speed = -self.max_speed * 0.05
                 rot_speed = -self.max_speed * 0.25
                 self.robot.move(x_speed, y_speed, rot_speed)
             else:
@@ -333,7 +361,7 @@ class Robot:
 
 
 if __name__ == "__main__":
-    conf_debug = False
+    conf_debug = True
     conf_camera_deadzone = 5
     conf_max_speed = 0.75
     conf_search_speed = 2
