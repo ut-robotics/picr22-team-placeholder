@@ -34,6 +34,7 @@ class Robot:
     # probably not needed, just for debugging right now to cut down on log spam
     prev_ball_count = 0
     no_balls_frames = 0
+    orbit_start = 0
     wait_end = 0
     processed_data = 0
     ball_count = 0
@@ -52,7 +53,8 @@ class Robot:
                  max_ball_miss: int,
                  use_realsense: bool,
                  middle_offset: int,
-                 basket_color: Color):
+                 basket_color: Color,
+                 max_orbit_time: int):
         self.debug = debug
 
         if use_realsense:
@@ -84,11 +86,12 @@ class Robot:
         self.max_ball_miss = max_ball_miss
 
         self.basket_color = basket_color
+        self.max_orbit_time = max_orbit_time
 
         self.search_end = time() + scan_move_time
         self.main_loop()
 
-    def back_to_search(self):
+    def back_to_search_state(self):
         """Returns to search state
         """
         self.current_state = State.Searching
@@ -115,7 +118,7 @@ class Robot:
             if k == ord('q'):
                 raise KeyboardInterrupt
 
-        #print("CURRENT STATE -", self.current_state)
+        print("CURRENT STATE -", self.current_state)
 
         # -- REMOTE CONTROL STUFF --
         # stop button
@@ -127,7 +130,7 @@ class Robot:
             self.current_state = State.RemoteControl
         if self.current_state == State.RemoteControl:
             if not self.controller.is_remote_controlled():
-                self.back_to_search()
+                self.back_to_search_state()
             else:
                 return
 
@@ -189,7 +192,7 @@ class Robot:
         if self.no_balls_frames > self.max_ball_miss:  # lost the ball
             print(
                 f"--BallAlign-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
-            self.back_to_search()
+            self.back_to_search_state()
             return
         if self.ball_count == 0:  # don't do anything when we cant see a ball
             self.robot.stop()
@@ -205,13 +208,14 @@ class Robot:
 
         else:
             self.current_state = State.Orbiting
+            self.orbit_start = time()
 
     def drive_to_ball_state(self):
         """State for driving to the ball."""
         if self.no_balls_frames > self.max_ball_miss:  # lost the ball
             print(
                 f"--DriveToBall-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
-            self.back_to_search()
+            self.back_to_search_state()
             return
         if self.ball_count == 0:  # don't do anything when we cant see a ball
             self.robot.stop()
@@ -238,27 +242,39 @@ class Robot:
 
     def orbiting_state(self):
         """State for orbiting around the ball and trying to find the basket."""
+        if time() > self.orbit_start + self.max_orbit_time:
+            print("--ORBIT-- Orbiting for too long, going back to search")
+            self.robot.stop()
+            self.back_to_search_state()
+            return
         if self.basket.exists:
-            self.current_state = State.BasketBallAlign
+            if self.basket.x < self.middle_point - 5:  # left
+                self.robot.move(self.max_speed * 0.15, 0, self.max_speed * 0.5)
+            elif self.basket.x > self.middle_point + 5:  # right
+                self.robot.move(-self.max_speed * 0.15,
+                                0, -self.max_speed * 0.5)
+            else:
+                self.current_state = State.BasketBallAlign
         else:
             # move faster to try and find the basket
             self.robot.move(0.5, 0, 1.5)
 
     def basket_ball_align_state(self):
         """State for aligning the ball and the basket."""
-        if self.basket.exists: # TODO - use ball
-            if self.basket.x < self.middle_point - 5:  # left
-                x_speed = self.max_speed * 0.15
-                y_speed = 0
-                rot_speed = self.max_speed * 0.5
-            elif self.basket.x > self.middle_point + 5:  # right
-                x_speed = -self.max_speed * 0.15
-                y_speed = 0
-                rot_speed = -self.max_speed * 0.5
-            self.robot.move(x_speed, y_speed, rot_speed)
+        if self.basket.exists:  # TODO - use ball
+            x_speed, y_speed, rot_speed = 0, 0, 0
+            if self.basket.x < self.middle_point - 2:  # left
+                x_speed = self.max_speed * 0.05
+                rot_speed = self.max_speed * 0.25
+                self.robot.move(x_speed, y_speed, rot_speed)
+            elif self.basket.x > self.middle_point + 2:  # right
+                x_speed = -self.max_speed * 0.05
+                rot_speed = -self.max_speed * 0.25
+                self.robot.move(x_speed, y_speed, rot_speed)
+            else:
+                self.current_state = State.BallThrow
         else:
             pass
-        
 
     def ball_throw_state(self):
         """State for throwing the ball into the basket"""
@@ -268,13 +284,14 @@ class Robot:
         elif self.ball_count != 0:
             print("--BallThrow-- No basket, going back to orbiting.")
             self.current_state = State.Orbiting
+            self.orbit_start = time()
         else:
             print("--BallThrow-- No basket or ball, going back to throwing.")
             self.current_state = State.Searching
 
     def remote_control_state(self):
         if not self.controller.is_remote_controlled():
-            self.back_to_search()
+            self.back_to_search_state()
 
     def main_loop(self):
         try:
@@ -296,9 +313,6 @@ class Robot:
                 elif self.current_state == State.BasketBallAlign:
                     self.basket_ball_align_state()
 
-                elif self.current_state == State.Orbiting:
-                    self.orbiting_state()
-
                 elif self.current_state == State.RemoteControl:
                     self.remote_control_state()
 
@@ -319,7 +333,7 @@ class Robot:
 
 
 if __name__ == "__main__":
-    conf_debug = True
+    conf_debug = False
     conf_camera_deadzone = 5
     conf_max_speed = 0.75
     conf_search_speed = 2
@@ -331,6 +345,7 @@ if __name__ == "__main__":
     conf_use_realsense = True
     conf_middle_offset = 0
     conf_basket_color = Color.MAGENTA
+    conf_max_orbit_time = 7  # seconds
 
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_wait,
-                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color)
+                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time)
