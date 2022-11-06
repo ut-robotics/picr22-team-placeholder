@@ -15,7 +15,10 @@ class State(Enum):
     Orbiting = 3
     BallThrow = 4
     Wait = 5
-    RemoteControl = 6
+    BallAlign = 6
+    DriveToBall = 7
+    BasketBallAlign = 8
+    RemoteControl = 98
     Debug = 99  # state for temporarily testing code
 
 
@@ -42,7 +45,7 @@ def main_loop():
     processor.start()
     middle_point = cam.rgb_width // 2
     # the middle area of the camera image
-    camera_deadzone = 60
+    camera_deadzone = 30
     # FPS counter
     start = time.time()
     fps = 0
@@ -60,6 +63,8 @@ def main_loop():
     scan_wait_time = 1  # time to scan for balls when in search mode
     scan_move_time = 0.2
     wait_end = 0
+
+    max_ball_miss = 5
     # TODO - unhardcode this value eventually
     basket_color = Color.MAGENTA
     # the state machine
@@ -71,6 +76,7 @@ def main_loop():
     search_end = time.time() + scan_move_time
     # probably not needed, just for debugging right now to cut down on log spam
     prev_ball_count = 0
+    no_balls_frames = 0
     try:
         while True:
             # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
@@ -158,7 +164,7 @@ def main_loop():
                     #      wait_end - time.time(), "seconds.")
                     pass
             if current_state == State.BallFound:
-                if ball_count == 0:  # lost the ball
+                if no_balls_frames > max_ball_miss:  # lost the ball
                     current_state, search_end = back_to_search(scan_move_time)
                     continue
                 print("--BallFound-- Ball found.")
@@ -168,15 +174,14 @@ def main_loop():
                 elif ball.x < (middle_point - camera_deadzone):
                     print("--BallFound-- left")
                     robot.move(0, 0, max_speed, 0)
+
                 else:
-                    # TODO - depth camera for distance (?)
-                    ball_distance = processedData.depth_frame[ball.y][ball.x]
-                    if ball_distance < min_distance:
+                    if ball.distance < min_distance:
                         # the greater the distance the closer the ball
-                        print("--BallFound-- ball close, distance:", ball_distance)
+                        print("--BallFound-- ball close, distance:", ball.distance)
                         current_state = State.Orbiting
                     else:
-                        print("--BallFound-- ball far, distance:", ball_distance)
+                        print("--BallFound-- ball far, distance:", ball.distance)
                         robot.move(0, max_speed, 0)
 
             if current_state == State.Orbiting:
@@ -210,9 +215,8 @@ def main_loop():
                 elif basket_color == Color.BLUE:
                     basket = processedData.basket_b
                 if basket.exists:  # TODO
-                    basket_distance = processedData.depth_frame[basket.y][basket.x]
                     print("--BallThrow-- Throwing ball, basket distance:",
-                          basket_distance)
+                          basket.distance)
                 elif ball_count != 0:
                     print("--BallThrow-- No basket, going back to orbiting.")
                     current_state = State.Orbiting

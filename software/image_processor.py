@@ -78,7 +78,7 @@ class ImageProcessor():
     def stop(self):
         self.camera.close()
 
-    def analyze_balls(self, t_balls, fragments) -> list:
+    def analyze_balls(self, t_balls, depth, fragments) -> list:
         contours, hierarchy = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -103,7 +103,10 @@ class ImageProcessor():
 
             obj_x = int(x + (w/2))
             obj_y = int(y + (h/2))
-            obj_dst = obj_y
+            if depth is None:
+                obj_dst = obj_y
+            else:
+                obj_dst = np.average(depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
 
             if self.debug:
                 self.debug_frame[ys, xs] = [0, 0, 0]
@@ -117,7 +120,7 @@ class ImageProcessor():
 
         return balls
 
-    def analyze_baskets(self, t_basket, debug_color=(0, 255, 255)) -> list:
+    def analyze_baskets(self, t_basket, depth,  debug_color=(0, 255, 255)) -> list:
         contours, hierarchy = cv2.findContours(
             t_basket, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -135,7 +138,10 @@ class ImageProcessor():
 
             obj_x = int(x + (w/2))
             obj_y = int(y + (h/2))
-            obj_dst = obj_y
+            if depth is None:
+                obj_dst = obj_y
+            else:
+                obj_dst = np.average(depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
 
             baskets.append(Object(x=obj_x, y=obj_y, size=size,
                            distance=obj_dst, exists=True))
@@ -167,11 +173,11 @@ class ImageProcessor():
         if self.debug:
             self.debug_frame = np.copy(color_frame)
 
-        balls = self.analyze_balls(self.t_balls, self.fragmented)
+        balls = self.analyze_balls(self.t_balls, depth_frame, self.fragmented)
         basket_b = self.analyze_baskets(
-            self.t_basket_b, debug_color=c.Color.BLUE.color.tolist())
+            self.t_basket_b, depth_frame, debug_color=c.Color.BLUE.color.tolist())
         basket_m = self.analyze_baskets(
-            self.t_basket_m, debug_color=c.Color.MAGENTA.color.tolist())
+            self.t_basket_m, depth_frame, debug_color=c.Color.MAGENTA.color.tolist())
 
         return ProcessedResults(balls=balls,
                                 basket_b=basket_b,
