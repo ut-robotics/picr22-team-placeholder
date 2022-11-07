@@ -11,12 +11,10 @@ from Color import Color
 class State(Enum):
     """State machine enums"""
     Searching = 1
-    BallAlign = 2
-    DriveToBall = 3
-    Orbiting = 4
-    BasketBallAlign = 5
-    BallThrow = 6
-    Wait = 7
+    DriveToBall = 2
+    Orbiting = 3
+    BallThrow = 4
+    Wait = 5
     RemoteControl = 98
     Debug = 99  # state for temporarily testing code
 
@@ -187,29 +185,6 @@ class Robot:
             if self.current_state == State.Searching:
                 self.search_end = time() + self.scan_move_time
 
-    def ball_align_state(self):
-        """State for aligning the robot with the ball's direction"""
-        if self.no_balls_frames > self.max_ball_miss:  # lost the ball
-            print(
-                f"--BallAlign-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
-            self.back_to_search_state()
-            return
-        if self.ball_count == 0:  # don't do anything when we cant see a ball
-            self.robot.stop()
-            return
-
-        print("--BallAlign-- Ball found.")
-        if self.ball.x > (self.middle_point + self.camera_deadzone):
-            print("--BallAlign-- right")
-            self.robot.move(0, 0, -self.max_speed*0.5, 0)
-        elif self.ball.x < (self.middle_point - self.camera_deadzone):
-            print("--BallAlign-- left")
-            self.robot.move(0, 0, self.max_speed*0.5, 0)
-
-        else:
-            self.current_state = State.Orbiting
-            self.orbit_start = time()
-
     def drive_to_ball_state(self):
         """State for driving to the ball."""
         if self.no_balls_frames > self.max_ball_miss:  # lost the ball
@@ -237,7 +212,8 @@ class Robot:
         elif self.ball.distance > self.min_distance * 1.25:
             self.robot.move(0, self.max_speed*0.5, rot_speed)
         else:
-            self.current_state = State.BallAlign
+            self.current_state = State.Orbiting
+            self.orbit_start = time()
 
     def orbiting_state(self):
         """State for orbiting around the ball and trying to find the basket."""
@@ -262,14 +238,12 @@ class Robot:
             return
         
         x_delta = self.middle_point - self.ball.x
-        x_speed = -1 * x_delta * 0.003
+        x_speed = -1 * x_delta * 0.001
         
         y_delta = self.min_distance - self.ball.distance
-        y_speed = -1 * y_delta * 0.001
+        y_speed = -1 * y_delta * 0.005
         
         rot_speed = self.max_speed * 0.7
-        
-        direction = 1
         
         print(f"--Orbiting-- Ball X {self.ball.x} Ball Y {self.ball.distance}")
         
@@ -278,15 +252,10 @@ class Robot:
             
             print(f"--Orbiting-- Basket X {self.basket.x}")
             
-            rot_speed = -1 * basket_delta * 0.005
+            rot_speed = -1 * basket_delta * 0.004
             
-            if self.basket.x < self.middle_point - 5:
-                direction = 1
-            elif self.basket.x > self.middle_point + 5:
-                direction = -1
-            else:
-                print("Go to align state")
-                #self.current_state = State.BasketBallAlign
+            if abs(x_delta) <= 5 and abs(basket_delta) <= 5:
+                self.current_state = State.BallThrow
                 return
         
         x_speed = min(x_speed, self.max_speed)
@@ -295,48 +264,7 @@ class Robot:
         
         print(f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")
         
-        self.robot.move(x_speed * direction, y_speed, rot_speed)
-
-    def basket_ball_align_state(self):
-        """State for aligning the ball and the basket."""
-        if self.no_balls_frames > self.max_ball_miss:  # lost the ball
-            print(
-                f"--DriveToBall-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
-            self.back_to_search_state()
-            return
-        if self.ball_count == 0:  # don't do anything when we cant see a ball
-            self.robot.stop()
-            return
-        if self.basket.exists:
-            x_speed, y_speed, rot_speed = 0, 0, 0
-            if ((self.middle_point - self.camera_deadzone) < self.ball.x < (self.middle_point + self.camera_deadzone)) and ((self.middle_point - self.camera_deadzone) < self.basket.x < (self.middle_point + self.camera_deadzone)):
-                self.current_state = State.BallThrow
-                return
-            # ball adjustment
-            print("g", self.ball.distance)
-            if self.ball.distance > self.min_distance:
-                self.y_speed = self.max_speed * 0.532
-            if self.ball.x > (self.middle_point + self.camera_deadzone):
-                print("--BallBasket-- Ball right")
-                x_speed = self.max_speed * 0.1
-            elif self.ball.x < (self.middle_point - self.camera_deadzone):
-                print("--BallBasket-- Ball left")
-                x_speed = -self.max_speed * 0.1
-            # basket adjustment
-            if self.basket.x < self.middle_point - self.camera_deadzone:  # left
-                print("--BallBasket-- Basket left")
-                #x_speed = self.max_speed * 0.05
-                rot_speed = self.max_speed * 0.25
-                self.robot.move(x_speed, y_speed, rot_speed)
-            elif self.basket.x > self.middle_point + self.camera_deadzone:  # right
-                print("--BallBasket-- Basket right")
-                #x_speed = -self.max_speed * 0.05
-                rot_speed = -self.max_speed * 0.25
-                self.robot.move(x_speed, y_speed, rot_speed)
-            else:
-                self.robot.move(x_speed, y_speed, rot_speed)
-        else:
-            pass
+        self.robot.move(x_speed, y_speed, rot_speed)
 
     def ball_throw_state(self):
         """State for throwing the ball into the basket"""
@@ -366,14 +294,8 @@ class Robot:
                 elif self.current_state == State.Wait:
                     self.wait_state()
 
-                elif self.current_state == State.BallAlign:
-                    self.ball_align_state()
-
                 elif self.current_state == State.Orbiting:
                     self.orbiting_state()
-
-                elif self.current_state == State.BasketBallAlign:
-                    self.basket_ball_align_state()
 
                 elif self.current_state == State.RemoteControl:
                     self.remote_control_state()
