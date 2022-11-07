@@ -4,6 +4,8 @@ This is where we're going to write down what we've done so far.
 
 Mechanics link: https://a360.co/3SYDOoi
 
+Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
+
 == Entries
 
 * 8.09.2022 - *Timo:* Creating the blog file, writing code to read response from mainboard and adding `robot.py` to GitHub. (2h)
