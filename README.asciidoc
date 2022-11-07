@@ -2,6 +2,8 @@
 
 This is where we're going to write down what we've done so far.
 
+Mechanics link: https://a360.co/3SYDOoi
+
 == Entries
 
 * 8.09.2022 - *Timo:* Creating the blog file, writing code to read response from mainboard and adding `robot.py` to GitHub. (2h)
@@ -41,3 +43,4 @@ This is where we're going to write down what we've done so far.
 * 04.11.2022 - *Timo:* Documenting functions and removing unused stuff. (1h)
 * 05.11.2022 - *Timo:* Working on robot code. (6h)
 * 06.11.2022 - *Timo:* Working on state machine. (6.5h)
+* 06.11.2022 - *Jens:* Fix designs (2h)
