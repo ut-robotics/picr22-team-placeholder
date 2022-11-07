@@ -221,21 +221,20 @@ class Robot:
             self.robot.stop()
             return
         print("--DriveToBall-- Driving to ball.")
-        if self.ball.x > (self.middle_point + self.camera_deadzone):
-            print("--DriveToBall-- Keep right")
-            rot_speed = -self.max_speed
-        elif self.ball.x < (self.middle_point - self.camera_deadzone):
-            print("--DriveToBall-- Keep left")
-            rot_speed = self.max_speed
-        else:
-            rot_speed = 0
+        
+        rot_speed = 0
+        
+        if abs(self.ball.x - self.middle_point) > self.camera_deadzone:
+            delta = self.middle_point - self.ball.x
+            rot_speed = delta * 0.007
+        
         if self.ball.distance < self.min_distance - 100:
             print("--DriveToBall-- ball too close, distance:", self.ball.distance)
             self.robot.move(0, -self.max_speed * 0.25, rot_speed)
         elif self.ball.distance > self.min_distance * 2:
             print("--DriveToBall-- ball far, distance:", self.ball.distance)
             self.robot.move(0, self.max_speed, rot_speed)
-        elif self.ball.distance > self.min_distance * 2:
+        elif self.ball.distance > self.min_distance * 1.25:
             self.robot.move(0, self.max_speed*0.5, rot_speed)
         else:
             self.current_state = State.BallAlign
@@ -257,19 +256,46 @@ class Robot:
         if self.ball_count == 0:  # don't do anything when we cant see a ball
             self.robot.stop()
             return
-
+        
+        if self.ball.distance > 4 * self.min_distance:
+            self.state = State.Searching
+            return
+        
+        x_delta = self.middle_point - self.ball.x
+        x_speed = -1 * x_delta * 0.003
+        
+        y_delta = self.min_distance - self.ball.distance
+        y_speed = -1 * y_delta * 0.001
+        
+        rot_speed = self.max_speed * 0.7
+        
+        direction = 1
+        
+        print(f"--Orbiting-- Ball X {self.ball.x} Ball Y {self.ball.distance}")
+        
         if self.basket.exists:
-            if self.basket.x < self.middle_point - 5:  # left
-                self.robot.move(self.max_speed * 0.15, 0, self.max_speed * 0.5)
-            elif self.basket.x > self.middle_point + 5:  # right
-                self.robot.move(-self.max_speed * 0.15,
-                                0, -self.max_speed * 0.5)
+            basket_delta = self.basket.x - self.middle_point
+            
+            print(f"--Orbiting-- Basket X {self.basket.x}")
+            
+            rot_speed = -1 * basket_delta * 0.005
+            
+            if self.basket.x < self.middle_point - 5:
+                direction = 1
+            elif self.basket.x > self.middle_point + 5:
+                direction = -1
             else:
-                self.current_state = State.BasketBallAlign
-        else:
-            # move faster to try and find the basket
-            self.robot.move(0.25, 0, self.max_speed *
-                            (self.ball.distance / 1000))
+                print("Go to align state")
+                #self.current_state = State.BasketBallAlign
+                return
+        
+        x_speed = min(x_speed, self.max_speed)
+        y_speed = min(y_speed, self.max_speed)
+        rot_speed = min(rot_speed, self.max_speed)
+        
+        print(f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")
+        
+        self.robot.move(x_speed * direction, y_speed, rot_speed)
 
     def basket_ball_align_state(self):
         """State for aligning the ball and the basket."""
@@ -381,7 +407,7 @@ if __name__ == "__main__":
     conf_use_realsense = True
     conf_middle_offset = 0
     conf_basket_color = Color.MAGENTA
-    conf_max_orbit_time = 7  # seconds
+    conf_max_orbit_time = 15  # seconds
 
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_wait,
                   conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time)
