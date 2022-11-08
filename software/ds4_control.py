@@ -1,9 +1,8 @@
 from threading import Thread
-import motion
 from helper import map_range
 from pyPS4Controller.controller import Controller
 from enum import Enum
-
+from main import State
 
 class Axis(Enum):
     """All possible movement axes"""
@@ -14,28 +13,21 @@ class Axis(Enum):
 
 
 class RobotDS4Backend(Controller):
-    def __init__(self, max_speed, analog_deadzone, default_thrower_speed, robot, **kwargs):
+    def __init__(self, robot_data, **kwargs):
         """Initializes RobotDS4Backend
 
         Args:
-            max_speed (float): Max speed for robot in metres
             analog_deadzone (int): Deadzone for analog stick
-            default_thrower_speed (int): Default speed to use for thrower
-            robot (OmniRobot): The robot to control
+            robot_data (Robot): The robot to control
         """
         Controller.__init__(self, **kwargs)
         # if there is no connection with the robot, open one
-        if robot == None:
-            self.robot = motion.OmniRobot()
-            self.robot.open()
-        else:
-            self.robot = robot
+        self.robot = robot_data.robot
         # parameters
-        self.max_speed = max_speed
-        self.analog_deadzone = analog_deadzone
+        self.max_speed = robot_data.max_speed
+        self.analog_deadzone = robot_data.analog_deadzone
         # speed to use when we activate thrower
-        self.thrower_speed_param = default_thrower_speed
-        self.remote_controlled = False
+        self.thrower_speed_param = robot_data.thrower_speed
         # default is stopped, 0
         self.x_speed = 0
         self.y_speed = 0
@@ -45,7 +37,7 @@ class RobotDS4Backend(Controller):
 
     def send_movement(self):
         """Sends movement to the robot based on current speed values"""
-        if self.remote_controlled:
+        if self.robot_data.current_state == State.RemoteControl:
             self.robot.move(self.x_speed, self.y_speed, self.rot_speed,
                             self.thrower_speed, disableFailsafe=True)
 
@@ -169,8 +161,12 @@ class RobotDS4Backend(Controller):
     def on_share_press(self):
         """Toggle remote control"""
         self.robot.stop()
-        self.remote_controlled = not self.remote_controlled
-        print("Remote control:", self.remote_controlled)
+        if self.robot_data.current_state != State.RemoteControl:
+            print("Remote control: ON")
+            self.robot_data.current_state = State.RemoteControl
+        else:
+            print("Remote control: OFF")
+            self.robot_data.current_state = State.Searching
 
     # quit
     def on_playstation_button_press(self):
@@ -186,12 +182,9 @@ class RobotDS4Backend(Controller):
 class RobotDS4:
     """Class for enabling the use of a DualShock 4 controller for controlling the robot"""
 
-    def __init__(self, max_speed=1, analog_deadzone=400, default_thrower_speed=50, robot=None):
+    def __init__(self, robot_data):
         self.controller = None
-        self.analog_deadzone = analog_deadzone
-        self.max_speed = max_speed
-        self.default_thrower_speed = default_thrower_speed
-        self.robot = robot
+        self.robot_data = robot_data
 
     def start(self):
         """Starts controller listening in a separate thread"""
@@ -199,17 +192,8 @@ class RobotDS4:
 
     def listen(self):
         """Listen for controller inputs"""
-        self.controller = RobotDS4Backend(max_speed=self.max_speed, analog_deadzone=self.analog_deadzone,
-                                          default_thrower_speed=self.default_thrower_speed, robot=self.robot, interface="/dev/input/js0", connecting_using_ds4drv=False)
+        self.controller = RobotDS4Backend(robot_data=self.robot_data, interface="/dev/input/js0", connecting_using_ds4drv=False)
         self.controller.listen(timeout=60)
-
-    def is_remote_controlled(self):
-        """Whether the robot is currently remote controlled
-
-        Returns:
-            bool: is_remote_controlled
-        """
-        return self.controller.remote_controlled
 
     def is_stopped(self):
         """Whether the robot is stopped

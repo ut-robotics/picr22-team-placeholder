@@ -52,7 +52,9 @@ class Robot:
                  use_realsense: bool,
                  middle_offset: int,
                  basket_color: Color,
-                 max_orbit_time: int):
+                 max_orbit_time: int,
+                 thrower_speed: int,
+                 analog_deadzone: int):
         self.debug = debug
 
         if use_realsense:
@@ -67,9 +69,8 @@ class Robot:
         self.camera_deadzone = camera_deadzone
 
         self.robot.open()
-
-        self.controller = RobotDS4(robot=self.robot)
-        self.controller.start()
+        self.analog_deadzone = analog_deadzone
+        self.thrower_speed = thrower_speed
 
         self.max_speed = max_speed
         self.search_speed = search_speed
@@ -85,8 +86,11 @@ class Robot:
 
         self.basket_color = basket_color
         self.max_orbit_time = max_orbit_time
-
         self.search_end = time() + scan_move_time
+
+        self.controller = RobotDS4(robot_data=self)
+        self.controller.start()
+
         self.main_loop()
 
     def back_to_search_state(self):
@@ -124,13 +128,8 @@ class Robot:
             raise KeyboardInterrupt
 
         # verify if robot is remote controlled, no autonomous stuff if robot is remote controlled
-        if self.controller.is_remote_controlled():
-            self.current_state = State.RemoteControl
         if self.current_state == State.RemoteControl:
-            if not self.controller.is_remote_controlled():
-                self.back_to_search_state()
-            else:
-                return
+            return
 
         # -- AUTONOMOUS STUFF --
         if self.ball_count == 0:
@@ -279,16 +278,15 @@ class Robot:
             print("--BallThrow-- No basket or ball, going back to throwing.")
             self.current_state = State.Searching
 
-    def remote_control_state(self):
-        if not self.controller.is_remote_controlled():
-            self.back_to_search_state()
-
     def main_loop(self):
         try:
             while True:
                 self.get_image_data()
 
-                if self.current_state == State.Searching:
+                if self.current_state == State.RemoteControl:
+                    return
+                    
+                elif self.current_state == State.Searching:
                     self.searching_state()
 
                 elif self.current_state == State.Wait:
@@ -296,9 +294,6 @@ class Robot:
 
                 elif self.current_state == State.Orbiting:
                     self.orbiting_state()
-
-                elif self.current_state == State.RemoteControl:
-                    self.remote_control_state()
 
                 elif self.current_state == State.DriveToBall:
                     self.drive_to_ball_state()
@@ -330,6 +325,8 @@ if __name__ == "__main__":
     conf_middle_offset = 0
     conf_basket_color = Color.MAGENTA
     conf_max_orbit_time = 15  # seconds
+    conf_thrower_speed = 1500
+    conf_controller_analog_deadzone = 400
 
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_wait,
-                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time)
+                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_thrower_speed, conf_controller_analog_deadzone)
