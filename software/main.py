@@ -7,6 +7,7 @@ from ds4_control import RobotDS4
 from Color import Color
 from states import State
 
+
 class Robot:
     current_state = State.Searching
     next_state = None
@@ -141,7 +142,7 @@ class Robot:
         # first element is always the closest ball
         if self.ball_count > 0:
             self.ball = self.processed_data.balls[0]
-        else:
+        elif self.no_balls_frames >= self.max_ball_miss:  # use old ball sometimes
             self.ball = None
 
         if self.basket_color == Color.MAGENTA:
@@ -181,7 +182,7 @@ class Robot:
 
     def drive_to_ball_state(self):
         """State for driving to the ball."""
-        if self.no_balls_frames > self.max_ball_miss:  # lost the ball
+        if self.no_balls_frames >= self.max_ball_miss:  # lost the ball
             print(
                 f"--DriveToBall-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
             self.back_to_search_state()
@@ -193,15 +194,13 @@ class Robot:
         if abs(self.ball.x - self.middle_point) > self.camera_deadzone:
             delta = self.middle_point - self.ball.x
             rot_speed = delta * 0.007
-
-        if self.ball.distance < self.min_distance - 100:
-            print("--DriveToBall-- ball too close, distance:", self.ball.distance)
-            self.robot.move(0, -self.max_speed * 0.25, rot_speed)
-        elif self.ball.distance > self.min_distance * 2:
-            print("--DriveToBall-- ball far, distance:", self.ball.distance)
-            self.robot.move(0, self.max_speed, rot_speed)
-        elif self.ball.distance > self.min_distance * 1.25:
-            self.robot.move(0, self.max_speed*0.5, rot_speed)
+        if not self.min_distance + 40 > self.ball.distance > self.min_distance - 40:
+            y_delta = self.min_distance - self.ball.distance
+            y_speed = min((-1 * y_delta * 0.01), self.max_speed)
+            rot_speed = min(rot_speed, self.max_speed)
+            print(
+                f"--DriveToBall-- ball distance {self.ball.distance}, y_speed {y_speed}, rot_speed {rot_speed}")
+            self.robot.move(0, y_speed, rot_speed)
         else:
             self.current_state = State.Orbiting
             self.orbit_start = time()
@@ -215,7 +214,7 @@ class Robot:
             return
 
         # TODO - put this into its own function, we reuse it a lot
-        if self.no_balls_frames > self.max_ball_miss:  # lost the ball
+        if self.no_balls_frames >= self.max_ball_miss:  # lost the ball
             print(
                 f"--Orbiting-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
             self.back_to_search_state()
@@ -241,7 +240,7 @@ class Robot:
             print(f"--Orbiting-- Basket X {self.basket.x}")
 
             rot_speed = -1 * basket_delta * 0.004
-
+            # TODO - might be a bit too sensitive, adjust
             if abs(x_delta) <= 5 and abs(basket_delta) <= 5:
                 self.current_state = State.BallThrow
                 return
@@ -256,9 +255,10 @@ class Robot:
 
     def ball_throw_state(self):
         """State for throwing the ball into the basket"""
-        if self.basket.exists:  # TODO
+        if self.basket.exists:  # TODO - account for distance
             print("--BallThrow-- Throwing ball, basket distance:",
                   self.basket.distance)
+            self.robot.move(0, self.max_speed * 0.25, 0, self.thrower_speed)
         elif self.ball_count != 0:
             print("--BallThrow-- No basket, going back to orbiting.")
             self.current_state = State.Orbiting
@@ -301,7 +301,7 @@ class Robot:
 
 
 if __name__ == "__main__":
-    conf_debug = True
+    conf_debug = False
     conf_camera_deadzone = 5
     conf_max_speed = 0.75
     conf_search_speed = 2
