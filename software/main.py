@@ -99,12 +99,7 @@ class Robot:
         self.current_state = State.Searching
         self.search_end = time() + self.scan_move_time
 
-    def get_image_data(self):
-        # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
-        self.processed_data = self.processor.process_frame(aligned_depth=True)
-
-        # -- BOILERPLATE CAMERA CODE, DO NOT TOUCH UNLESS REALLY NECESSARY --
-        # FPS counter
+    def fps_counter(self):
         self.frame_cnt += 1
         if self.frame_cnt % 30 == 0:
             self.frame_cnt = 0
@@ -112,13 +107,25 @@ class Robot:
             fps = 30 / (end - self.start)
             self.start = end
             print("FPS: {}, framecount: {}".format(fps, self.frame_cnt))
+
+    def display_camera_feed(self):
+        debug_frame = self.processed_data.debug_frame
+        cv2.imshow('debug', debug_frame)
+        k = cv2.waitKey(1) & 0xff
+        if k == ord('q'):
+            raise KeyboardInterrupt
+
+    def get_image_data(self):
+        # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
+        self.processed_data = self.processor.process_frame(aligned_depth=True)
+
+        # -- BOILERPLATE CAMERA CODE, DO NOT TOUCH UNLESS REALLY NECESSARY --
+        # FPS counter
+        self.fps_counter()
+
         # Debug stuff, turn off when we don't need camera
         if self.debug:
-            debug_frame = self.processed_data.debug_frame
-            cv2.imshow('debug', debug_frame)
-            k = cv2.waitKey(1) & 0xff
-            if k == ord('q'):
-                raise KeyboardInterrupt
+            self.display_camera_feed()
 
         print("CURRENT STATE -", self.current_state)
 
@@ -132,12 +139,12 @@ class Robot:
             return
 
         # -- AUTONOMOUS STUFF --
+        self.ball_count = len(self.processed_data.balls)
         if self.ball_count == 0:
             self.no_balls_frames += 1
         else:
             self.no_balls_frames = 0
 
-        self.ball_count = len(self.processed_data.balls)
         if self.prev_ball_count != self.ball_count:
             # this is for debugging
             print("ball_count: {}".format(self.ball_count))
@@ -191,17 +198,14 @@ class Robot:
                 f"--DriveToBall-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
             self.back_to_search_state()
             return
-        if self.ball_count == 0:  # don't do anything when we cant see a ball
-            self.robot.stop()
-            return
         print("--DriveToBall-- Driving to ball.")
-        
+
         rot_speed = 0
-        
+
         if abs(self.ball.x - self.middle_point) > self.camera_deadzone:
             delta = self.middle_point - self.ball.x
             rot_speed = delta * 0.007
-        
+
         if self.ball.distance < self.min_distance - 100:
             print("--DriveToBall-- ball too close, distance:", self.ball.distance)
             self.robot.move(0, -self.max_speed * 0.25, rot_speed)
@@ -228,41 +232,38 @@ class Robot:
                 f"--Orbiting-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
             self.back_to_search_state()
             return
-        if self.ball_count == 0:  # don't do anything when we cant see a ball
-            self.robot.stop()
-            return
-        
+
         if self.ball.distance > 4 * self.min_distance:
             self.state = State.Searching
             return
-        
+
         x_delta = self.middle_point - self.ball.x
         x_speed = -1 * x_delta * 0.001
-        
+
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.005
-        
+
         rot_speed = self.max_speed * 0.7
-        
+
         print(f"--Orbiting-- Ball X {self.ball.x} Ball Y {self.ball.distance}")
-        
+
         if self.basket.exists:
             basket_delta = self.basket.x - self.middle_point
-            
+
             print(f"--Orbiting-- Basket X {self.basket.x}")
-            
+
             rot_speed = -1 * basket_delta * 0.004
-            
+
             if abs(x_delta) <= 5 and abs(basket_delta) <= 5:
                 self.current_state = State.BallThrow
                 return
-        
+
         x_speed = min(x_speed, self.max_speed)
         y_speed = min(y_speed, self.max_speed)
         rot_speed = min(rot_speed, self.max_speed)
-        
+
         print(f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")
-        
+
         self.robot.move(x_speed, y_speed, rot_speed)
 
     def ball_throw_state(self):
@@ -285,7 +286,7 @@ class Robot:
 
                 if self.current_state == State.RemoteControl:
                     return
-                    
+
                 elif self.current_state == State.Searching:
                     self.searching_state()
 
