@@ -4,20 +4,8 @@ import motion
 import cv2
 from time import time
 from ds4_control import RobotDS4
-from enum import Enum
 from Color import Color
-
-
-class State(Enum):
-    """State machine enums"""
-    Searching = 1
-    DriveToBall = 2
-    Orbiting = 3
-    BallThrow = 4
-    Wait = 5
-    RemoteControl = 98
-    Debug = 99  # state for temporarily testing code
-
+from states import State
 
 class Robot:
     current_state = State.Searching
@@ -285,7 +273,7 @@ class Robot:
                 self.get_image_data()
 
                 if self.current_state == State.RemoteControl:
-                    return
+                    continue
 
                 elif self.current_state == State.Searching:
                     self.searching_state()

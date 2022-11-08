@@ -2,7 +2,7 @@ from threading import Thread
 from helper import map_range
 from pyPS4Controller.controller import Controller
 from enum import Enum
-from main import State
+from states import State
 
 class Axis(Enum):
     """All possible movement axes"""
@@ -22,7 +22,8 @@ class RobotDS4Backend(Controller):
         """
         Controller.__init__(self, **kwargs)
         # if there is no connection with the robot, open one
-        self.robot = robot_data.robot
+        self.robot_data = robot_data
+        self.robot = self.robot_data.robot
         # parameters
         self.max_speed = robot_data.max_speed
         self.analog_deadzone = robot_data.analog_deadzone
