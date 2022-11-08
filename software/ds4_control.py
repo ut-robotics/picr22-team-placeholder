@@ -34,6 +34,7 @@ class RobotDS4Backend(Controller):
         self.y_speed = 0
         self.rot_speed = 0
         self.thrower_speed = 0
+        self.thrower_active = False
         print("Controller added.")
 
     def send_movement(self):
@@ -63,29 +64,37 @@ class RobotDS4Backend(Controller):
 
     def on_up_arrow_press(self):
         """Increasing thrower speed"""
-        self.thrower_speed_param += 1
-        print("Increased thrower speed by 1, new speed:",
-              self.thrower_speed_param)
+        if self.thrower_speed_param >= 2000:
+            print("Already at max speed!")
+        else:
+            self.thrower_speed_param += 50
+            print("Increased thrower speed by 50, new speed:",
+                self.thrower_speed_param)
+            if self.thrower_active:
+                self.thrower_speed = self.thrower_speed_param
+                self.send_movement()
 
     def on_down_arrow_press(self):
         """Decreasing thrower speed"""
-        if self.thrower_speed_param == 49:
+        if self.thrower_speed_param <= 50:
             print("Thrower - Already at minimum speed!")
         else:
-            self.thrower_speed_param -= 1
-            print("Decreased thrower speed by 1, new speed:",
+            self.thrower_speed_param -= 50
+            print("Decreased thrower speed by 50, new speed:",
                   self.thrower_speed_param)
+        if self.thrower_active:
+            self.thrower_speed = self.thrower_speed_param
+            self.send_movement()
 
     def on_triangle_press(self):
-        """Activating thrower"""
+        """Toggling thrower"""
         print("Triangle - Thrower")
-        self.thrower_speed = self.thrower_speed_param
+        self.thrower_active = not self.thrower_active
+        if self.thrower_active:
+            self.thrower_speed = self.thrower_speed_param
+        else:
+            self.thrower_speed = 0
         self.send_movement()
-
-    def on_triangle_release(self):
-        """Deactivating thrower"""
-        print("Triangle - Thrower stop")
-        self.axis_stop(Axis.THROWER)
 
     def on_R1_press(self):
         """Move right on the X-axis"""
@@ -96,17 +105,6 @@ class RobotDS4Backend(Controller):
     def on_R1_release(self):
         """Stop X-axis movement"""
         print("R1 release")
-        self.axis_stop(Axis.X)
-
-    def on_L1_press(self):
-        """Move left on the X-axis"""
-        print("L1 - left")
-        self.x_speed = -self.max_speed
-        self.send_movement()
-
-    def on_L1_release(self):
-        """Stop X-axis movement"""
-        print("L1 release")
         self.axis_stop(Axis.X)
 
     def on_R2_press(self, value):
@@ -151,11 +149,34 @@ class RobotDS4Backend(Controller):
             self.rot_speed = map_range(
                 value, 0, 32767, 0, -self.max_speed * 3000) / 1000
             self.send_movement()
-
+    
     def on_L3_x_at_rest(self):
         """Stop rotating"""
         self.axis_stop(Axis.ROT)
+    
+    def on_R3_left(self, value):
+        """Move left on the X-axis"""
+        print("R3 - drive left")
+        if value >= self.analog_deadzone:
+            self.axis_stop(Axis.X)
+        else:
+            self.x_speed = map_range(
+                value, 0, -32767, 0, -self.max_speed * 1000) / 1000
+            self.send_movement()
 
+    def on_R3_right(self, value):
+        """Move right on the X-axis"""
+        print("R3 - drive right")
+        if value <= -self.analog_deadzone:
+            self.axis_stop(Axis.X)
+        else:
+            self.x_speed = map_range(
+                value, 0, 32767, 0, self.max_speed * 1000) / 1000
+            self.send_movement()
+
+    def on_R3_x_at_rest(self):
+        """Stop rotating"""
+        self.axis_stop(Axis.X)
     # MISC
 
     # switch modes
