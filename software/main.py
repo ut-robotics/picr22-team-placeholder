@@ -9,6 +9,7 @@ from states import State
 
 
 class Robot:
+    """The main class for %placeholder%"""
     current_state = State.Searching
     next_state = None
 
@@ -42,10 +43,12 @@ class Robot:
                  middle_offset: int,
                  basket_color: Color,
                  max_orbit_time: int,
-                 thrower_speed: int,
-                 analog_deadzone: int):
+                 manual_thrower_speed: int,
+                 analog_deadzone: int,
+                 debug_data_collection: bool,
+                 throw_move_speed: float):
         self.debug = debug
-
+        self.debug_data_collection = debug_data_collection
         if use_realsense:
             # camera instance for realsense cameras
             self.cam = camera.RealsenseCamera(exposure=100)
@@ -59,9 +62,10 @@ class Robot:
 
         self.robot.open()
         self.analog_deadzone = analog_deadzone
-        self.thrower_speed = thrower_speed
+        self.manual_thrower_speed = manual_thrower_speed
 
         self.max_speed = max_speed
+        self.throw_move_speed = throw_move_speed
         self.search_speed = search_speed
         self.throw_wait = throw_wait
         # how far the ball has to be to prepare for throw, approx 10 cm
@@ -89,6 +93,7 @@ class Robot:
         self.search_end = time() + self.scan_move_time
 
     def fps_counter(self):
+        """Prints FPS"""
         self.frame_cnt += 1
         if self.frame_cnt % 30 == 0:
             self.frame_cnt = 0
@@ -105,6 +110,7 @@ class Robot:
             raise KeyboardInterrupt
 
     def get_image_data(self):
+        """Main non-state part of the loop"""
         # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
         self.processed_data = self.processor.process_frame(aligned_depth=True)
 
@@ -124,8 +130,9 @@ class Robot:
             raise KeyboardInterrupt
 
         # verify if robot is remote controlled, no autonomous stuff if robot is remote controlled
-        if self.current_state == State.RemoteControl:
-            return
+        if not self.debug_data_collection:  # data collection requires camera
+            if self.current_state == State.RemoteControl:
+                return
 
         # -- AUTONOMOUS STUFF --
         self.ball_count = len(self.processed_data.balls)
@@ -224,6 +231,7 @@ class Robot:
             self.state = State.Searching
             return
 
+        # TODO - adjust these values to improve orbiting
         x_delta = self.middle_point - self.ball.x
         x_speed = -1 * x_delta * 0.001
 
@@ -255,10 +263,11 @@ class Robot:
 
     def ball_throw_state(self):
         """State for throwing the ball into the basket"""
-        if self.basket.exists:  # TODO - account for distance
+        if self.basket.exists:
             print("--BallThrow-- Throwing ball, basket distance:",
                   self.basket.distance)
-            self.robot.move(0, self.max_speed * 0.25, 0, self.thrower_speed)
+            throw_speed = self.basket.distance * 0.11257028809968204 + 767.9124714973484
+            self.robot.move(0, self.throw_move_speed, 0, throw_speed)
         elif self.ball_count != 0:
             print("--BallThrow-- No basket, going back to orbiting.")
             self.current_state = State.Orbiting
@@ -302,8 +311,10 @@ class Robot:
 
 if __name__ == "__main__":
     conf_debug = False
+    conf_debug_data_collection = True
     conf_camera_deadzone = 5
     conf_max_speed = 0.75
+    conf_throw_move_speed = 0.375
     conf_search_speed = 2
     conf_throw_wait = 5
     conf_min_distance = 340
@@ -314,8 +325,8 @@ if __name__ == "__main__":
     conf_middle_offset = 0
     conf_basket_color = Color.MAGENTA
     conf_max_orbit_time = 15  # seconds
-    conf_thrower_speed = 1500
+    conf_manual_thrower_speed = 1000  # default for remote control
     conf_controller_analog_deadzone = 400
 
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_wait,
-                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_thrower_speed, conf_controller_analog_deadzone)
+                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed)

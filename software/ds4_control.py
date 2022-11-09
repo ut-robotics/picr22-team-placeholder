@@ -3,6 +3,9 @@ from helper import map_range
 from pyPS4Controller.controller import Controller
 from enum import Enum
 from states import State
+from pathlib import Path
+import time
+
 
 class Axis(Enum):
     """All possible movement axes"""
@@ -17,31 +20,34 @@ class RobotDS4Backend(Controller):
         """Initializes RobotDS4Backend
 
         Args:
-            analog_deadzone (int): Deadzone for analog stick
             robot_data (Robot): The robot to control
         """
         Controller.__init__(self, **kwargs)
-        # if there is no connection with the robot, open one
         self.robot_data = robot_data
-        self.robot = self.robot_data.robot
-        # parameters
-        self.max_speed = robot_data.max_speed
-        self.analog_deadzone = robot_data.analog_deadzone
-        # speed to use when we activate thrower
-        self.thrower_speed_param = robot_data.thrower_speed
+
+        # speeds to use when we activate robot, these are changed when buttons are pressed
         # default is stopped, 0
         self.x_speed = 0
         self.y_speed = 0
         self.rot_speed = 0
         self.thrower_speed = 0
-        self.thrower_active = False
+        self.thrower_active = False  # for toggling thrower
         print("Controller added.")
+
+        # debug function for thrower data collection
+        if self.robot_data.debug_data_collection:
+            self.last_throw_data = str()
+            self.data_file = Path("data", "data.csv")
+            self.data_file.parent.mkdir(parents=True, exist_ok=True)
+            if not self.data_file.exists():
+                with open(self.data_file, 'w') as f:
+                    f.write("x speed,thrower speed,basket distance,ball distance\n")
 
     def send_movement(self):
         """Sends movement to the robot based on current speed values"""
         if self.robot_data.current_state == State.RemoteControl:
-            self.robot.move(self.x_speed, self.y_speed, self.rot_speed,
-                            self.thrower_speed, disableFailsafe=True)
+            self.robot_data.robot.move(self.x_speed, self.y_speed, self.rot_speed,
+                                       self.thrower_speed, disableFailsafe=True)
 
     def axis_stop(self, axis):
         """Stops a specified axis
@@ -62,28 +68,29 @@ class RobotDS4Backend(Controller):
             raise ValueError(f"Invalid axis", axis)
         self.send_movement()
 
+    # Thrower
     def on_up_arrow_press(self):
         """Increasing thrower speed"""
-        if self.thrower_speed_param >= 2000:
+        if self.robot_data.manual_thrower_speed >= 2000:
             print("Already at max speed!")
         else:
-            self.thrower_speed_param += 50
-            print("Increased thrower speed by 50, new speed:",
-                self.thrower_speed_param)
+            self.robot_data.manual_thrower_speed += 10
+            print("Increased thrower speed by 10, new speed:",
+                  self.robot_data.manual_thrower_speed)
             if self.thrower_active:
-                self.thrower_speed = self.thrower_speed_param
+                self.thrower_speed = self.robot_data.manual_thrower_speed
                 self.send_movement()
 
     def on_down_arrow_press(self):
         """Decreasing thrower speed"""
-        if self.thrower_speed_param <= 50:
+        if self.robot_data.manual_thrower_speed <= 50:  # the actual limit is 49, but we can't get that with our current decrease interval anyways
             print("Thrower - Already at minimum speed!")
         else:
-            self.thrower_speed_param -= 50
-            print("Decreased thrower speed by 50, new speed:",
-                  self.thrower_speed_param)
+            self.robot_data.manual_thrower_speed -= 10
+            print("Decreased thrower speed by 10, new speed:",
+                  self.robot_data.manual_thrower_speed)
         if self.thrower_active:
-            self.thrower_speed = self.thrower_speed_param
+            self.thrower_speed = self.robot_data.manual_thrower_speed
             self.send_movement()
 
     def on_triangle_press(self):
@@ -91,27 +98,42 @@ class RobotDS4Backend(Controller):
         print("Triangle - Thrower")
         self.thrower_active = not self.thrower_active
         if self.thrower_active:
-            self.thrower_speed = self.thrower_speed_param
+            self.thrower_speed = self.robot_data.manual_thrower_speed
         else:
             self.thrower_speed = 0
         self.send_movement()
 
-    def on_R1_press(self):
-        """Move right on the X-axis"""
-        print("R1 - right")
-        self.x_speed = self.max_speed
-        self.send_movement()
+    # X-axis
+    def on_R3_left(self, value):
+        """Move left on the X-axis"""
+        print("R3 - drive left")
+        if value >= self.robot_data.analog_deadzone:
+            self.axis_stop(Axis.X)
+        else:
+            self.x_speed = map_range(
+                value, 0, -32767, 0, -self.robot_data.max_speed * 1000) / 1000
+            self.send_movement()
 
-    def on_R1_release(self):
-        """Stop X-axis movement"""
-        print("R1 release")
+    def on_R3_right(self, value):
+        """Move right on the X-axis"""
+        print("R3 - drive right")
+        if value <= -self.robot_data.analog_deadzone:
+            self.axis_stop(Axis.X)
+        else:
+            self.x_speed = map_range(
+                value, 0, 32767, 0, self.robot_data.max_speed * 1000) / 1000
+            self.send_movement()
+
+    def on_R3_x_at_rest(self):
+        """Stop moving on the X-axis"""
         self.axis_stop(Axis.X)
 
+    # Y-axis
     def on_R2_press(self, value):
         """Move forwards on the Y-axis"""
         print("R2 - forwards")
         self.y_speed = map_range(value, -32767, 32767,
-                                 0, self.max_speed * 1000) / 1000
+                                 0, self.robot_data.max_speed * 1000) / 1000
         self.send_movement()
 
     def on_R2_release(self):
@@ -122,7 +144,7 @@ class RobotDS4Backend(Controller):
         """Move backwards on the Y-axis"""
         print("L2 - backwards")
         self.y_speed = map_range(value, -32767, 32767,
-                                 0, -self.max_speed * 1000) / 1000
+                                 0, -self.robot_data.max_speed * 1000) / 1000
         self.send_movement()
 
     def on_L2_release(self):
@@ -133,56 +155,57 @@ class RobotDS4Backend(Controller):
     def on_L3_left(self, value):
         """Rotate left"""
         print("L3 - rot. left")
-        if value >= -self.analog_deadzone:
+        if value >= -self.robot_data.analog_deadzone:
             self.axis_stop(Axis.ROT)
         else:
             self.rot_speed = map_range(
-                value, 0, -32767, 0, self.max_speed * 3000) / 1000
+                value, 0, -32767, 0, self.robot_data.max_speed * 3000) / 1000
             self.send_movement()
 
     def on_L3_right(self, value):
         """Rotate right"""
         print("L3 - rot. right")
-        if value <= self.analog_deadzone:
+        if value <= self.robot_data.analog_deadzone:
             self.axis_stop(Axis.ROT)
         else:
             self.rot_speed = map_range(
-                value, 0, 32767, 0, -self.max_speed * 3000) / 1000
+                value, 0, 32767, 0, -self.robot_data.max_speed * 3000) / 1000
             self.send_movement()
-    
+
     def on_L3_x_at_rest(self):
         """Stop rotating"""
         self.axis_stop(Axis.ROT)
-    
-    def on_R3_left(self, value):
-        """Move left on the X-axis"""
-        print("R3 - drive left")
-        if value >= self.analog_deadzone:
-            self.axis_stop(Axis.X)
-        else:
-            self.x_speed = map_range(
-                value, 0, -32767, 0, -self.max_speed * 1000) / 1000
-            self.send_movement()
 
-    def on_R3_right(self, value):
-        """Move right on the X-axis"""
-        print("R3 - drive right")
-        if value <= -self.analog_deadzone:
-            self.axis_stop(Axis.X)
+    # DEBUG DATA COLLECTION
+    def on_square_press(self):
+        """Save previous throw data."""
+        if len(self.last_throw_data) > 0:
+            with open(self.data_file, "a") as f:
+                f.write(self.last_throw_data)
+            self.last_throw_data = str()
+            print("Wrote speeds to file.")
         else:
-            self.x_speed = map_range(
-                value, 0, 32767, 0, self.max_speed * 1000) / 1000
-            self.send_movement()
+            print("Nothing to write!")
 
-    def on_R3_x_at_rest(self):
-        """Stop rotating"""
-        self.axis_stop(Axis.X)
+    def on_circle_press(self):
+        """Attempt to throw the ball"""
+        if (self.robot_data.ball == None) or (self.basket.distance == -1):  # we can't get ball data if there's no ball and no point if robot can't find basket
+            return
+        print("Saved speeds")
+        self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.basket.distance},{self.robot_data.ball.distance}\n"
+        for _ in range(3):
+            print("--BallThrowRemote-- Throwing ball, basket distance:",
+                  self.robot_data.basket.distance)
+            self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
+                                       0, self.robot_data.manual_thrower_speed)
+            # this is blocking, but we're just gathering data anyways, so it's not much of an issue
+            time.sleep(0.1)
+
     # MISC
-
     # switch modes
     def on_share_press(self):
         """Toggle remote control"""
-        self.robot.stop()
+        self.robot_data.robot.stop()
         if self.robot_data.current_state != State.RemoteControl:
             print("Remote control: ON")
             self.robot_data.current_state = State.RemoteControl
@@ -214,7 +237,8 @@ class RobotDS4:
 
     def listen(self):
         """Listen for controller inputs"""
-        self.controller = RobotDS4Backend(robot_data=self.robot_data, interface="/dev/input/js0", connecting_using_ds4drv=False)
+        self.controller = RobotDS4Backend(
+            robot_data=self.robot_data, interface="/dev/input/js0", connecting_using_ds4drv=False)
         self.controller.listen(timeout=60)
 
     def is_stopped(self):
