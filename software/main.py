@@ -197,12 +197,12 @@ class Robot:
             return
         print("--DriveToBall-- Driving to ball.")
 
-        if not self.min_distance + 40 > self.ball.distance > self.min_distance - 40:
+        if not self.min_distance + 60 > self.ball.distance > self.min_distance - 60:
             rot_delta = self.middle_point - self.ball.x
             y_delta = self.min_distance - self.ball.distance
             
-            y_speed = -1 * y_delta * 0.0003
-            rot_speed = -1 * rot_delta * 0.004
+            y_speed = -1 * y_delta * 0.0006
+            rot_speed = -1 * rot_delta * 0.006
             
             y_sign = 1 if y_speed >= 0 else -1
             rot_sign = 1 if rot_speed >= 0 else -1
@@ -281,10 +281,11 @@ class Robot:
                   self.basket.distance)
             self.robot.move(0, self.throw_move_speed, 0, throw_speed)
         elif self.ball_count != 0:
-            print("--BallThrow-- No basket, going back to orbiting.")
-            self.current_state = State.Orbiting
-            self.orbit_start = time()
-        else:
+            if self.no_balls_frames >= self.max_ball_miss:
+                print("--BallThrow-- No basket, going back to orbiting.")
+                self.current_state = State.Orbiting
+                self.orbit_start = time()
+        elif self.no_balls_frames >= self.max_ball_miss:
             print("--BallThrow-- No basket or ball, going back to throwing.")
             self.current_state = State.Searching
 
@@ -325,7 +326,7 @@ if __name__ == "__main__":
     conf_debug = False
     conf_debug_data_collection = True
     conf_camera_deadzone = 5
-    conf_max_speed = 1
+    conf_max_speed = 0.75
     conf_throw_move_speed = 0.375
     conf_search_speed = 2
     conf_throw_time = 1.1037
@@ -335,7 +336,7 @@ if __name__ == "__main__":
     conf_max_ball_miss = 5
     conf_use_realsense = True
     conf_middle_offset = 0
-    conf_basket_color = Color.BLUE
+    conf_basket_color = Color.MAGENTA
     conf_max_orbit_time = 15  # seconds
     conf_manual_thrower_speed = 1000  # default for remote control
     conf_controller_analog_deadzone = 400
