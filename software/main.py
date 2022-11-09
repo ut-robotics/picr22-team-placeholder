@@ -24,6 +24,7 @@ class Robot:
     no_balls_frames = 0
     orbit_start = 0
     wait_end = 0
+    throw_end_time = 0
     processed_data = 0
     ball_count = 0
     ball = None
@@ -34,7 +35,7 @@ class Robot:
                  camera_deadzone: int,
                  max_speed: float,
                  search_speed: float,
-                 throw_wait: int,
+                 throw_time: int,
                  min_distance: int,
                  scan_wait_time: float,
                  scan_move_time: float,
@@ -67,7 +68,7 @@ class Robot:
         self.max_speed = max_speed
         self.throw_move_speed = throw_move_speed
         self.search_speed = search_speed
-        self.throw_wait = throw_wait
+        self.throw_time = throw_time # how long to stay in throw state
         # how far the ball has to be to prepare for throw, approx 10 cm
         self.min_distance = min_distance
 
@@ -254,6 +255,7 @@ class Robot:
             # TODO - might be a bit too sensitive, adjust
             if abs(x_delta) <= 15 and abs(basket_delta) <= 15:
                 self.current_state = State.BallThrow
+                self.throw_end_time = time() + self.throw_time
                 return
             
         x_sign = 1 if x_speed >= 0 else -1
@@ -270,11 +272,13 @@ class Robot:
 
     def ball_throw_state(self):
         """State for throwing the ball into the basket"""
-        if self.basket.exists:  # TODO - account for distance
+        if time() > self.throw_end_time:
+            self.current_state = State.Searching
+            return
+        if self.basket.exists:
             throw_speed = int(self.basket.distance * 0.11257028809968204 + 767.9124714973484)
             print("--BallThrow-- Throwing ball, basket distance:",
                   self.basket.distance)
-            throw_speed = self.basket.distance * 0.11257028809968204 + 767.9124714973484
             self.robot.move(0, self.throw_move_speed, 0, throw_speed)
         elif self.ball_count != 0:
             print("--BallThrow-- No basket, going back to orbiting.")
@@ -324,7 +328,7 @@ if __name__ == "__main__":
     conf_max_speed = 0.75
     conf_throw_move_speed = 0.375
     conf_search_speed = 2
-    conf_throw_wait = 5
+    conf_throw_time = 2
     conf_min_distance = 340
     conf_scan_wait_time = 1
     conf_scan_move_time = 0.2
@@ -336,5 +340,5 @@ if __name__ == "__main__":
     conf_manual_thrower_speed = 1000  # default for remote control
     conf_controller_analog_deadzone = 400
 
-    robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_wait,
-                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed)
+    robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_time,
+                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed)
