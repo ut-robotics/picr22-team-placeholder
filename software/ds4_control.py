@@ -16,6 +16,13 @@ class Axis(Enum):
 
 
 class RobotDS4Backend(Controller):
+    # speeds to use when we activate robot, these are changed when buttons are pressed
+    # default is stopped, 0
+    x_speed = 0
+    y_speed = 0
+    rot_speed = 0
+    thrower_speed = 0
+    thrower_active = False # for toggling thrower
     def __init__(self, robot_data, **kwargs):
         """Initializes RobotDS4Backend
 
@@ -24,20 +31,12 @@ class RobotDS4Backend(Controller):
         """
         Controller.__init__(self, **kwargs)
         self.robot_data = robot_data
-
-        # speeds to use when we activate robot, these are changed when buttons are pressed
-        # default is stopped, 0
-        self.x_speed = 0
-        self.y_speed = 0
-        self.rot_speed = 0
-        self.thrower_speed = 0
-        self.thrower_active = False  # for toggling thrower
         print("Controller added.")
 
         # debug function for thrower data collection
         if self.robot_data.debug_data_collection:
             self.last_throw_data = str()
-            self.data_file = Path("data", "data.csv")
+            self.data_file = Path("data", "measurements.csv")
             self.data_file.parent.mkdir(parents=True, exist_ok=True)
             if not self.data_file.exists():
                 with open(self.data_file, 'w') as f:
@@ -178,6 +177,8 @@ class RobotDS4Backend(Controller):
 
     # DEBUG DATA COLLECTION
     def on_square_press(self):
+        if not self.robot_data.debug_data_collection:
+            return
         """Save previous throw data."""
         if len(self.last_throw_data) > 0:
             with open(self.data_file, "a") as f:
@@ -189,10 +190,13 @@ class RobotDS4Backend(Controller):
 
     def on_circle_press(self):
         """Attempt to throw the ball"""
-        if (self.robot_data.ball == None) or (self.basket.distance == -1):  # we can't get ball data if there's no ball and no point if robot can't find basket
+        if self.robot_data.current_state != State.RemoteControl:
+            return
+        if (self.robot_data.ball == None) or (self.robot_data.basket.distance == -1):  # we can't get ball data if there's no ball and no point if robot can't find basket
             return
         print("Saved speeds")
-        self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.basket.distance},{self.robot_data.ball.distance}\n"
+        if self.robot_data.debug_data_collection:
+            self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.basket.distance},{self.robot_data.ball.distance}\n"
         for _ in range(3):
             print("--BallThrowRemote-- Throwing ball, basket distance:",
                   self.robot_data.basket.distance)
@@ -200,6 +204,17 @@ class RobotDS4Backend(Controller):
                                        0, self.robot_data.manual_thrower_speed)
             # this is blocking, but we're just gathering data anyways, so it's not much of an issue
             time.sleep(0.1)
+    
+    def on_R1_press(self):
+        """Adjust thrower speed based on basket distance"""
+        if self.robot_data.basket.exists:
+            self.robot_data.manual_thrower_speed = int(self.robot_data.basket.distance * 0.11265775164986744 + 771.0755450563299) 
+            print("Adjusted thrower speed to", self.robot_data.manual_thrower_speed)
+            if self.thrower_active:
+                self.thrower_speed = self.robot_data.manual_thrower_speed
+                self.send_movement()
+        else:
+            print("No basket visible, unable to adjust.")
 
     # MISC
     # switch modes

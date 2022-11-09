@@ -35,7 +35,7 @@ class Robot:
                  camera_deadzone: int,
                  max_speed: float,
                  search_speed: float,
-                 throw_time: int,
+                 throw_time: float,
                  min_distance: int,
                  scan_wait_time: float,
                  scan_move_time: float,
@@ -144,7 +144,7 @@ class Robot:
 
         if self.prev_ball_count != self.ball_count:
             # this is for debugging
-            print("ball_count: {}".format(self.ball_count))
+            #print("ball_count: {}".format(self.ball_count))
             self.prev_ball_count = self.ball_count
 
         # first element is always the closest ball
@@ -163,15 +163,15 @@ class Robot:
         if self.ball_count != 0:
             self.current_state = State.DriveToBall
 
-        elif time() < self.search_end:
-            print("--Searching-- Moving to look for ball")
-            self.robot.move(0, 0, self.search_speed, 0)
+        #elif time() < self.search_end:
+        print("--Searching-- Moving to look for ball")
+        self.robot.move(0, 0, self.search_speed, 0)
 
-        else:
-            print("--Searching-- Entering wait to scan surroundings")
-            self.current_state = State.Wait
-            self.wait_end = time() + self.scan_wait_time
-            self.next_state = State.Searching
+        #else:
+            #print("--Searching-- Entering wait to scan surroundings")
+            #self.current_state = State.Wait
+            #self.wait_end = time() + self.scan_wait_time
+            #self.next_state = State.Searching
 
     def wait_state(self):
         """State for waiting"""
@@ -276,7 +276,7 @@ class Robot:
             self.current_state = State.Searching
             return
         if self.basket.exists:
-            throw_speed = int(self.basket.distance * 0.11257028809968204 + 767.9124714973484)
+            throw_speed = int(self.basket.distance * 0.11265775164986744 + 771.0755450563299) # todo - calibrate this further
             print("--BallThrow-- Throwing ball, basket distance:",
                   self.basket.distance)
             self.robot.move(0, self.throw_move_speed, 0, throw_speed)
@@ -325,17 +325,17 @@ if __name__ == "__main__":
     conf_debug = False
     conf_debug_data_collection = True
     conf_camera_deadzone = 5
-    conf_max_speed = 0.75
+    conf_max_speed = 1
     conf_throw_move_speed = 0.375
     conf_search_speed = 2
-    conf_throw_time = 2
+    conf_throw_time = 1.1037
     conf_min_distance = 340
     conf_scan_wait_time = 1
     conf_scan_move_time = 0.2
     conf_max_ball_miss = 5
     conf_use_realsense = True
     conf_middle_offset = 0
-    conf_basket_color = Color.MAGENTA
+    conf_basket_color = Color.BLUE
     conf_max_orbit_time = 15  # seconds
     conf_manual_thrower_speed = 1000  # default for remote control
     conf_controller_analog_deadzone = 400
