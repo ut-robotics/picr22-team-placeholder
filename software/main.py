@@ -2,7 +2,7 @@ import image_processor
 import camera
 import motion
 import cv2
-from time import time
+from time import time, sleep
 from ds4_control import RobotDS4
 from Color import Color
 from states import State
@@ -100,7 +100,7 @@ class Robot:
             end = time()
             fps = 30 / (end - self.start)
             self.start = end
-            print("FPS: {}, framecount: {}".format(fps, self.frame_cnt))
+            #print("FPS: {}, framecount: {}".format(fps, self.frame_cnt))
 
     def display_camera_feed(self):
         debug_frame = self.processed_data.debug_frame
@@ -122,7 +122,7 @@ class Robot:
         if self.debug:
             self.display_camera_feed()
 
-        print("CURRENT STATE -", self.current_state)
+        #print("CURRENT STATE -", self.current_state)
 
         # -- REMOTE CONTROL STUFF --
         # stop button
@@ -196,15 +196,18 @@ class Robot:
             return
         print("--DriveToBall-- Driving to ball.")
 
-        rot_speed = 0
-
-        if abs(self.ball.x - self.middle_point) > self.camera_deadzone:
-            delta = self.middle_point - self.ball.x
-            rot_speed = delta * 0.007
         if not self.min_distance + 40 > self.ball.distance > self.min_distance - 40:
+            rot_delta = self.middle_point - self.ball.x
             y_delta = self.min_distance - self.ball.distance
-            y_speed = min((-1 * y_delta * 0.01), self.max_speed)
-            rot_speed = min(rot_speed, self.max_speed)
+            
+            y_speed = -1 * y_delta * 0.0003
+            rot_speed = -1 * rot_delta * 0.004
+            
+            y_sign = 1 if y_speed >= 0 else -1
+            rot_sign = 1 if rot_speed >= 0 else -1
+            
+            y_speed = min(abs(y_delta), self.max_speed) * y_sign
+            rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
             print(
                 f"--DriveToBall-- ball distance {self.ball.distance}, y_speed {y_speed}, rot_speed {rot_speed}")
             self.robot.move(0, y_speed, rot_speed)
@@ -227,35 +230,39 @@ class Robot:
             self.back_to_search_state()
             return
 
-        if self.ball.distance > 4 * self.min_distance:
+        if self.ball.distance > 3 * self.min_distance:
             self.state = State.Searching
             return
 
         # TODO - adjust these values to improve orbiting
         x_delta = self.middle_point - self.ball.x
-        x_speed = -1 * x_delta * 0.001
+        x_speed = -1 * x_delta * 0.0018
 
         y_delta = self.min_distance - self.ball.distance
-        y_speed = -1 * y_delta * 0.005
+        y_speed = -1 * y_delta * 0.001
 
         rot_speed = self.max_speed * 0.7
 
-        print(f"--Orbiting-- Ball X {self.ball.x} Ball Y {self.ball.distance}")
+        print(f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
 
         if self.basket.exists:
             basket_delta = self.basket.x - self.middle_point
 
-            print(f"--Orbiting-- Basket X {self.basket.x}")
+            print(f"--Orbiting-- Basket delta {basket_delta}")
 
-            rot_speed = -1 * basket_delta * 0.004
+            rot_speed = -1 * basket_delta * 0.0085
             # TODO - might be a bit too sensitive, adjust
-            if abs(x_delta) <= 5 and abs(basket_delta) <= 5:
+            if abs(x_delta) <= 15 and abs(basket_delta) <= 15:
                 self.current_state = State.BallThrow
                 return
-
-        x_speed = min(x_speed, self.max_speed)
-        y_speed = min(y_speed, self.max_speed)
-        rot_speed = min(rot_speed, self.max_speed)
+            
+        x_sign = 1 if x_speed >= 0 else -1
+        y_sign = 1 if y_speed >= 0 else -1
+        rot_sign = 1 if rot_speed >= 0 else -1
+        
+        x_speed = min(abs(x_speed), self.max_speed) * x_sign
+        y_speed = min(abs(y_speed), self.max_speed) * y_sign
+        rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
 
         print(f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")
 
@@ -263,7 +270,8 @@ class Robot:
 
     def ball_throw_state(self):
         """State for throwing the ball into the basket"""
-        if self.basket.exists:
+        if self.basket.exists:  # TODO - account for distance
+            throw_speed = int(self.basket.distance * 0.11257028809968204 + 767.9124714973484)
             print("--BallThrow-- Throwing ball, basket distance:",
                   self.basket.distance)
             throw_speed = self.basket.distance * 0.11257028809968204 + 767.9124714973484
