@@ -13,7 +13,7 @@ class Robot:
     """The main class for %placeholder%"""
     current_state = State.Searching
     thrower_substate = ThrowerState.Off
-    throw_speed = 0
+    thrower_speed = 0
     next_state = None
 
     # FPS counter
@@ -164,7 +164,9 @@ class Robot:
     def searching_state(self):
         """State for searching for the ball"""
         if self.ball_count != 0:
+            self.robot.stop()
             self.current_state = State.DriveToBall
+            return
 
         # elif time() < self.search_end:
         print("--Searching-- Moving to look for ball")
@@ -256,9 +258,10 @@ class Robot:
             print(f"--Orbiting-- Basket delta {basket_delta}")
 
             rot_speed = -1 * basket_delta * 0.0085
-            # TODO - might be a bit too sensitive, adjust
+            # TODO - a bit too sensitive at long distances
             if abs(x_delta) <= 15 and abs(basket_delta) <= 15:
                 self.current_state = State.BallThrow
+                self.thrower_substate = ThrowerState.StartThrow
                 self.throw_end_time = time() + self.throw_time
                 return
 
@@ -303,7 +306,7 @@ class Robot:
 
         if self.thrower_substate == ThrowerState.StartThrow:
             # all our data is from slightly away from the ball, so always adjusting the speed might been a bad idea. no idea if this works better
-            self.throw_speed = calculate_throw_speed(
+            self.thrower_speed = calculate_throw_speed(
                 self.basket.distance)  # TODO - calibrate thrower
             self.thrower_substate = ThrowerState.MidThrow
             print("--BallThrow-- Starting throw, basket distance:",
