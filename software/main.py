@@ -71,7 +71,7 @@ class Robot:
         self.max_speed = max_speed
         self.throw_move_speed = throw_move_speed
         self.search_speed = search_speed
-        self.throw_time = throw_time # how long to stay in throw state
+        self.throw_time = throw_time  # how long to stay in throw state
         # how far the ball has to be to prepare for throw, approx 10 cm
         self.min_distance = min_distance
 
@@ -166,15 +166,15 @@ class Robot:
         if self.ball_count != 0:
             self.current_state = State.DriveToBall
 
-        #elif time() < self.search_end:
+        # elif time() < self.search_end:
         print("--Searching-- Moving to look for ball")
         self.robot.move(0, 0, self.search_speed, 0)
 
-        #else:
-            #print("--Searching-- Entering wait to scan surroundings")
-            #self.current_state = State.Wait
-            #self.wait_end = time() + self.scan_wait_time
-            #self.next_state = State.Searching
+        # else:
+        #print("--Searching-- Entering wait to scan surroundings")
+        #self.current_state = State.Wait
+        #self.wait_end = time() + self.scan_wait_time
+        #self.next_state = State.Searching
 
     def wait_state(self):
         """State for waiting"""
@@ -200,16 +200,17 @@ class Robot:
             return
         print("--DriveToBall-- Driving to ball.")
 
-        if not self.min_distance + 60 > self.ball.distance > self.min_distance - 60:
+        # TODO - might need to adjust these further
+        if not self.min_distance + 45 > self.ball.distance > self.min_distance - 45:
             rot_delta = self.middle_point - self.ball.x
             y_delta = self.min_distance - self.ball.distance
-            
+
             y_speed = -1 * y_delta * 0.0006
             rot_speed = -1 * rot_delta * 0.006
-            
+
             y_sign = 1 if y_speed >= 0 else -1
             rot_sign = 1 if rot_speed >= 0 else -1
-            
+
             y_speed = min(abs(y_delta), self.max_speed) * y_sign
             rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
             print(
@@ -260,11 +261,11 @@ class Robot:
                 self.current_state = State.BallThrow
                 self.throw_end_time = time() + self.throw_time
                 return
-            
+
         x_sign = 1 if x_speed >= 0 else -1
         y_sign = 1 if y_speed >= 0 else -1
         rot_sign = 1 if rot_speed >= 0 else -1
-        
+
         x_speed = min(abs(x_speed), self.max_speed) * x_sign
         y_speed = min(abs(y_speed), self.max_speed) * y_sign
         rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
@@ -279,33 +280,37 @@ class Robot:
         if time() > self.throw_end_time:
             self.current_state = State.Searching
             return
-        if self.basket.exists: 
-            throw_speed = int(self.basket.distance * 0.11265775164986744 + 771.0755450563299) # TODO - calibrate this further
+        if self.basket.exists:
+            # TODO - calibrate this further
+            throw_speed = calculate_throw_speed(self.basket.distance)
             print("--BallThrow-- Throwing ball, basket distance:",
                   self.basket.distance)
             self.robot.move(0, self.throw_move_speed, 0, throw_speed)
         elif self.ball_count != 0:
-            if self.no_balls_frames >= self.max_ball_miss: # FIXME - what is this code even, it wont work. we can't miss balls if there are balls
+            # FIXME - what is this code even, it wont work. we can't miss balls if there are balls
+            if self.no_balls_frames >= self.max_ball_miss:
                 print("--BallThrow-- No basket, going back to orbiting.")
                 self.current_state = State.Orbiting
                 self.orbit_start = time()
         elif self.no_balls_frames >= self.max_ball_miss:
             print("--BallThrow-- No basket or ball, going back to throwing.")
             self.current_state = State.Searching
-    
+
     def ball_throw_state_v2(self):
         """NEW - State for throwing the ball into the basket"""
-        if time() > self.throw_end_time: # end the throw after a specified amount of time
+        if time() > self.throw_end_time:  # end the throw after a specified amount of time
             self.thrower_substate = ThrowerState.EndThrow
-        
+
         if self.thrower_substate == ThrowerState.StartThrow:
-             # all our data is from slightly away from the ball, so always adjusting the speed might been a bad idea. no idea if this works better
-            self.throw_speed = calculate_throw_speed(self.basket.distance) # TODO - calibrate thrower
+            # all our data is from slightly away from the ball, so always adjusting the speed might been a bad idea. no idea if this works better
+            self.throw_speed = calculate_throw_speed(
+                self.basket.distance)  # TODO - calibrate thrower
             self.thrower_substate = ThrowerState.MidThrow
             print("--BallThrow-- Starting throw, basket distance:",
                   self.basket.distance, "speed:", self.thrower_speed)
             self.robot.move(0, self.throw_move_speed, 0, self.thrower_speed)
-        elif self.thrower_substate == ThrowerState.MidThrow: # TODO - verify if we need to check if basket actually exists, or if it works better this way
+        # TODO - verify if we need to check if basket actually exists, or if it works better this way
+        elif self.thrower_substate == ThrowerState.MidThrow:
             print("--BallThrow-- Throwing ball, basket distance:",
                   self.basket.distance, "speed:", self.thrower_speed)
             self.robot.move(0, self.throw_move_speed, 0, self.thrower_speed)
@@ -314,7 +319,6 @@ class Robot:
             self.current_state = State.Searching
             self.thrower_substate = ThrowerState.Off
             self.thrower_speed = 0
-
 
     def main_loop(self):
         try:
