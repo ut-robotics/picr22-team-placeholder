@@ -26,7 +26,6 @@ class Robot:
     prev_ball_count = 0
     no_balls_frames = 0
     orbit_start = 0
-    wait_end = 0
     throw_end_time = 0
     processed_data = 0
     ball_count = 0
@@ -40,8 +39,6 @@ class Robot:
                  search_speed: float,
                  throw_time: float,
                  min_distance: int,
-                 scan_wait_time: float,
-                 scan_move_time: float,
                  max_ball_miss: int,
                  use_realsense: bool,
                  middle_offset: int,
@@ -75,15 +72,10 @@ class Robot:
         # how far the ball has to be to prepare for throw, approx 10 cm
         self.min_distance = min_distance
 
-        # time to scan for balls when in search mode
-        self.scan_wait_time = scan_wait_time
-        self.scan_move_time = scan_move_time
-
         self.max_ball_miss = max_ball_miss
 
         self.basket_color = basket_color
         self.max_orbit_time = max_orbit_time
-        self.search_end = time() + scan_move_time
 
         self.controller = RobotDS4(robot_data=self)
         self.controller.start()
@@ -94,7 +86,6 @@ class Robot:
         """Returns to search state
         """
         self.current_state = State.Searching
-        self.search_end = time() + self.scan_move_time
 
     def fps_counter(self):
         """Prints FPS"""
@@ -167,31 +158,8 @@ class Robot:
             self.robot.stop()
             self.current_state = State.DriveToBall
             return
-
-        # elif time() < self.search_end:
         print("--Searching-- Moving to look for ball")
         self.robot.move(0, 0, self.search_speed, 0)
-
-        # else:
-        #print("--Searching-- Entering wait to scan surroundings")
-        #self.current_state = State.Wait
-        #self.wait_end = time() + self.scan_wait_time
-        #self.next_state = State.Searching
-
-    def wait_state(self):
-        """State for waiting"""
-        if self.next_state == State.Searching and self.ball_count != 0:
-            print("--Wait-- Found ball.")
-            self.current_state = State.DriveToBall
-            return
-        if time() >= self.wait_end:
-            if self.next_state is not None:
-                self.current_state = self.next_state
-            else:
-                self.current_state = State.Searching
-            self.next_state = None
-            if self.current_state == State.Searching:
-                self.search_end = time() + self.scan_move_time
 
     def drive_to_ball_state(self):
         """State for driving to the ball."""
@@ -279,30 +247,8 @@ class Robot:
 
         self.robot.move(x_speed, y_speed, rot_speed)
 
-    # right now it's unused, but if it works better than the new one we'll switch back to this
     def ball_throw_state(self):
-        """OLD - State for throwing the ball into the basket"""
-        if time() > self.throw_end_time:
-            self.current_state = State.Searching
-            return
-        if self.basket.exists:
-            # TODO - calibrate this further
-            throw_speed = calculate_throw_speed(self.basket.distance)
-            print("--BallThrow-- Throwing ball, basket distance:",
-                  self.basket.distance)
-            self.robot.move(0, self.throw_move_speed, 0, throw_speed)
-        elif self.ball_count != 0:
-            # FIXME - what is this code even, it wont work. we can't miss balls if there are balls
-            if self.no_balls_frames >= self.max_ball_miss:
-                print("--BallThrow-- No basket, going back to orbiting.")
-                self.current_state = State.Orbiting
-                self.orbit_start = time()
-        elif self.no_balls_frames >= self.max_ball_miss:
-            print("--BallThrow-- No basket or ball, going back to throwing.")
-            self.current_state = State.Searching
-
-    def ball_throw_state_v2(self):
-        """NEW - State for throwing the ball into the basket"""
+        """State for throwing the ball into the basket"""
         if time() > self.throw_end_time:  # end the throw after a specified amount of time
             self.thrower_substate = ThrowerState.EndThrow
 
@@ -314,7 +260,6 @@ class Robot:
             print("--BallThrow-- Starting throw, basket distance:",
                   self.basket.distance, "speed:", self.thrower_speed)
             self.robot.move(0, self.throw_move_speed, 0, self.thrower_speed)
-        # TODO - verify if we need to check if basket actually exists, or if it works better this way
         elif self.thrower_substate == ThrowerState.MidThrow:
             print("--BallThrow-- Throwing ball, basket distance:",
                   self.basket.distance, "speed:", self.thrower_speed)
@@ -336,9 +281,6 @@ class Robot:
                 elif self.current_state == State.Searching:
                     self.searching_state()
 
-                elif self.current_state == State.Wait:
-                    self.wait_state()
-
                 elif self.current_state == State.Orbiting:
                     self.orbiting_state()
 
@@ -346,7 +288,7 @@ class Robot:
                     self.drive_to_ball_state()
 
                 elif self.current_state == State.BallThrow:
-                    self.ball_throw_state_v2()
+                    self.ball_throw_state()
 
         except KeyboardInterrupt:
             print("Closing....")
@@ -367,8 +309,6 @@ if __name__ == "__main__":
     conf_search_speed = 2
     conf_throw_time = 1.1037
     conf_min_distance = 340
-    conf_scan_wait_time = 1
-    conf_scan_move_time = 0.2
     conf_max_ball_miss = 5
     conf_use_realsense = True
     conf_middle_offset = 0
@@ -378,4 +318,4 @@ if __name__ == "__main__":
     conf_controller_analog_deadzone = 400
 
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_time,
-                  conf_min_distance, conf_scan_wait_time, conf_scan_move_time, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed)
+                  conf_min_distance, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed)
