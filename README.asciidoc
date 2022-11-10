@@ -48,3 +48,4 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 06.11.2022 - *Jens:* Fix designs (2h)
 * 07.11.2022 - *Timo:* Thrower testing. (2h)
 * 08.11.2022 - *Timo:* Thrower testing, gathering data and cleaning up code. (5h)
+* 09.11.2022 - *Timo:* Thrower testing, improving robot driving. (4h)
