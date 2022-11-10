@@ -5,12 +5,15 @@ import cv2
 from time import time, sleep
 from ds4_control import RobotDS4
 from Color import Color
-from states import State
+from states import State, ThrowerState
+from helper import calculate_throw_speed
 
 
 class Robot:
     """The main class for %placeholder%"""
     current_state = State.Searching
+    thrower_substate = ThrowerState.Off
+    throw_speed = 0
     next_state = None
 
     # FPS counter
@@ -270,24 +273,48 @@ class Robot:
 
         self.robot.move(x_speed, y_speed, rot_speed)
 
+    # right now it's unused, but if it works better than the new one we'll switch back to this
     def ball_throw_state(self):
-        """State for throwing the ball into the basket"""
+        """OLD - State for throwing the ball into the basket"""
         if time() > self.throw_end_time:
             self.current_state = State.Searching
             return
-        if self.basket.exists:
-            throw_speed = int(self.basket.distance * 0.11265775164986744 + 771.0755450563299) # todo - calibrate this further
+        if self.basket.exists: 
+            throw_speed = int(self.basket.distance * 0.11265775164986744 + 771.0755450563299) # TODO - calibrate this further
             print("--BallThrow-- Throwing ball, basket distance:",
                   self.basket.distance)
             self.robot.move(0, self.throw_move_speed, 0, throw_speed)
         elif self.ball_count != 0:
-            if self.no_balls_frames >= self.max_ball_miss:
+            if self.no_balls_frames >= self.max_ball_miss: # FIXME - what is this code even, it wont work. we can't miss balls if there are balls
                 print("--BallThrow-- No basket, going back to orbiting.")
                 self.current_state = State.Orbiting
                 self.orbit_start = time()
         elif self.no_balls_frames >= self.max_ball_miss:
             print("--BallThrow-- No basket or ball, going back to throwing.")
             self.current_state = State.Searching
+    
+    def ball_throw_state_v2(self):
+        """NEW - State for throwing the ball into the basket"""
+        if time() > self.throw_end_time: # end the throw after a specified amount of time
+            self.thrower_substate = ThrowerState.EndThrow
+        
+        if self.thrower_substate == ThrowerState.StartThrow:
+             # all our data is from slightly away from the ball, so always adjusting the speed might been a bad idea. no idea if this works better
+            self.throw_speed = calculate_throw_speed(self.basket.distance) # TODO - calibrate thrower
+            self.thrower_substate = ThrowerState.MidThrow
+            print("--BallThrow-- Starting throw, basket distance:",
+                  self.basket.distance, "speed:", self.thrower_speed)
+            self.robot.move(0, self.throw_move_speed, 0, self.thrower_speed)
+        elif self.thrower_substate == ThrowerState.MidThrow: # TODO - verify if we need to check if basket actually exists, or if it works better this way
+            print("--BallThrow-- Throwing ball, basket distance:",
+                  self.basket.distance, "speed:", self.thrower_speed)
+            self.robot.move(0, self.throw_move_speed, 0, self.thrower_speed)
+        elif self.thrower_substate == ThrowerState.EndThrow:
+            print("--BallThrow-- Finishing throw.")
+            self.current_state = State.Searching
+            self.thrower_substate = ThrowerState.Off
+            self.thrower_speed = 0
+
 
     def main_loop(self):
         try:
@@ -310,7 +337,7 @@ class Robot:
                     self.drive_to_ball_state()
 
                 elif self.current_state == State.BallThrow:
-                    self.ball_throw_state()
+                    self.ball_throw_state_v2()
 
         except KeyboardInterrupt:
             print("Closing....")

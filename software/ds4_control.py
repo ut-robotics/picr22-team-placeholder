@@ -1,5 +1,5 @@
 from threading import Thread
-from helper import map_range
+from helper import map_range, calculate_throw_speed
 from pyPS4Controller.controller import Controller
 from enum import Enum
 from states import State
@@ -208,7 +208,7 @@ class RobotDS4Backend(Controller):
     def on_R1_press(self):
         """Adjust thrower speed based on basket distance"""
         if self.robot_data.basket.exists:
-            self.robot_data.manual_thrower_speed = int(self.robot_data.basket.distance * 0.11265775164986744 + 771.0755450563299) 
+            self.robot_data.manual_thrower_speed = calculate_throw_speed(self.robot_data.basket.distance)
             print("Adjusted thrower speed to", self.robot_data.manual_thrower_speed)
             if self.thrower_active:
                 self.thrower_speed = self.robot_data.manual_thrower_speed

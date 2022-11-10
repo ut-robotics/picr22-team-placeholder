@@ -28,3 +28,15 @@ def get_colors_pkl_path():
     if not os.path.exists(pkl_path) and os.path.exists(os.path.join("software", pkl_path)):
         pkl_path = os.path.join("software", pkl_path)
     return pkl_path
+
+def calculate_throw_speed(basket_dist):
+    """Calculates throw speed based on basket distance 
+
+    Args:
+        basket_dist (float): Distance to basket
+
+    Returns:
+        int: ThrowerSpeed
+    """
+    # Values calibrated using linear regression
+    return int(basket_dist * 0.11265775164986744 + 771.0755450563299)
