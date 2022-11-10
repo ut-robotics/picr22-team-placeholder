@@ -203,12 +203,12 @@ class Robot:
         print("--DriveToBall-- Driving to ball.")
 
         # TODO - might need to adjust these further
-        if not self.min_distance + 45 > self.ball.distance > self.min_distance - 45:
+        if not self.min_distance + 35 > self.ball.distance > self.min_distance - 35:
             rot_delta = self.middle_point - self.ball.x
             y_delta = self.min_distance - self.ball.distance
 
             y_speed = -1 * y_delta * 0.0006
-            rot_speed = -1 * rot_delta * 0.006
+            rot_speed = -1 * rot_delta * 0.003
 
             y_sign = 1 if y_speed >= 0 else -1
             rot_sign = 1 if rot_speed >= 0 else -1
@@ -219,6 +219,7 @@ class Robot:
                 f"--DriveToBall-- ball distance {self.ball.distance}, y_speed {y_speed}, rot_speed {rot_speed}")
             self.robot.move(0, y_speed, rot_speed)
         else:
+            self.robot.stop()
             self.current_state = State.Orbiting
             self.orbit_start = time()
 
@@ -257,9 +258,10 @@ class Robot:
 
             print(f"--Orbiting-- Basket delta {basket_delta}")
 
-            rot_speed = -1 * basket_delta * 0.0085
+            rot_speed = -1 * basket_delta * 0.009
             # TODO - a bit too sensitive at long distances
-            if abs(x_delta) <= 15 and abs(basket_delta) <= 15:
+            if abs(x_delta) <= 12 and abs(basket_delta) <= 15:
+                self.robot.stop()
                 self.current_state = State.BallThrow
                 self.thrower_substate = ThrowerState.StartThrow
                 self.throw_end_time = time() + self.throw_time
@@ -360,7 +362,7 @@ if __name__ == "__main__":
     conf_debug = False
     conf_debug_data_collection = True
     conf_camera_deadzone = 5
-    conf_max_speed = 0.75
+    conf_max_speed = 1
     conf_throw_move_speed = 0.375
     conf_search_speed = 2
     conf_throw_time = 1.1037
@@ -370,7 +372,7 @@ if __name__ == "__main__":
     conf_max_ball_miss = 5
     conf_use_realsense = True
     conf_middle_offset = 0
-    conf_basket_color = Color.MAGENTA
+    conf_basket_color = Color.BLUE
     conf_max_orbit_time = 15  # seconds
     conf_manual_thrower_speed = 1000  # default for remote control
     conf_controller_analog_deadzone = 400
