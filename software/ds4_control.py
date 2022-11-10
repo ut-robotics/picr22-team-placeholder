@@ -5,6 +5,7 @@ from enum import Enum
 from states import State
 from pathlib import Path
 import time
+from Color import Color
 
 
 class Axis(Enum):
@@ -22,7 +23,8 @@ class RobotDS4Backend(Controller):
     y_speed = 0
     rot_speed = 0
     thrower_speed = 0
-    thrower_active = False # for toggling thrower
+    thrower_active = False  # for toggling thrower
+
     def __init__(self, robot_data, **kwargs):
         """Initializes RobotDS4Backend
 
@@ -177,44 +179,58 @@ class RobotDS4Backend(Controller):
 
     # DEBUG DATA COLLECTION
     def on_square_press(self):
-        if not self.robot_data.debug_data_collection:
-            return
-        """Save previous throw data."""
-        if len(self.last_throw_data) > 0:
-            with open(self.data_file, "a") as f:
-                f.write(self.last_throw_data)
-            self.last_throw_data = str()
-            print("Wrote speeds to file.")
-        else:
-            print("Nothing to write!")
+        if self.robot_data.current_state == State.RemoteControl:
+            if not self.robot_data.debug_data_collection:
+                return
+            """Save previous throw data."""
+            if len(self.last_throw_data) > 0:
+                with open(self.data_file, "a") as f:
+                    f.write(self.last_throw_data)
+                self.last_throw_data = str()
+                print("Wrote speeds to file.")
+            else:
+                print("Nothing to write!")
 
     def on_circle_press(self):
         """Attempt to throw the ball"""
-        if self.robot_data.current_state != State.RemoteControl:
-            return
-        if (self.robot_data.ball == None) or (self.robot_data.basket.distance == -1):  # we can't get ball data if there's no ball and no point if robot can't find basket
-            return
-        print("Saved speeds")
-        if self.robot_data.debug_data_collection:
-            self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.basket.distance},{self.robot_data.ball.distance}\n"
-        for _ in range(3):
-            print("--BallThrowRemote-- Throwing ball, basket distance:",
-                  self.robot_data.basket.distance)
-            self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
-                                       0, self.robot_data.manual_thrower_speed)
-            # this is blocking, but we're just gathering data anyways, so it's not much of an issue
-            time.sleep(0.1)
-    
+        if self.robot_data.current_state == State.RemoteControl:
+            # we can't get ball data if there's no ball and no point if robot can't find basket
+            if (self.robot_data.ball == None) or (self.robot_data.basket.distance == -1):
+                return
+            print("Saved speeds")
+            if self.robot_data.debug_data_collection:
+                self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.basket.distance},{self.robot_data.ball.distance}\n"
+            for _ in range(3):
+                print("--BallThrowRemote-- Throwing ball, basket distance:",
+                      self.robot_data.basket.distance)
+                self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
+                                           0, self.robot_data.manual_thrower_speed)
+                # this is blocking, but we're just gathering data anyways, so it's not much of an issue
+                time.sleep(0.1)
+
     def on_R1_press(self):
         """Adjust thrower speed based on basket distance"""
-        if self.robot_data.basket.exists:
-            self.robot_data.manual_thrower_speed = calculate_throw_speed(self.robot_data.basket.distance)
-            print("Adjusted thrower speed to", self.robot_data.manual_thrower_speed)
-            if self.thrower_active:
-                self.thrower_speed = self.robot_data.manual_thrower_speed
-                self.send_movement()
-        else:
-            print("No basket visible, unable to adjust.")
+        if self.robot_data.current_state == State.RemoteControl:
+            if self.robot_data.basket.exists:
+                self.robot_data.manual_thrower_speed = calculate_throw_speed(
+                    self.robot_data.basket.distance)
+                print("Adjusted thrower speed to",
+                      self.robot_data.manual_thrower_speed)
+                if self.thrower_active:
+                    self.thrower_speed = self.robot_data.manual_thrower_speed
+                    self.send_movement()
+            else:
+                print("No basket visible, unable to adjust.")
+
+    def on_L1_press(self):
+        """Change currently targeted basket"""
+        if self.robot_data.current_state == State.RemoteControl:
+            if self.robot_data.basket_color == Color.MAGENTA:
+                print("Current basket is now BLUE.")
+                self.robot_data.basket_color = Color.BLUE
+            else:
+                print("Current basket is now MAGENTA.")
+                self.robot_data.basket_color = Color.MAGENTA
 
     # MISC
     # switch modes
