@@ -2,7 +2,7 @@
 G04 Layer_Color=128*
 %FSLAX45Y45*%
 %MOMM*%
-%TF.SameCoordinates,1FC91EB1-9634-4345-979C-C496A52DE46E*%
+%TF.SameCoordinates,980CB771-C75C-4F2C-B837-E40D3F653A85*%
 %TF.FilePolarity,Positive*%
 %TF.FileFunction,Paste,Bot*%
 %TF.Part,Single*%
@@ -131,5 +131,5 @@ X4355000Y1230000D02*
 D03*
 X4355000Y1420000D02*
 D03*
-%TF.MD5,47da1dea52c08c518b6122fcc8e07a61*%
+%TF.MD5,ccc4ebe6fbbaab9015092a08b5dcaffc*%
 M02*
