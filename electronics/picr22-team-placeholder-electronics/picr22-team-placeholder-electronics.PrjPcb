@@ -169,8 +169,85 @@ DItemRevisionGUID=
 GenerateClassCluster=0
 DocumentUniqueId=YYROQIBR
 
+[Document8]
+DocumentPath=Output.OutJob
+AnnotationEnabled=1
+AnnotateStartValue=1
+AnnotationIndexControlEnabled=0
+AnnotateSuffix=
+AnnotateScope=All
+AnnotateOrder=-1
+DoLibraryUpdate=1
+DoDatabaseUpdate=1
+ClassGenCCAutoEnabled=1
+ClassGenCCAutoRoomEnabled=1
+ClassGenNCAutoScope=None
+DItemRevisionGUID=
+GenerateClassCluster=0
+DocumentUniqueId=
+
 [GeneratedDocument1]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Copper_Plane_1.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument2]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Copper_Plane_2.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument3]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Copper_Signal_Bot.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument4]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Copper_Signal_Top.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument5]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Legend_Bot.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument6]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Legend_Top.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument7]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_NPTH_Drill.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument8]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Paste_Bot.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument9]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Paste_Top.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument10]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Profile.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument11]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_PTH_Drill.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument12]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Soldermask_Bot.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument13]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Board_Soldermask_Top.gbr
+DItemRevisionGUID=
+
+[GeneratedDocument14]
 DocumentPath=..\..\..\..\..\..\..\..\AppData\Local\Temp\Project Outputs for picr22-team-placeholder-electronics\Design Rule Check - Board.html
+DItemRevisionGUID=
+
+[GeneratedDocument15]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Placeholder.EXTREP
+DItemRevisionGUID=
+
+[GeneratedDocument16]
+DocumentPath=Project Outputs for picr22-team-placeholder-electronics\Placeholder.REP
 DItemRevisionGUID=
 
 [Configuration1]
