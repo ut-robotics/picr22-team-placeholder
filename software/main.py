@@ -11,7 +11,7 @@ from referee import Referee
 
 class Robot:
     """The main class for %placeholder%"""
-    current_state = State.Searching
+    current_state = State.Stopped
     thrower_substate = ThrowerState.Off
     thrower_speed = 0
     next_state = None
@@ -83,7 +83,8 @@ class Robot:
         self.controller.start()
         self.referee_ip = conf_referee_ip
         self.name = conf_name
-        #self.referee = Referee(robot_data=self) # TODO - verify if this is blocking or not and whether it works as intended
+        self.referee = Referee(robot_data=self) # TODO - verify if this is blocking or not and whether it works as intended
+        self.referee.start()
         self.main_loop()
 
     def back_to_search_state(self):
@@ -121,7 +122,7 @@ class Robot:
         if self.debug:
             self.display_camera_feed()
 
-        #print("CURRENT STATE -", self.current_state)
+        print("CURRENT STATE -", self.current_state)
 
         # -- REMOTE CONTROL STUFF --
         # stop button
@@ -278,6 +279,9 @@ class Robot:
         """State for stopping."""
         self.robot.move(0, 0, 0, 0)
 
+    def drive_to_search_state(self): # TODO - implement. This would run after trying to search for the ball for a few cycles and not finding anything. It could drive to the basket on the opposite side.
+        print("Drive2Search - UNIMPLEMENTED")
+        
     def main_loop(self):
         try:
             while True:
@@ -300,6 +304,9 @@ class Robot:
 
                 elif self.current_state == State.BallThrow:
                     self.ball_throw_state()
+                    
+                elif self.current_state == State.DriveToSearch: # TODO - implement
+                    self.drive_to_search_state()
 
         except KeyboardInterrupt:
             print("Closing....")
@@ -309,6 +316,7 @@ class Robot:
             self.controller.stop()
             cv2.destroyAllWindows()
             self.processor.stop()
+            self.referee.stop()
 
 
 if __name__ == "__main__":
@@ -327,7 +335,7 @@ if __name__ == "__main__":
     conf_max_orbit_time = 15  # seconds
     conf_manual_thrower_speed = 1000  # default for remote control
     conf_controller_analog_deadzone = 400
-    conf_referee_ip = "ws://localhost:8222"
+    conf_referee_ip = "ws://192.168.3.69:8222"
     conf_name = "placeholder"
 
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_time,

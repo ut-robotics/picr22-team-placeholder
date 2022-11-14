@@ -1,20 +1,29 @@
 import asyncio
+from threading import Thread
 import websockets
 import json
 from states import State
 from Color import Color
-class Referee:
+
+class RefereeBackend:
     """Class for getting messages from referee server"""
-    def __init__(self, robot_data):
+    running = True
+    def __init__(self, robot_data): # TODO - maybe figure out a cleaner and more robust way, but this does technically work
         self.robot_data = robot_data
-        asyncio.ensure_future(self.monitor())
-    
+        print("the monitor")
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(self.monitor()) 
+        #loop.close()
+        
     # TODO - implement actual states for all the stuff
     async def monitor(self):
-        while True:
+        while self.running:
+            print("Connecting...")
             try:
                 async with websockets.connect(self.robot_data.referee_ip) as websocket:
-                    while True:
+                    print("Connected to server!")
+                    while self.running:
                         data = json.loads(await websocket.recv())
                         if self.robot_data.name in data["targets"]:
                             robot_index = data["targets"].index(self.robot_data.name)
@@ -50,3 +59,26 @@ class Referee:
             except(KeyboardInterrupt):
                 print("Closing websocket...")
                 break
+            
+    def stop(self):
+        """Stops listening for referee commands."""
+        self.running = False
+        
+class Referee:
+    """Class for enabling the use of a referee server to start and stop the robot."""
+
+    def __init__(self, robot_data):
+        self.robot_data = robot_data
+        self.referee = None
+
+    def start(self):
+        """Starts referee listening in a separate thread"""
+        self.thread = Thread(target=self.listen, args=()).start()
+
+    def listen(self):
+        """Listen for referee commands"""
+        self.referee = RefereeBackend(robot_data=self.robot_data)
+
+    def stop(self): # TODO - this is broken
+        """Stops the referee server."""
+        self.referee.stop()
