@@ -49,6 +49,7 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 06.11.2022 - *Artur:* Helped with robot software. (6h)
 * 06.11.2022 - *Timo:* Working on state machine. (6.5h)
 * 06.11.2022 - *Jens:* Fix designs (2h)
+* 07.11.2022 - *Jens:* Milling and assembling thrower (3h)
 * 07.11.2022 - *Timo:* Thrower testing. (2h)
 * 08.11.2022 - *Artur:* Redid the PCB, fixed PCB issues, did thrower regression. (8h)
 * 08.11.2022 - *Timo:* Thrower testing, gathering data and cleaning up code. (5h)
