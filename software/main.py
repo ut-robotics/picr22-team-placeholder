@@ -7,7 +7,7 @@ from ds4_control import RobotDS4
 from Color import Color
 from states import State, ThrowerState
 from helper import calculate_throw_speed
-
+from referee import Referee
 
 class Robot:
     """The main class for %placeholder%"""
@@ -47,7 +47,9 @@ class Robot:
                  manual_thrower_speed: int,
                  analog_deadzone: int,
                  debug_data_collection: bool,
-                 throw_move_speed: float):
+                 throw_move_speed: float,
+                 referee_ip: str,
+                 name: str):
         self.debug = debug
         self.debug_data_collection = debug_data_collection
         if use_realsense:
@@ -79,7 +81,9 @@ class Robot:
 
         self.controller = RobotDS4(robot_data=self)
         self.controller.start()
-
+        self.referee_ip = conf_referee_ip
+        self.name = conf_name
+        #self.referee = Referee(robot_data=self) # TODO - verify if this is blocking or not and whether it works as intended
         self.main_loop()
 
     def back_to_search_state(self):
@@ -270,6 +274,10 @@ class Robot:
             self.thrower_substate = ThrowerState.Off
             self.thrower_speed = 0
 
+    def stop_state(self):
+        """State for stopping."""
+        self.robot.move(0, 0, 0, 0)
+
     def main_loop(self):
         try:
             while True:
@@ -277,6 +285,9 @@ class Robot:
 
                 if self.current_state == State.RemoteControl:
                     continue
+                
+                elif self.current_state == State.Stopped:
+                    self.stop_state()
 
                 elif self.current_state == State.Searching:
                     self.searching_state()
@@ -316,6 +327,8 @@ if __name__ == "__main__":
     conf_max_orbit_time = 15  # seconds
     conf_manual_thrower_speed = 1000  # default for remote control
     conf_controller_analog_deadzone = 400
+    conf_referee_ip = "ws://localhost:8222"
+    conf_name = "placeholder"
 
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_time,
-                  conf_min_distance, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed)
+                  conf_min_distance, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed, conf_referee_ip, conf_name)
