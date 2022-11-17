@@ -14,6 +14,7 @@ class Robot:
     current_state = State.Stopped
     thrower_substate = ThrowerState.Off
     thrower_speed = 0
+    drive_end_time = 0
     next_state = None
 
     # FPS counter
@@ -91,7 +92,7 @@ class Robot:
         """Returns to search state
         """
         self.current_state = State.Searching
-
+    
     def fps_counter(self):
         """Prints FPS"""
         self.frame_cnt += 1
@@ -122,7 +123,7 @@ class Robot:
         if self.debug:
             self.display_camera_feed()
 
-        print("CURRENT STATE -", self.current_state)
+        #print("CURRENT STATE -", self.current_state)
 
         # -- REMOTE CONTROL STUFF --
         # stop button
@@ -164,6 +165,7 @@ class Robot:
             self.current_state = State.DriveToBall
             return
         print("--Searching-- Moving to look for ball")
+        # TODO - drive to furthest basket after X time, save basket, maybe check lines and turn 45 degrees when hitting a line
         self.robot.move(0, 0, self.search_speed, 0)
 
     def drive_to_ball_state(self):
@@ -184,7 +186,7 @@ class Robot:
             rot_speed = -1 * rot_delta * 0.003
 
             y_sign = 1 if y_speed >= 0 else -1
-            rot_sign = 1 if rot_speed >= 0 else -1
+            rot_sign = -1 if rot_speed >= 0 else 1
 
             y_speed = min(abs(y_delta), self.max_speed) * y_sign
             rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
@@ -280,7 +282,15 @@ class Robot:
         self.robot.move(0, 0, 0, 0)
 
     def drive_to_search_state(self): # TODO - implement. This would run after trying to search for the ball for a few cycles and not finding anything. It could drive to the basket on the opposite side.
-        print("Drive2Search - UNIMPLEMENTED")
+        if self.ball_count > 0:
+            self.current_state = State.DriveToBall
+            self.robot.stop()
+            return
+        if time() < self.drive_end_time:
+            print("Drive2Search - Driving to look for ball")
+            self.robot.move(0, self.max_speed, 0, 0)
+        else:
+            self.current_state = State.Searching
         
     def main_loop(self):
         try:

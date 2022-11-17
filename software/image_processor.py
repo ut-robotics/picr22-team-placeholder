@@ -83,6 +83,7 @@ class ImageProcessor():
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         balls = []
+        # TODO - dilate
 
         for contour in contours:
 

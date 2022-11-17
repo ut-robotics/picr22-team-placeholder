@@ -4,6 +4,7 @@ import websockets
 import json
 from states import State
 from Color import Color
+from time import time
 
 class RefereeBackend:
     """Class for getting messages from referee server"""
@@ -41,7 +42,8 @@ class RefereeBackend:
                             else:
                                 raise ValueError("Unknown basket colour:", basket_str)
                             self.robot_data.basket_color = basket
-                            self.robot_data.current_state = State.Searching
+                            self.robot_data.drive_end_time = time() + 3.5
+                            self.robot_data.current_state = State.DriveToSearch
                             print("STARTING ROBOT, basket:", basket)
 
                         elif data["signal"] == "stop":
@@ -77,6 +79,7 @@ class Referee:
 
     def listen(self):
         """Listen for referee commands"""
+        print("LISTENING")
         self.referee = RefereeBackend(robot_data=self.robot_data)
 
     def stop(self): # TODO - this is broken
