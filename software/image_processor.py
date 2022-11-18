@@ -81,9 +81,10 @@ class ImageProcessor():
     def analyze_balls(self, t_balls, depth, fragments) -> list:
         contours, hierarchy = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
+        krnl = np.ones((3,3), np.uint8)
+        t_balls = cv2.dilate(t_balls, krnl)
+        t_balls = cv2.erode(t_balls, krnl)
         balls = []
-        # TODO - dilate
 
         for contour in contours:
 

@@ -101,7 +101,10 @@ class OmniRobot():
                      self.wheelAngles[motorID]) + self.wheelDistanceFromCenter * robotAngularVelocity
         wheelAngularSpeedInMainboardUnits = wheelLinearVelocity * \
             self.wheelSpeedToMainboardUnits
-        return wheelAngularSpeedInMainboardUnits
+        if math.isnan(wheelAngularSpeedInMainboardUnits):
+            return 0
+        else:
+            return wheelAngularSpeedInMainboardUnits
 
     def move(self, x_speed, y_speed, rot_speed, thrower_speed=0, disableFailsafe=0):
         """Move the robot

@@ -42,8 +42,8 @@ class RefereeBackend:
                             else:
                                 raise ValueError("Unknown basket colour:", basket_str)
                             self.robot_data.basket_color = basket
-                            self.robot_data.drive_end_time = time() + 3.5
-                            self.robot_data.current_state = State.DriveToSearch
+                            self.robot_data.enemy_basket_color = Color(2) if self.robot_data.basket_color == Color(3) else Color(3)
+                            self.robot_data.back_to_search_state()
                             print("STARTING ROBOT, basket:", basket)
 
                         elif data["signal"] == "stop":

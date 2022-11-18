@@ -195,14 +195,14 @@ class RobotDS4Backend(Controller):
         """Attempt to throw the ball"""
         if self.robot_data.current_state == State.RemoteControl:
             # we can't get ball data if there's no ball and no point if robot can't find basket
-            if (self.robot_data.ball == None) or (self.robot_data.basket.distance == -1):
+            if (self.robot_data.ball == None) or (self.robot_data.baskets[self.robot_data.basket_color].distance == -1):
                 return
             print("Saved speeds")
             if self.robot_data.debug_data_collection:
-                self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.basket.distance},{self.robot_data.ball.distance}\n"
+                self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.baskets[self.robot_data.basket_color].distance},{self.robot_data.ball.distance}\n"
             for _ in range(3):
                 print("--BallThrowRemote-- Throwing ball, basket distance:",
-                      self.robot_data.basket.distance)
+                      self.robot_data.baskets[self.robot_data.basket_color].distance)
                 self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
                                            0, self.robot_data.manual_thrower_speed)
                 # this is blocking, but we're just gathering data anyways, so it's not much of an issue
@@ -211,9 +211,9 @@ class RobotDS4Backend(Controller):
     def on_R1_press(self):
         """Adjust thrower speed based on basket distance"""
         if self.robot_data.current_state == State.RemoteControl:
-            if self.robot_data.basket.exists:
+            if self.robot_data.baskets[self.robot_data.basket_color].exists:
                 self.robot_data.manual_thrower_speed = calculate_throw_speed(
-                    self.robot_data.basket.distance)
+                    self.robot_data.baskets[self.robot_data.basket_color].distance)
                 print("Adjusted thrower speed to",
                       self.robot_data.manual_thrower_speed)
                 if self.thrower_active:
@@ -225,12 +225,9 @@ class RobotDS4Backend(Controller):
     def on_L1_press(self):
         """Change currently targeted basket"""
         if self.robot_data.current_state == State.RemoteControl:
-            if self.robot_data.basket_color == Color.MAGENTA:
-                print("Current basket is now BLUE.")
-                self.robot_data.basket_color = Color.BLUE
-            else:
-                print("Current basket is now MAGENTA.")
-                self.robot_data.basket_color = Color.MAGENTA
+            self.robot_data.basket_color = Color(2) if self.robot_data.basket_color == Color(3) else Color(3)
+            self.robot_data.enemy_basket_color = Color(2) if self.robot_data.basket_color == Color(3) else Color(3)
+            print("Current basket is now", self.robot_data.basket_color)
 
     # MISC
     # switch modes
@@ -242,7 +239,8 @@ class RobotDS4Backend(Controller):
             self.robot_data.current_state = State.RemoteControl
         else:
             print("Remote control: OFF")
-            self.robot_data.current_state = State.Searching
+            
+            self.robot_data.back_to_search_state()
 
     # quit
     def on_playstation_button_press(self):

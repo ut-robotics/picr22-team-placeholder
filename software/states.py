@@ -8,7 +8,6 @@ class State(Enum):
     Orbiting = 3
     BallThrow = 4
     Wait = 5
-    DriveToSearch = 6
     RemoteControl = 98
     Debug = 99  # state for temporarily testing code
 
@@ -17,3 +16,10 @@ class ThrowerState(Enum):
     StartThrow = 1
     MidThrow = 2
     EndThrow = 3
+
+class SearchState(Enum):
+    Off = 0
+    StartSearch = 1
+    Left = 2
+    Right = 3
+    DriveToSearch = 4
