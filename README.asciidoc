@@ -58,4 +58,7 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 10.11.2022 - *Timo:* Finally getting the robot code in a competitive state, qualifying and taking part of test competition. (10h)
 * 10.11.2022 - *Artur:* Helped with software, participated in the test competition. (4h)
 * 12.11.2022 - *Artur:* Fixed PCB issues, created PCB issues. (2h)
-* 13.11.2022 - *Artur:* Fixed PCB issues. (1h)
+* 14.11.2022 - *Timo:* Testing referee code. (1h)
+* 17.11.2022 - *Timo:* Testing movement, adding in more screws. (2h)
+* 18.11.2022 - *Timo:* Improved search function and ball detection. (3h)
+* 19.11.2022 - *Timo:* Code cleanup and switching referee code to multiprocessing. (2h)
