@@ -9,6 +9,7 @@ from states import State, ThrowerState, SearchState
 from helper import calculate_throw_speed
 from referee import Referee
 
+
 class Robot:
     """The main class for %placeholder%"""
     current_state = State.Stopped
@@ -31,13 +32,13 @@ class Robot:
     processed_data = 0
     ball_count = 0
     ball = None
-    baskets = {Color.BLUE : None, Color.MAGENTA : None}
+    baskets = {Color.BLUE: None, Color.MAGENTA: None}
     basket_max_distance = 0
     enemy_basket_max_distance = 0
     search_end_time = 0
     last_seen_ball = None
     basket_to_drive_to = None
-    
+
     def __init__(self,
                  debug: bool,
                  camera_deadzone: int,
@@ -85,7 +86,8 @@ class Robot:
         self.max_ball_miss = max_ball_miss
 
         self.basket_color = basket_color
-        self.enemy_basket_color = Color(2) if self.basket_color == Color(3) else Color(3)
+        self.enemy_basket_color = Color(
+            2) if self.basket_color == Color(3) else Color(3)
         self.max_orbit_time = max_orbit_time
 
         self.search_timeout = search_timeout
@@ -94,7 +96,7 @@ class Robot:
         self.controller.start()
         self.referee_ip = referee_ip
         self.name = name
-        self.referee = Referee(robot_data=self) # TODO - crashes when closing the program
+        self.referee = Referee(robot_data=self)
         self.referee.start()
         self.main_loop()
 
@@ -103,7 +105,7 @@ class Robot:
         """
         self.current_state = State.Searching
         self.search_substate = SearchState.StartSearch
-    
+
     def fps_counter(self):
         """Prints FPS"""
         self.frame_cnt += 1
@@ -165,17 +167,18 @@ class Robot:
         elif self.no_balls_frames >= self.max_ball_miss:  # use old ball sometimes
             self.ball = None
 
+        # TODO - implement code to prevent it from driving into baskets and over lines
         self.baskets[Color.MAGENTA] = self.processed_data.basket_m
         self.baskets[Color.BLUE] = self.processed_data.basket_b
 
     def searching_state(self):
         """State for searching for the ball"""
-        if self.ball_count != 0:
+        if self.ball_count != 0:  # FIXME - robot seems to sometimes find a ball but lose it immediately after, maybe Wait state will help?
             self.robot.stop()
             self.current_state = State.DriveToBall
             self.search_substate = SearchState.Off
             return
-        
+
         if self.search_substate == SearchState.StartSearch:
             print("StartSearch!!!")
             if self.last_seen_ball != None:
@@ -186,7 +189,7 @@ class Robot:
             else:
                 self.search_substate = SearchState.Left
             self.search_end_time = time() + self.search_timeout
-            
+
         elif (time() > self.search_end_time) and (self.search_substate != SearchState.DriveToSearch):
             print("--Searching-- Searched for too long, will drive to basket soon.")
             if self.basket_to_drive_to == None:
@@ -198,19 +201,18 @@ class Robot:
                 self.robot.stop()
                 self.search_substate = SearchState.DriveToSearch
             else:
-                print("basket does not exist, basket distances are", self.enemy_basket_max_distance, self.basket_max_distance, self.baskets[self.basket_color].exists, self.baskets[self.enemy_basket_color].exists, self.baskets[self.basket_to_drive_to])
-                
+                print("basket does not exist, basket distances are", self.enemy_basket_max_distance, self.basket_max_distance,
+                      self.baskets[self.basket_color].exists, self.baskets[self.enemy_basket_color].exists, self.baskets[self.basket_to_drive_to])
+
         # TODO - maybe check lines and turn 45 degrees when hitting a line
-        
-        if self.search_substate != SearchState.DriveToSearch:                  
+
+        if self.search_substate != SearchState.DriveToSearch:
             if self.baskets[self.basket_color].exists:
                 if self.baskets[self.basket_color].distance > self.enemy_basket_max_distance:
                     self.basket_max_distance = self.baskets[self.basket_color].distance
             elif self.baskets[self.enemy_basket_color].exists:
                 if self.baskets[self.enemy_basket_color].distance > self.enemy_basket_max_distance:
                     self.enemy_basket_max_distance = self.baskets[self.enemy_basket_color].distance
-            
-            
 
         if self.search_substate == SearchState.Left:
             print("--Searching-- Moving LEFT to look for ball")
@@ -218,10 +220,21 @@ class Robot:
         elif self.search_substate == SearchState.Right:
             print("--Searching-- Moving RIGHT to look for ball")
             self.robot.move(0, 0, -self.search_speed, 0)
+
+        # TODO - actually make use of this, add the variables used and improve it, this is just a proof of concept here
+        elif self.search_substate == SearchState.Wait:
+            if time() > self.wait_end:
+                self.search_substate = SearchState.Left  # or right
+                self.search_end = time() + self.search_time
+            else:
+                self.robot.stop()
+
         elif self.search_substate == SearchState.DriveToSearch:
             if not self.search_min_basket_dist > self.baskets[self.basket_to_drive_to].distance:
-                rot_delta = self.middle_point - self.baskets[self.basket_to_drive_to].x
-                y_delta = self.min_distance - self.baskets[self.basket_to_drive_to].distance
+                rot_delta = self.middle_point - \
+                    self.baskets[self.basket_to_drive_to].x
+                y_delta = self.min_distance - \
+                    self.baskets[self.basket_to_drive_to].distance
 
                 y_speed = -1 * y_delta * 0.0006
                 rot_speed = -1 * rot_delta * 0.003
@@ -303,7 +316,8 @@ class Robot:
         print(f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
 
         if self.baskets[self.basket_color].exists:
-            basket_delta = self.baskets[self.basket_color].x - self.middle_point
+            basket_delta = self.baskets[self.basket_color].x - \
+                self.middle_point
 
             print(f"--Orbiting-- Basket delta {basket_delta}")
 
@@ -342,19 +356,51 @@ class Robot:
                   self.baskets[self.basket_color].distance, "speed:", self.thrower_speed)
             self.robot.move(0, self.throw_move_speed, 0, self.thrower_speed)
         elif self.thrower_substate == ThrowerState.MidThrow:
-            #print("--BallThrow-- Throwing ball, basket distance:",
-            #      self.baskets[self.basket_color].distance, "speed:", self.thrower_speed)
-            #self.robot.move(0, self.throw_move_speed, 0, self.thrower_speed)
             rot_delta = self.middle_point - self.baskets[self.basket_color].x
             rot_speed = -1 * rot_delta * 0.003
             rot_sign = -1 if rot_speed >= 0 else 1
             rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
-            self.robot.move(0, self.throw_move_speed, rot_speed, self.thrower_speed)
+            self.robot.move(0, self.throw_move_speed,
+                            rot_speed, self.thrower_speed)
         elif self.thrower_substate == ThrowerState.EndThrow:
             print("--BallThrow-- Finishing throw.")
             self.back_to_search_state()
             self.thrower_substate = ThrowerState.Off
             self.thrower_speed = 0
+
+    def parse_referee_cmd(self):
+        """Function for parsing referee commands"""
+        cmd = self.referee.get_cmd()
+        if cmd == None:
+            return
+
+        if self.name in cmd["targets"]:
+            robot_index = cmd["targets"].index(self.name)
+            if robot_index > 1:
+                return  # this should also never happen
+        else:
+            robot_index = None
+            return  # we filter it in referee already, so this shouldnt happen, but better safe than sorry
+
+        if cmd["signal"] == "start":
+            basket_str = cmd["baskets"][robot_index]
+            if basket_str == "blue":
+                self.basket_color = Color.BLUE
+            elif basket_str == "magenta":
+                self.basket_color = Color.MAGENTA
+            else:
+                raise ValueError("Unknown basket colour:", basket_str)
+
+            self.enemy_basket_color = Color(
+                2) if self.basket_color == Color(3) else Color(3)
+            self.back_to_search_state()
+            print("STARTING ROBOT, basket:", self.basket_color)
+
+        elif cmd["signal"] == "stop":
+            print("STOPPING ROBOT")
+            self.current_state = State.Stopped
+        else:
+            raise ValueError("Unknown signal:", cmd["signal"])
 
     def stop_state(self):
         """State for stopping."""
@@ -363,11 +409,12 @@ class Robot:
     def main_loop(self):
         try:
             while True:
+                self.parse_referee_cmd()
                 self.get_image_data()
 
                 if self.current_state == State.RemoteControl:
                     continue
-                
+
                 elif self.current_state == State.Stopped:
                     self.stop_state()
 
@@ -382,7 +429,6 @@ class Robot:
 
                 elif self.current_state == State.BallThrow:
                     self.ball_throw_state()
-                    
 
         except KeyboardInterrupt:
             print("Closing....")
@@ -392,7 +438,7 @@ class Robot:
             self.controller.stop()
             cv2.destroyAllWindows()
             self.processor.stop()
-            self.referee.stop()
+            self.referee.close()
 
 
 if __name__ == "__main__":
@@ -413,7 +459,7 @@ if __name__ == "__main__":
     conf_controller_analog_deadzone = 400
     conf_referee_ip = "ws://192.168.3.69:8222"
     conf_name = "placeholder"
-    conf_search_timeout = 3 # TODO - adjust
-    conf_search_min_basket_dist = 1200 # TODO - adjust
+    conf_search_timeout = 3  # TODO - adjust
+    conf_search_min_basket_dist = 1200  # TODO - adjust
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_time,
                   conf_min_distance, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed, conf_referee_ip, conf_name, conf_search_timeout, conf_search_min_basket_dist)

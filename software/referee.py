@@ -1,87 +1,75 @@
-import asyncio
-from threading import Thread
-import websockets
 import json
-from states import State
-from Color import Color
-from time import time
+import time
+import queue
+import multiprocessing as mp
+import websocket as wsc
 
-class RefereeBackend:
-    """Class for getting messages from referee server"""
-    running = True
-    def __init__(self, robot_data): # TODO - maybe figure out a cleaner and more robust way, but this does technically work
-        self.robot_data = robot_data
-        print("the monitor")
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(self.monitor()) 
-        #loop.close()
-        
-    # TODO - implement actual states for all the stuff
-    async def monitor(self):
-        while self.running:
-            print("Connecting...")
-            try:
-                async with websockets.connect(self.robot_data.referee_ip) as websocket:
-                    print("Connected to server!")
-                    while self.running:
-                        data = json.loads(await websocket.recv())
-                        if self.robot_data.name in data["targets"]:
-                            robot_index = data["targets"].index(self.robot_data.name)
-                            print("our robot found, index:", robot_index)
-                        else:
-                            robot_index = None
-                            continue # don't do anything if our robot is not on list
 
-                        if data["signal"] == "start":
-                            basket_str = data["baskets"][robot_index]
-                            if basket_str == "blue":
-                                basket = Color.BLUE
-                            elif basket_str == "magenta":
-                                basket = Color.MAGENTA
-                            else:
-                                raise ValueError("Unknown basket colour:", basket_str)
-                            self.robot_data.basket_color = basket
-                            self.robot_data.enemy_basket_color = Color(2) if self.robot_data.basket_color == Color(3) else Color(3)
-                            self.robot_data.back_to_search_state()
-                            print("STARTING ROBOT, basket:", basket)
-
-                        elif data["signal"] == "stop":
-                            print("STOPPING ROBOT")
-                            self.robot_data.current_state = State.Stopped
-                        else:
-                            raise ValueError("Unknown signal:", data["signal"])
-
-            except(websockets.exceptions.ConnectionClosedError):
-                print("Server closed. Attempting to reconnect...")
-                continue
-            except(ConnectionRefusedError):
-                print("Connection refused, trying again..")
-                continue
-            except(KeyboardInterrupt):
-                print("Closing websocket...")
-                break
-            
-    def stop(self):
-        """Stops listening for referee commands."""
-        self.running = False
-        
 class Referee:
-    """Class for enabling the use of a referee server to start and stop the robot."""
+    """Class for getting data from the referee server and making it accessible for the robot."""
 
     def __init__(self, robot_data):
-        self.robot_data = robot_data
-        self.referee = None
+        self.ip = robot_data.referee_ip
+        self.name = robot_data.name
+        self.queue = mp.Queue()
 
     def start(self):
-        """Starts referee listening in a separate thread"""
-        self.thread = Thread(target=self.listen, args=()).start()
+        """Start the referee process"""
+        self.running = True
+        self.ws = wsc.WebSocket()
+        self.connect()
+        self.process = mp.Process(target=self.listen, args=())
+        self.process.start()
+        print("--REFEREE-- Started process!")
+
+    def close(self):
+        """Close the referee process"""
+        self.running = False
+        self.process.join()
+        self.process.close()
+        self.ws.close()
+        print("--REFEREE-- Closed process!")
+
+    def connect(self):
+        """Connect to the referee server"""
+        for _ in range(15):  # Attempt reconnecting for ~15 seconds before giving up
+            try:
+                self.ws.connect(self.ip)
+                return True
+            except ConnectionRefusedError:
+                print("--REFEREE-- Retrying...")
+                time.sleep(1)
+                continue
+        return False
 
     def listen(self):
-        """Listen for referee commands"""
-        print("LISTENING")
-        self.referee = RefereeBackend(robot_data=self.robot_data)
+        """Listen and add referee commands to queue"""
+        print("--REFEREE-- Listening to commands.")
+        while self.running:
+            try:
+                msg = self.ws.recv()
+                try:
+                    msg = json.loads(msg)
+                    if self.name in msg["targets"]:
+                        self.queue.put(msg)
+                except json.JSONDecodeError:
+                    print("--REFEREE-- Received non-json message!")
+                    continue
+            except wsc.WebSocketConnectionClosedException:
+                print("--REFEREE-- Connection lost, reconnecting...")
+                if self.connect():
+                    print("--REFEREE-- Reconnected.")
+                    continue
+                else:
+                    print("--REFEREE-- Failed to reconnect.")
+                    self.close()
+            except KeyboardInterrupt:
+                print("--REFEREE-- Closing...")
+                break
 
-    def stop(self): # TODO - this is broken
-        """Stops the referee server."""
-        self.referee.stop()
+    def get_cmd(self):
+        """Attempt to get a command from queue"""
+        try:
+            return self.queue.get_nowait()
+        except queue.Empty:
+            return None
