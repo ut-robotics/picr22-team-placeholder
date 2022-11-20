@@ -198,15 +198,22 @@ class RobotDS4Backend(Controller):
             if (self.robot_data.ball == None) or (self.robot_data.baskets[self.robot_data.basket_color].distance == -1):
                 return
             print("Saved speeds")
+            # FIXME - the code below depends on camera, so it wont work if we're not in data collection
             if self.robot_data.debug_data_collection:
                 self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.baskets[self.robot_data.basket_color].distance},{self.robot_data.ball.distance}\n"
-            for _ in range(3):
+            while time() < self.throw_end_time:
                 print("--BallThrowRemote-- Throwing ball, basket distance:",
                       self.robot_data.baskets[self.robot_data.basket_color].distance)
+                # self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
+                #                           0, self.robot_data.manual_thrower_speed)
+                rot_delta = self.robot_data.middle_point - \
+                    self.robot_data.baskets[self.robot_data.basket_color].x
+                rot_speed = -1 * rot_delta * 0.003
+                rot_sign = -1 if rot_speed >= 0 else 1
+                rot_speed = min(
+                    abs(rot_speed), self.robot_data.max_speed) * rot_sign
                 self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
-                                           0, self.robot_data.manual_thrower_speed)
-                # this is blocking, but we're just gathering data anyways, so it's not much of an issue
-                time.sleep(0.1)
+                                           rot_speed, self.manual_thrower_speed)
 
     def on_R1_press(self):
         """Adjust thrower speed based on basket distance"""
@@ -225,8 +232,10 @@ class RobotDS4Backend(Controller):
     def on_L1_press(self):
         """Change currently targeted basket"""
         if self.robot_data.current_state == State.RemoteControl:
-            self.robot_data.basket_color = Color(2) if self.robot_data.basket_color == Color(3) else Color(3)
-            self.robot_data.enemy_basket_color = Color(2) if self.robot_data.basket_color == Color(3) else Color(3)
+            self.robot_data.basket_color = Color(
+                2) if self.robot_data.basket_color == Color(3) else Color(3)
+            self.robot_data.enemy_basket_color = Color(
+                2) if self.robot_data.basket_color == Color(3) else Color(3)
             print("Current basket is now", self.robot_data.basket_color)
 
     # MISC
@@ -239,7 +248,7 @@ class RobotDS4Backend(Controller):
             self.robot_data.current_state = State.RemoteControl
         else:
             print("Remote control: OFF")
-            
+
             self.robot_data.back_to_search_state()
 
     # quit
