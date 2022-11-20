@@ -62,3 +62,4 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 17.11.2022 - *Timo:* Testing movement, adding in more screws. (2h)
 * 18.11.2022 - *Timo:* Improved search function and ball detection. (3h)
 * 19.11.2022 - *Timo:* Code cleanup and switching referee code to multiprocessing. (2h)
+* 20.11.2022 - *Timo:* More code cleanup and fixes. (1h)
