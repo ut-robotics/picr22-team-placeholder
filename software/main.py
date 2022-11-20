@@ -35,7 +35,9 @@ class Robot:
     baskets = {Color.BLUE: None, Color.MAGENTA: None}
     basket_max_distance = 0
     enemy_basket_max_distance = 0
-    search_end_time = 0
+    search_timeout_time = 0
+    search_wait_end = 0
+    search_look_end = 0
     last_seen_ball = None
     basket_to_drive_to = None
 
@@ -58,7 +60,9 @@ class Robot:
                  referee_ip: str,
                  name: str,
                  search_timeout: int,
-                 search_min_basket_dist: int):
+                 search_min_basket_dist: int,
+                 search_wait_time: int,
+                 search_look_time: int):
         self.debug = debug
         self.debug_data_collection = debug_data_collection
         if use_realsense:
@@ -91,6 +95,9 @@ class Robot:
         self.max_orbit_time = max_orbit_time
 
         self.search_timeout = search_timeout
+        self.search_look_time = search_look_time
+        self.search_wait_time = search_wait_time
+
         self.search_min_basket_dist = search_min_basket_dist
         self.controller = RobotDS4(robot_data=self)
         self.controller.start()
@@ -122,6 +129,15 @@ class Robot:
         k = cv2.waitKey(1) & 0xff
         if k == ord('q'):
             raise KeyboardInterrupt
+
+    def find_optimal_search_direction(self):
+        if self.last_seen_ball != None:
+            if self.last_seen_ball.x >= self.middle_point:
+                self.search_substate = SearchState.Right
+            else:
+                self.search_substate = SearchState.Left
+        else:
+            self.search_substate = SearchState.Left
 
     def get_image_data(self):
         """Main non-state part of the loop"""
@@ -171,6 +187,18 @@ class Robot:
         self.baskets[Color.MAGENTA] = self.processed_data.basket_m
         self.baskets[Color.BLUE] = self.processed_data.basket_b
 
+        # TODO - verify if this code is good, I implemented it to not go for balls that are obviously out of bounds. Maybe make it ignore balls very close to basket too, we'll never get those in
+        for basket in self.baskets:
+            if self.baskets[basket].exists:
+                if self.baskets[basket].distance <= self.ball.distance:
+                    print("--WARNING-- Ball is out of bounds")
+                    if self.ball_count > 1:
+                        for potential_ball in self.processed_data.balls:
+                            if potential_ball.distance < self.baskets[basket].distance:
+                                self.ball = potential_ball
+                                self.last_seen_ball = self.ball
+                                break
+
     def searching_state(self):
         """State for searching for the ball"""
         if self.ball_count != 0:  # FIXME - robot seems to sometimes find a ball but lose it immediately after, maybe Wait state will help?
@@ -181,16 +209,11 @@ class Robot:
 
         if self.search_substate == SearchState.StartSearch:
             print("StartSearch!!!")
-            if self.last_seen_ball != None:
-                if self.last_seen_ball.x >= self.middle_point:
-                    self.search_substate = SearchState.Right
-                else:
-                    self.search_substate = SearchState.Left
-            else:
-                self.search_substate = SearchState.Left
-            self.search_end_time = time() + self.search_timeout
+            self.find_optimal_search_direction()
+            self.search_look_end = time() + self.search_look_time
+            self.search_timeout_time = time() + self.search_timeout
 
-        elif (time() > self.search_end_time) and (self.search_substate != SearchState.DriveToSearch):
+        elif (time() > self.search_timeout_time) and (self.search_substate != SearchState.DriveToSearch):
             print("--Searching-- Searched for too long, will drive to basket soon.")
             if self.basket_to_drive_to == None:
                 if self.enemy_basket_max_distance >= self.basket_max_distance:
@@ -204,6 +227,9 @@ class Robot:
                 print("basket does not exist, basket distances are", self.enemy_basket_max_distance, self.basket_max_distance,
                       self.baskets[self.basket_color].exists, self.baskets[self.enemy_basket_color].exists, self.baskets[self.basket_to_drive_to])
 
+        if time() > self.search_look_end:
+            self.search_substate = SearchState.Wait
+
         # TODO - maybe check lines and turn 45 degrees when hitting a line
 
         if self.search_substate != SearchState.DriveToSearch:
@@ -214,21 +240,19 @@ class Robot:
                 if self.baskets[self.enemy_basket_color].distance > self.enemy_basket_max_distance:
                     self.enemy_basket_max_distance = self.baskets[self.enemy_basket_color].distance
 
-        if self.search_substate == SearchState.Left:
+        # TODO - verify if Wait state works and if it makes sense to use, if not, just undo all wait related code
+        if self.search_substate == SearchState.Wait:
+            if time() > self.search_wait_end:
+                self.find_optimal_search_direction()
+                self.search_look_end = time() + self.search_look_time
+            else:
+                self.robot.stop()
+        elif self.search_substate == SearchState.Left:
             print("--Searching-- Moving LEFT to look for ball")
             self.robot.move(0, 0, self.search_speed, 0)
         elif self.search_substate == SearchState.Right:
             print("--Searching-- Moving RIGHT to look for ball")
             self.robot.move(0, 0, -self.search_speed, 0)
-
-        # TODO - actually make use of this, add the variables used and improve it, this is just a proof of concept here
-        elif self.search_substate == SearchState.Wait:
-            if time() > self.wait_end:
-                self.search_substate = SearchState.Left  # or right
-                self.search_end = time() + self.search_time
-            else:
-                self.robot.stop()
-
         elif self.search_substate == SearchState.DriveToSearch:
             if not self.search_min_basket_dist > self.baskets[self.basket_to_drive_to].distance:
                 rot_delta = self.middle_point - \
@@ -293,7 +317,6 @@ class Robot:
             self.back_to_search_state()
             return
 
-        # TODO - put this into its own function, we reuse it a lot
         if self.no_balls_frames >= self.max_ball_miss:  # lost the ball
             print(
                 f"--Orbiting-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
@@ -461,5 +484,7 @@ if __name__ == "__main__":
     conf_name = "placeholder"
     conf_search_timeout = 3  # TODO - adjust
     conf_search_min_basket_dist = 1200  # TODO - adjust
+    conf_search_look_time = 0.2  # TODO - adjust
+    conf_search_wait_time = 0.3  # TODO - adjust
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_time,
                   conf_min_distance, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed, conf_referee_ip, conf_name, conf_search_timeout, conf_search_min_basket_dist)
