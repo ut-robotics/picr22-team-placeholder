@@ -186,18 +186,7 @@ class Robot:
         # TODO - implement code to prevent it from driving into baskets and over lines
         self.baskets[Color.MAGENTA] = self.processed_data.basket_m
         self.baskets[Color.BLUE] = self.processed_data.basket_b
-
-        # TODO - verify if this code is good, I implemented it to not go for balls that are obviously out of bounds. Maybe make it ignore balls very close to basket too, we'll never get those in
-        for basket in self.baskets:
-            if self.baskets[basket].exists:
-                if self.baskets[basket].distance <= self.ball.distance:
-                    print("--WARNING-- Ball is out of bounds")
-                    if self.ball_count > 1:
-                        for potential_ball in self.processed_data.balls:
-                            if potential_ball.distance < self.baskets[basket].distance:
-                                self.ball = potential_ball
-                                self.last_seen_ball = self.ball
-                                break
+             
 
     def searching_state(self):
         """State for searching for the ball"""

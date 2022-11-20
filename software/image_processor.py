@@ -37,6 +37,8 @@ class ProcessedResults():
         self.balls = balls
         self.basket_b = basket_b
         self.basket_m = basket_m
+        #self.lines_b = lines_b
+        #self.lines_w = lines_w
         self.color_frame = color_frame
         self.depth_frame = depth_frame
         self.fragmented = fragmented
@@ -64,6 +66,10 @@ class ImageProcessor():
             (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
         self.t_basket_m = np.zeros(
             (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
+        # self.t_lines_b = np.zeros(
+        #    (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
+        # self.t_lines_w = np.zeros(
+        #    (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
 
         self.debug = debug
         self.debug_frame = np.zeros(
@@ -78,18 +84,23 @@ class ImageProcessor():
     def stop(self):
         self.camera.close()
 
-    def analyze_balls(self, t_balls, depth, fragments) -> list:
+    # TODO - implement line analyze logic
+
+    def analyze_lines(self, t_lines, image, fragments):
+        pass
+
+    def analyze_balls(self, t_balls, depth, fragments, basket) -> list:
+        kernel = np.ones((3, 3), np.uint8)
+        t_balls = cv2.dilate(t_balls, kernel)
+        t_balls = cv2.erode(t_balls, kernel)
         contours, hierarchy = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        krnl = np.ones((3,3), np.uint8)
-        t_balls = cv2.dilate(t_balls, krnl)
-        t_balls = cv2.erode(t_balls, krnl)
         balls = []
 
         for contour in contours:
 
             # ball filtering logic goes here. Example includes filtering by size and an example how to get pixels from
-            # the bottom center of the fram to the ball
+            # the bottom center of the frame to the ball
 
             size = cv2.contourArea(contour)
 
@@ -110,6 +121,11 @@ class ImageProcessor():
             else:
                 obj_dst = np.average(depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
 
+            # don't add if ball is further than the basket
+            if basket != None:
+                if basket.distance <= obj_dst:
+                    continue
+
             if self.debug:
                 self.debug_frame[ys, xs] = [0, 0, 0]
                 cv2.circle(self.debug_frame, (obj_x, obj_y),
@@ -123,10 +139,10 @@ class ImageProcessor():
         return balls
 
     def analyze_baskets(self, t_basket, depth,  debug_color=(0, 255, 255)) -> list:
+        kernel = np.ones((3, 3), np.uint8)
+        t_basket = cv2.morphologyEx(t_basket, cv2.MORPH_CLOSE, kernel)
         contours, hierarchy = cv2.findContours(
             t_basket, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        krnl = np.ones((3,3), np.uint8)
-        t_basket = cv2.morphologyEx(t_basket, cv2.MORPH_CLOSE, krnl)
         baskets = []
         for contour in contours:
 
@@ -176,11 +192,23 @@ class ImageProcessor():
         if self.debug:
             self.debug_frame = np.copy(color_frame)
 
-        balls = self.analyze_balls(self.t_balls, depth_frame, self.fragmented)
         basket_b = self.analyze_baskets(
             self.t_basket_b, depth_frame, debug_color=c.Color.BLUE.color.tolist())
         basket_m = self.analyze_baskets(
             self.t_basket_m, depth_frame, debug_color=c.Color.MAGENTA.color.tolist())
+        # lines_b = self.analyze_lines(
+        #    self.t_lines_b, self.fragmented, depth_frame, debug_color=c.Color.BLACK.color.tolist())
+        # lines_w = self.analyze_lines(
+        #    self.t_lines_b, self.fragmented, depth_frame, debug_color=c.Color.WHITE.color.tolist())
+        if basket_b.exists and basket_m.exists:
+            basket_to_check = basket_b if basket_b.distance > basket_m.distance else basket_m
+        elif True in [basket_b.exists, basket_m.exists]:
+            basket_to_check = basket_b if basket_b.exists else basket_m
+        else:
+            basket_to_check = None
+
+        balls = self.analyze_balls(
+            self.t_balls, depth_frame, self.fragmented, basket_to_check)
 
         return ProcessedResults(balls=balls,
                                 basket_b=basket_b,
