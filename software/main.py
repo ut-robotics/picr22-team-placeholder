@@ -174,6 +174,7 @@ class Robot:
     def searching_state(self):
         """State for searching for the ball"""
         if self.ball_count != 0:  # FIXME - robot seems to sometimes find a ball but lose it immediately after
+            print("--SEARCHING-- BALL FOUND, MOVING TO DRIVE2BALL")
             self.robot.stop()
             self.current_state = State.DriveToBall
             self.search_substate = SearchState.Off
@@ -239,7 +240,8 @@ class Robot:
                 print(
                     f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}, y_speed {y_speed}, rot_speed {rot_speed}")
                 self.robot.move(0, y_speed, rot_speed)
-            elif self.basket_too_close_frames >= 5:
+            elif self.basket_too_close_frames >= 10:
+                print(f"--SEARCHING-- Basket too close, distance: {self.baskets[self.basket_to_drive_to].distance}, back to rotating!") # FIXME- robot thinks its driving into the basket when nowhere close
                 self.basket_to_drive_to = None
                 self.basket_max_distance = 0
                 self.enemy_basket_max_distance = 0
