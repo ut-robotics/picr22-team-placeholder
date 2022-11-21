@@ -4,7 +4,7 @@ from pyPS4Controller.controller import Controller
 from enum import Enum
 from states import State
 from pathlib import Path
-import time
+from time import time
 from Color import Color
 
 
@@ -201,7 +201,8 @@ class RobotDS4Backend(Controller):
             # FIXME - the code below depends on camera, so it wont work if we're not in data collection
             if self.robot_data.debug_data_collection:
                 self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.baskets[self.robot_data.basket_color].distance},{self.robot_data.ball.distance}\n"
-            while time() < self.throw_end_time:
+            self.robot_data.throw_end_time = time() + self.robot_data.throw_time
+            while time() < self.robot_data.throw_end_time:
                 print("--BallThrowRemote-- Throwing ball, basket distance:",
                       self.robot_data.baskets[self.robot_data.basket_color].distance)
                 # self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
@@ -213,7 +214,7 @@ class RobotDS4Backend(Controller):
                 rot_speed = min(
                     abs(rot_speed), self.robot_data.max_speed) * rot_sign
                 self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
-                                           rot_speed, self.manual_thrower_speed)
+                                           rot_speed, self.robot_data.manual_thrower_speed)
 
     def on_R1_press(self):
         """Adjust thrower speed based on basket distance"""
