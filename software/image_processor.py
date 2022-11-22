@@ -38,8 +38,6 @@ class ProcessedResults():
         self.balls = balls
         self.basket_b = basket_b
         self.basket_m = basket_m
-        #self.lines_b = lines_b
-        #self.lines_w = lines_w
         self.color_frame = color_frame
         self.depth_frame = depth_frame
         self.fragmented = fragmented
@@ -67,10 +65,6 @@ class ImageProcessor():
             (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
         self.t_basket_m = np.zeros(
             (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
-        # self.t_lines_b = np.zeros(
-        #    (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
-        # self.t_lines_w = np.zeros(
-        #    (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
 
         self.debug = debug
         self.debug_frame = np.zeros(
@@ -86,7 +80,7 @@ class ImageProcessor():
         self.camera.close()
 
     # TODO - implement line analyze logic
-    # NOTE - this is unfinished (and unused) currently
+    # NOTE - this is unfinished (and unused) currently, mostly copy pasted from opencv2 documentation
     def analyze_lines(self, image, fragments):
         image = image[0:360]  # so our robot doesn't get included on the frame
 
@@ -230,10 +224,6 @@ class ImageProcessor():
             self.t_basket_b, depth_frame, debug_color=c.Color.BLUE.color.tolist())
         basket_m = self.analyze_baskets(
             self.t_basket_m, depth_frame, debug_color=c.Color.MAGENTA.color.tolist())
-        # lines_b = self.analyze_lines(
-        #    self.t_lines_b, self.fragmented, depth_frame, debug_color=c.Color.BLACK.color.tolist())
-        # lines_w = self.analyze_lines(
-        #    self.t_lines_b, self.fragmented, depth_frame, debug_color=c.Color.WHITE.color.tolist())
         if basket_b.exists and basket_m.exists:
             basket_to_check = basket_b if basket_b.distance > basket_m.distance else basket_m
         elif True in [basket_b.exists, basket_m.exists]:

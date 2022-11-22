@@ -12,13 +12,13 @@ from referee import Referee
 
 class Robot:
     """The main class for %placeholder%"""
-    current_state = State.Stopped  # TODO - change back to Stopped
+    current_state = State.Stopped
     thrower_substate = ThrowerState.Off
     thrower_speed = 0
     search_substate = SearchState.Off
     escape_substate = EscapeState.Off
     basket_too_close_frames = 0
-    opposite_basket = None  # for escapestate, we'll go to this basket
+    opposite_basket = None  # for escapestate, we'll go towards this basket
 
     # FPS counter
     start = time()
@@ -170,14 +170,13 @@ class Robot:
         elif self.no_balls_frames >= self.max_ball_miss:  # use old ball sometimes
             self.ball = None
 
-        # TODO - implement code to prevent it from driving into baskets and over lines
+        # TODO - implement code to prevent our robot from driving over lines
         self.baskets[Color.MAGENTA] = self.processed_data.basket_m
         self.baskets[Color.BLUE] = self.processed_data.basket_b
 
         if self.current_state not in [State.Stopped, State.RemoteControl, State.Debug]:
             if self.search_substate == SearchState.DriveToSearch:
                 return
-            print(self.current_state)
             for basket in self.baskets:
                 if self.baskets[basket].exists:
                     if self.baskets[basket].distance < 400:
@@ -192,7 +191,7 @@ class Robot:
 
     def searching_state(self):
         """State for searching for the ball"""
-        if self.ball_count != 0:  # FIXME - robot seems to sometimes find a ball but lose it immediately after
+        if self.ball_count != 0: 
             print("--SEARCHING-- BALL FOUND, MOVING TO DRIVE2BALL")
             self.robot.stop()
             self.current_state = State.DriveToBall
@@ -261,7 +260,6 @@ class Robot:
                     f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}, y_speed {y_speed}, rot_speed {rot_speed}")
                 self.robot.move(0, y_speed, rot_speed)
             elif self.basket_too_close_frames >= 60:
-                # FIXME- robot thinks its driving into the basket when nowhere close
                 print(
                     f"--SEARCHING-- Basket too close, distance: {self.baskets[self.basket_to_drive_to].distance}, back to rotating!")
                 self.basket_to_drive_to = None
@@ -423,6 +421,7 @@ class Robot:
         self.robot.move(0, 0, 0, 0)
 
     def escape_from_basket_state(self):
+        """State for escaping in case we get too close to the basket"""
         if self.escape_substate == EscapeState.StartEscape:
             self.escape_substate = EscapeState.Reverse
             self.escape_state_end = time() + 0.7  # dont reverse for too long
@@ -455,9 +454,6 @@ class Robot:
             else:
                 self.robot.move(0, self.max_speed*0.75, 0)
 
-    def debug_state(self):
-        pass
-
     def main_loop(self):
         try:
             while True:
@@ -485,13 +481,10 @@ class Robot:
                 elif self.current_state == State.EscapeFromBasket:
                     self.escape_from_basket_state()
 
-                elif self.current_state == State.Debug:
-                    self.debug_state()
-
         except KeyboardInterrupt:
             print("Closing....")
         except Exception as e:
-            print("error happened:", e)
+            print("Error happened:", e)
         finally:
             self.robot.close()
             self.controller.stop()
@@ -501,7 +494,7 @@ class Robot:
 
 
 if __name__ == "__main__":
-    conf_debug = True
+    conf_debug = False
     conf_debug_data_collection = True
     conf_camera_deadzone = 5
     conf_max_speed = 1

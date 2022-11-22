@@ -3,7 +3,17 @@ from numba import jit
 
 @jit(nopython=True)
 def find_black_near_ball(fragments, object_coords, frag_size, look_range):
-    """Returns how many black frames were found near the ball"""
+    """Returns how many black frames were found near the ball
+
+    Args:
+        fragments (np.array): fragments
+        object_coords (tuple): coordinates for object, (x, y, w, h)
+        frag_size (tuple): fragments size (y, x)
+        look_range (int): how much to extend looking area compared to object size
+
+    Returns:
+        int: black_frame_count
+    """
     x1 = object_coords[0] - look_range
     y1 = object_coords[1] - look_range
     x2 = object_coords[0] + object_coords[2] + look_range
