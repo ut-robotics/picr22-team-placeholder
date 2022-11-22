@@ -5,18 +5,20 @@ import cv2
 from time import time
 from ds4_control import RobotDS4
 from Color import Color
-from states import State, ThrowerState, SearchState
+from states import State, ThrowerState, SearchState, EscapeState
 from helper import calculate_throw_speed
 from referee import Referee
 
 
 class Robot:
     """The main class for %placeholder%"""
-    current_state = State.Stopped
+    current_state = State.Stopped  # TODO - change back to Stopped
     thrower_substate = ThrowerState.Off
     thrower_speed = 0
     search_substate = SearchState.Off
+    escape_substate = EscapeState.Off
     basket_too_close_frames = 0
+    opposite_basket = None  # for escapestate, we'll go to this basket
 
     # FPS counter
     start = time()
@@ -38,6 +40,7 @@ class Robot:
     search_end_time = 0
     last_seen_ball = None
     basket_to_drive_to = None
+    escape_state_end = 0
 
     def __init__(self,
                  debug: bool,
@@ -171,6 +174,22 @@ class Robot:
         self.baskets[Color.MAGENTA] = self.processed_data.basket_m
         self.baskets[Color.BLUE] = self.processed_data.basket_b
 
+        if self.current_state not in [State.Stopped, State.RemoteControl, State.Debug]:
+            if self.search_substate == SearchState.DriveToSearch:
+                return
+            print(self.current_state)
+            for basket in self.baskets:
+                if self.baskets[basket].exists:
+                    if self.baskets[basket].distance < 400:
+                        if self.basket_too_close_frames > 60:
+                            self.opposite_basket = Color.MAGENTA if basket == Color.BLUE else Color.BLUE
+                            self.current_state = State.EscapeFromBasket
+                            self.escape_substate = EscapeState.StartEscape
+                        else:
+                            self.basket_too_close_frames += 1
+                    else:
+                        self.basket_too_close_frames = 0
+
     def searching_state(self):
         """State for searching for the ball"""
         if self.ball_count != 0:  # FIXME - robot seems to sometimes find a ball but lose it immediately after
@@ -224,6 +243,7 @@ class Robot:
 
         elif self.search_substate == SearchState.DriveToSearch:
             if not self.search_min_basket_dist > self.baskets[self.basket_to_drive_to].distance:
+                self.basket_too_close_frames = 0
                 rot_delta = self.middle_point - \
                     self.baskets[self.basket_to_drive_to].x
                 y_delta = self.min_distance - \
@@ -240,8 +260,10 @@ class Robot:
                 print(
                     f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}, y_speed {y_speed}, rot_speed {rot_speed}")
                 self.robot.move(0, y_speed, rot_speed)
-            elif self.basket_too_close_frames >= 10:
-                print(f"--SEARCHING-- Basket too close, distance: {self.baskets[self.basket_to_drive_to].distance}, back to rotating!") # FIXME- robot thinks its driving into the basket when nowhere close
+            elif self.basket_too_close_frames >= 60:
+                # FIXME- robot thinks its driving into the basket when nowhere close
+                print(
+                    f"--SEARCHING-- Basket too close, distance: {self.baskets[self.basket_to_drive_to].distance}, back to rotating!")
                 self.basket_to_drive_to = None
                 self.basket_max_distance = 0
                 self.enemy_basket_max_distance = 0
@@ -400,6 +422,42 @@ class Robot:
         """State for stopping."""
         self.robot.move(0, 0, 0, 0)
 
+    def escape_from_basket_state(self):
+        if self.escape_substate == EscapeState.StartEscape:
+            self.escape_substate = EscapeState.Reverse
+            self.escape_state_end = time() + 0.7  # dont reverse for too long
+        elif self.escape_substate == EscapeState.Reverse:
+            print("--ESCAPE-- Reversing")
+            if time() > self.escape_state_end:
+                self.escape_substate = EscapeState.TurningFromBasket
+                # rotate for 2 seconds, or until opposite basket is found
+                self.escape_state_end = time() + 2
+            else:
+                self.robot.move(0, -self.max_speed * 0.75, 0)
+        elif self.escape_substate == EscapeState.TurningFromBasket:
+            print("--ESCAPE-- Turning from basket")
+            if (self.baskets[self.opposite_basket].exists):
+                self.robot.stop()
+                self.escape_substate = EscapeState.DrivingAway
+                self.escape_state_end = time() + 1
+            elif time() > self.escape_state_end:
+                self.escape_substate = EscapeState.Off
+                self.escape_state_end = 0
+                self.back_to_search_state()  # go back to searching and hope for the best
+            else:
+                self.robot.move(0, 0, -self.max_speed)
+        elif self.escape_substate == EscapeState.DrivingAway:
+            print("--ESCAPE-- Driving away")
+            if time() > self.escape_state_end:
+                self.escape_substate = EscapeState.Off
+                self.escape_state_end = 0
+                self.back_to_search_state()  # go back to searching and hope for the best
+            else:
+                self.robot.move(0, self.max_speed*0.75, 0)
+
+    def debug_state(self):
+        pass
+
     def main_loop(self):
         try:
             while True:
@@ -424,9 +482,16 @@ class Robot:
                 elif self.current_state == State.BallThrow:
                     self.ball_throw_state()
 
+                elif self.current_state == State.EscapeFromBasket:
+                    self.escape_from_basket_state()
+
+                elif self.current_state == State.Debug:
+                    self.debug_state()
+
         except KeyboardInterrupt:
             print("Closing....")
-
+        except Exception as e:
+            print("error happened:", e)
         finally:
             self.robot.close()
             self.controller.stop()
@@ -436,7 +501,7 @@ class Robot:
 
 
 if __name__ == "__main__":
-    conf_debug = False
+    conf_debug = True
     conf_debug_data_collection = True
     conf_camera_deadzone = 5
     conf_max_speed = 1

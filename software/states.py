@@ -8,7 +8,7 @@ class State(Enum):
     DriveToBall = 2
     Orbiting = 3
     BallThrow = 4
-    Wait = 5
+    EscapeFromBasket = 5
     RemoteControl = 98
     Debug = 99  # state for temporarily testing code
 
@@ -26,4 +26,11 @@ class SearchState(Enum):
     Left = 2
     Right = 3
     DriveToSearch = 4
-    Wait = 5
+
+
+class EscapeState(Enum):
+    Off = 0
+    StartEscape = 1
+    Reverse = 2
+    TurningFromBasket = 3
+    DrivingAway = 4

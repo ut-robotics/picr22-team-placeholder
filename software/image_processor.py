@@ -4,6 +4,7 @@ import _pickle as pickle
 import numpy as np
 import cv2
 import Color as c
+from helper_jit import find_black_near_ball
 from helper import get_colors_pkl_path
 
 
@@ -85,9 +86,37 @@ class ImageProcessor():
         self.camera.close()
 
     # TODO - implement line analyze logic
+    # NOTE - this is unfinished (and unused) currently
+    def analyze_lines(self, image, fragments):
+        image = image[0:360]  # so our robot doesn't get included on the frame
 
-    def analyze_lines(self, t_lines, image, fragments):
-        pass
+        x_size, y_size = np.shape(fragments)
+        black_fr = np.zeros((x_size, y_size))
+
+        black_fr[fragments == 6] = 1
+
+        detection_black = black_fr.astype(np.uint8) * 255
+        edges = cv2.Canny(detection_black, 50, 150)
+
+        rho = 1  # distance resolution in pixels of the Hough grid
+        theta = np.pi / 180  # angular resolution in radians of the Hough grid
+        # minimum number of votes (intersections in Hough grid cell)
+        threshold = 15
+        min_line_length = 50  # minimum number of pixels making up a line
+        max_line_gap = 20  # maximum gap in pixels between connectable line segments
+        line_image = np.copy(image) * 0  # creating a blank to draw lines on
+
+        # Run Hough on edge detected image
+        # Output "lines" is an array containing endpoints of detected line segments
+        lines = cv2.HoughLinesP(edges, rho, theta, threshold, np.array([]),
+                                min_line_length, max_line_gap)
+        for line in lines:
+            for x1, y1, x2, y2 in line:
+                cv2.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), 5)
+
+        lines_edges = cv2.addWeighted(image, 0.8, line_image, 1, 0)
+        cv2.imshow(
+            "Detected Lines (in red) - Probabilistic Line Transform", lines_edges)
 
     def analyze_balls(self, t_balls, depth, fragments, basket) -> list:
         kernel = np.ones((3, 3), np.uint8)
@@ -96,7 +125,7 @@ class ImageProcessor():
         contours, hierarchy = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         balls = []
-
+        frag_x, frag_y = np.shape(fragments)
         for contour in contours:
 
             # ball filtering logic goes here. Example includes filtering by size and an example how to get pixels from
@@ -108,6 +137,10 @@ class ImageProcessor():
                 continue
 
             x, y, w, h = cv2.boundingRect(contour)
+            black_count = find_black_near_ball(
+                fragments, (x, y, w, h), (frag_x, frag_y), 50)
+            if black_count > 180:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
+                continue
 
             ys = np.array(
                 np.arange(y + h, self.camera.rgb_height), dtype=np.uint16)
@@ -121,9 +154,9 @@ class ImageProcessor():
             else:
                 obj_dst = np.average(depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
 
-            # don't add if ball is further than the basket
+            # don't add if ball is further than the basket or too close to it
             if basket != None:
-                if basket.distance <= obj_dst:
+                if basket.distance - 300 <= obj_dst:
                     continue
 
             if self.debug:
@@ -144,6 +177,7 @@ class ImageProcessor():
         contours, hierarchy = cv2.findContours(
             t_basket, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         baskets = []
+
         for contour in contours:
 
             # basket filtering logic goes here. Example includes size filtering of the basket
@@ -191,7 +225,7 @@ class ImageProcessor():
 
         if self.debug:
             self.debug_frame = np.copy(color_frame)
-
+        #lines = self.analyze_lines(color_frame, self.fragmented)
         basket_b = self.analyze_baskets(
             self.t_basket_b, depth_frame, debug_color=c.Color.BLUE.color.tolist())
         basket_m = self.analyze_baskets(
