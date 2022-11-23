@@ -63,3 +63,6 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 18.11.2022 - *Timo:* Improved search function and ball detection. (3h)
 * 19.11.2022 - *Timo:* Code cleanup and switching referee code to multiprocessing. (2h)
 * 20.11.2022 - *Timo:* More code cleanup and fixes. (1h)
+* 21.11.2022 - *Timo:* Programming. (2h)
+* 22.11.2022 - *Timo:* More programming. (4h)
+* 23.11.2022 - *Timo:* Code cleanup, fixes, fixing mechanical problems, implementing logging. (7h)
