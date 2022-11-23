@@ -4,8 +4,7 @@ from pyPS4Controller.controller import Controller
 from enum import Enum
 from states import State
 from pathlib import Path
-from time import time
-from Color import Color
+from time import time, sleep
 
 
 class Axis(Enum):
@@ -16,6 +15,11 @@ class Axis(Enum):
     THROWER = 4
 
 
+class ThrowMode(Enum):
+    Assist = 0  # aim assist
+    Manual = 1
+
+
 class RobotDS4Backend(Controller):
     # speeds to use when we activate robot, these are changed when buttons are pressed
     # default is stopped, 0
@@ -24,6 +28,7 @@ class RobotDS4Backend(Controller):
     rot_speed = 0
     thrower_speed = 0
     thrower_active = False  # for toggling thrower
+    throw_mode = ThrowMode.Manual
 
     def __init__(self, robot_data, **kwargs):
         """Initializes RobotDS4Backend
@@ -198,22 +203,25 @@ class RobotDS4Backend(Controller):
                 # we can't get ball data if there's no ball and no point if robot can't find basket
                 if (self.robot_data.ball == None) or (self.robot_data.baskets[self.robot_data.basket_color].distance == -1):
                     return
-                print("Saved speeds")                
+                print("Saved speeds")
                 self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.baskets[self.robot_data.basket_color].distance},{self.robot_data.ball.distance}\n"
                 self.robot_data.throw_end_time = time() + self.robot_data.throw_time
                 while time() < self.robot_data.throw_end_time:
                     print("--BallThrowRemote-- Throwing ball, basket distance:",
-                        self.robot_data.baskets[self.robot_data.basket_color].distance)
-                    # self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
-                    #                           0, self.robot_data.manual_thrower_speed)
-                    rot_delta = self.robot_data.middle_point - \
-                        self.robot_data.baskets[self.robot_data.basket_color].x
-                    rot_speed = -1 * rot_delta * 0.003
-                    rot_sign = -1 if rot_speed >= 0 else 1
-                    rot_speed = min(
-                        abs(rot_speed), self.robot_data.max_speed) * rot_sign
-                    self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
-                                            rot_speed, self.robot_data.manual_thrower_speed)
+                          self.robot_data.baskets[self.robot_data.basket_color].distance)
+                    if self.throw_mode == ThrowMode.Manual:
+                        self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
+                                                   0, self.robot_data.manual_thrower_speed)
+                        sleep(0.1)
+                    elif self.throw_mode == ThrowMode.Assist:
+                        rot_delta = self.robot_data.middle_point - \
+                            self.robot_data.baskets[self.robot_data.basket_color].x
+                        rot_speed = -1 * rot_delta * 0.003
+                        rot_sign = -1 if rot_speed >= 0 else 1
+                        rot_speed = min(
+                            abs(rot_speed), self.robot_data.max_speed) * rot_sign
+                        self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
+                                                   rot_speed, self.robot_data.manual_thrower_speed)
 
     def on_R1_press(self):
         """Adjust thrower speed based on basket distance"""
@@ -230,13 +238,10 @@ class RobotDS4Backend(Controller):
                 print("No basket visible, unable to adjust.")
 
     def on_L1_press(self):
-        """Change currently targeted basket"""
+        """Change basket throw mode"""
         if self.robot_data.current_state == State.RemoteControl:
-            self.robot_data.basket_color = Color(
-                2) if self.robot_data.basket_color == Color(3) else Color(3)
-            self.robot_data.enemy_basket_color = Color(
-                2) if self.robot_data.basket_color == Color(3) else Color(3)
-            print("Current basket is now", self.robot_data.basket_color)
+            self.throw_mode = ThrowMode.Manual if ThrowMode.Assist else ThrowMode.Assist
+            print("Current thrower mode is now", self.throw_mode)
 
     # MISC
     # switch modes
