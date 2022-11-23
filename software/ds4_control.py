@@ -194,27 +194,26 @@ class RobotDS4Backend(Controller):
     def on_circle_press(self):
         """Attempt to throw the ball"""
         if self.robot_data.current_state == State.RemoteControl:
-            # we can't get ball data if there's no ball and no point if robot can't find basket
-            if (self.robot_data.ball == None) or (self.robot_data.baskets[self.robot_data.basket_color].distance == -1):
-                return
-            print("Saved speeds")
-            # FIXME - the code below depends on camera, so it wont work if we're not in data collection
             if self.robot_data.debug_data_collection:
+                # we can't get ball data if there's no ball and no point if robot can't find basket
+                if (self.robot_data.ball == None) or (self.robot_data.baskets[self.robot_data.basket_color].distance == -1):
+                    return
+                print("Saved speeds")                
                 self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.baskets[self.robot_data.basket_color].distance},{self.robot_data.ball.distance}\n"
-            self.robot_data.throw_end_time = time() + self.robot_data.throw_time
-            while time() < self.robot_data.throw_end_time:
-                print("--BallThrowRemote-- Throwing ball, basket distance:",
-                      self.robot_data.baskets[self.robot_data.basket_color].distance)
-                # self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
-                #                           0, self.robot_data.manual_thrower_speed)
-                rot_delta = self.robot_data.middle_point - \
-                    self.robot_data.baskets[self.robot_data.basket_color].x
-                rot_speed = -1 * rot_delta * 0.003
-                rot_sign = -1 if rot_speed >= 0 else 1
-                rot_speed = min(
-                    abs(rot_speed), self.robot_data.max_speed) * rot_sign
-                self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
-                                           rot_speed, self.robot_data.manual_thrower_speed)
+                self.robot_data.throw_end_time = time() + self.robot_data.throw_time
+                while time() < self.robot_data.throw_end_time:
+                    print("--BallThrowRemote-- Throwing ball, basket distance:",
+                        self.robot_data.baskets[self.robot_data.basket_color].distance)
+                    # self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
+                    #                           0, self.robot_data.manual_thrower_speed)
+                    rot_delta = self.robot_data.middle_point - \
+                        self.robot_data.baskets[self.robot_data.basket_color].x
+                    rot_speed = -1 * rot_delta * 0.003
+                    rot_sign = -1 if rot_speed >= 0 else 1
+                    rot_speed = min(
+                        abs(rot_speed), self.robot_data.max_speed) * rot_sign
+                    self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
+                                            rot_speed, self.robot_data.manual_thrower_speed)
 
     def on_R1_press(self):
         """Adjust thrower speed based on basket distance"""

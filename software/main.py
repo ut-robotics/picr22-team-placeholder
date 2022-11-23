@@ -278,7 +278,6 @@ class Robot:
             return
         print("--DriveToBall-- Driving to ball.")
 
-        # TODO - might need to adjust these further
         if not self.min_distance + 35 > self.ball.distance > self.min_distance - 35:
             rot_delta = self.middle_point - self.ball.x
             y_delta = self.min_distance - self.ball.distance
@@ -307,7 +306,6 @@ class Robot:
             self.back_to_search_state()
             return
 
-        # TODO - put this into its own function, we reuse it a lot
         if self.no_balls_frames >= self.max_ball_miss:  # lost the ball
             print(
                 f"--Orbiting-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
@@ -336,7 +334,6 @@ class Robot:
             print(f"--Orbiting-- Basket delta {basket_delta}")
 
             rot_speed = -1 * basket_delta * 0.009
-            # TODO - a bit too sensitive at long distances
             if abs(x_delta) <= 12 and abs(basket_delta) <= 15:
                 self.robot.stop()
                 self.current_state = State.BallThrow

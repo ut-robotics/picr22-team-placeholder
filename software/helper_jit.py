@@ -1,3 +1,4 @@
+# File for helper functions utilizing jit
 from numba import jit
 
 
@@ -33,7 +34,4 @@ def find_black_near_ball(fragments, object_coords, frag_size, look_range):
         for y in range(y1, y2):
             if fragments[y][x] == 6:
                 black_count += 1
-
-    if black_count == 0:
-        print(x1, y1, x2, y2)
     return black_count

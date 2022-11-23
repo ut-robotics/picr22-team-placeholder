@@ -79,39 +79,6 @@ class ImageProcessor():
     def stop(self):
         self.camera.close()
 
-    # TODO - implement line analyze logic
-    # NOTE - this is unfinished (and unused) currently, mostly copy pasted from opencv2 documentation
-    def analyze_lines(self, image, fragments):
-        image = image[0:360]  # so our robot doesn't get included on the frame
-
-        x_size, y_size = np.shape(fragments)
-        black_fr = np.zeros((x_size, y_size))
-
-        black_fr[fragments == 6] = 1
-
-        detection_black = black_fr.astype(np.uint8) * 255
-        edges = cv2.Canny(detection_black, 50, 150)
-
-        rho = 1  # distance resolution in pixels of the Hough grid
-        theta = np.pi / 180  # angular resolution in radians of the Hough grid
-        # minimum number of votes (intersections in Hough grid cell)
-        threshold = 15
-        min_line_length = 50  # minimum number of pixels making up a line
-        max_line_gap = 20  # maximum gap in pixels between connectable line segments
-        line_image = np.copy(image) * 0  # creating a blank to draw lines on
-
-        # Run Hough on edge detected image
-        # Output "lines" is an array containing endpoints of detected line segments
-        lines = cv2.HoughLinesP(edges, rho, theta, threshold, np.array([]),
-                                min_line_length, max_line_gap)
-        for line in lines:
-            for x1, y1, x2, y2 in line:
-                cv2.line(line_image, (x1, y1), (x2, y2), (255, 0, 0), 5)
-
-        lines_edges = cv2.addWeighted(image, 0.8, line_image, 1, 0)
-        cv2.imshow(
-            "Detected Lines (in red) - Probabilistic Line Transform", lines_edges)
-
     def analyze_balls(self, t_balls, depth, fragments, basket) -> list:
         kernel = np.ones((3, 3), np.uint8)
         t_balls = cv2.dilate(t_balls, kernel)
@@ -219,7 +186,6 @@ class ImageProcessor():
 
         if self.debug:
             self.debug_frame = np.copy(color_frame)
-        #lines = self.analyze_lines(color_frame, self.fragmented)
         basket_b = self.analyze_baskets(
             self.t_basket_b, depth_frame, debug_color=c.Color.BLUE.color.tolist())
         basket_m = self.analyze_baskets(
