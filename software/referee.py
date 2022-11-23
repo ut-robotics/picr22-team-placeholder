@@ -37,7 +37,7 @@ class Referee:
                 self.ws.connect(self.ip)
                 return True
             except ConnectionRefusedError:
-                self.robot_data.logger.log.info("--REFEREE-- Retrying...")
+                self.robot_data.logger.log.warning("--REFEREE-- Retrying...")
                 time.sleep(1)
                 continue
         return False
@@ -53,15 +53,15 @@ class Referee:
                     if self.name in msg["targets"]:
                         self.queue.put(msg)
                 except json.JSONDecodeError:
-                    self.robot_data.logger.log.info("--REFEREE-- Received non-json message!")
+                    self.robot_data.logger.log.error("--REFEREE-- Received non-json message!")
                     continue
             except wsc.WebSocketConnectionClosedException:
-                self.robot_data.logger.log.info("--REFEREE-- Connection lost, reconnecting...")
+                self.robot_data.logger.log.warning("--REFEREE-- Connection lost, reconnecting...")
                 if self.connect():
                     self.robot_data.logger.log.info("--REFEREE-- Reconnected.")
                     continue
                 else:
-                    self.robot_data.logger.log.info("--REFEREE-- Failed to reconnect.")
+                    self.robot_data.logger.log.error("--REFEREE-- Failed to reconnect.")
                     self.close()
             except KeyboardInterrupt:
                 self.robot_data.logger.log.info("--REFEREE-- Closing...")

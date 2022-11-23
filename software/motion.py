@@ -15,7 +15,7 @@ class SerialPortNotFound(Exception):
 class OmniRobot():
     """Movement code class"""
 
-    def __init__(self):
+    def __init__(self, robot_data):
         gearboxReductionRatio = 18.75
         encoderEdgesPerMotorRevolution = 64
         wheelRadius = 0.035  # metres
@@ -26,6 +26,7 @@ class OmniRobot():
             encoderEdgesPerMotorRevolution / \
             (2 * math.pi * wheelRadius * pidControlFrequency)
         self.wheelDistanceFromCenter = 0.11  # metres
+        self.robot_data = robot_data
 
     def find_serial_port(self):
         """Finds the serial port corresponding to the mainboard
@@ -56,16 +57,16 @@ class OmniRobot():
         self.ser.port = self.find_serial_port()
         self.ser.baudrate = 9600
         self.ser.open()
-        print("Serial opened")
+        self.robot_data.logger.log.info("Serial opened")
 
     def close(self):
         """Closes the serial connection with the mainboard."""
         if self.ser.isOpen():
             self.stop()
             self.ser.close()
-            print("Serial closed")
+            self.robot_data.logger.log.info("Serial closed")
         else:
-            print("Serial not open!")
+            self.robot_data.logger.log.warning("Serial not open!")
 
     def send(self, speeds, throwerSpeed, disableFailsafe=0):
         """This function sends speeds to the mainboard.
@@ -81,7 +82,7 @@ class OmniRobot():
         received_data = self.ser.read(8)
         actual_speed1, actual_speed2, actual_speed3, _ = struct.unpack(
             '<hhhH', received_data)
-        #print(
+        #self.robot_data.logger.log.info(
         #    f"Sent speed: {speeds}, Actual speed: [{actual_speed1}, {actual_speed2}, {actual_speed3}]")
 
     def get_wheel_speed(self, motorID, robotSpeed, robotDirectionAngle, robotAngularVelocity):
@@ -102,6 +103,7 @@ class OmniRobot():
         wheelAngularSpeedInMainboardUnits = wheelLinearVelocity * \
             self.wheelSpeedToMainboardUnits
         if math.isnan(wheelAngularSpeedInMainboardUnits):
+            self.robot_data.logger.log.warning("Tried to send NaN as speeds!")
             return 0
         else:
             return wheelAngularSpeedInMainboardUnits

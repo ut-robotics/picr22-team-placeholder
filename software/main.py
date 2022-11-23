@@ -24,7 +24,6 @@ class Robot:
     start = time()
     frame_cnt = 0
 
-    robot = motion.OmniRobot()
 
     # probably not needed, just for debugging right now to cut down on log spam
     prev_ball_count = 0
@@ -65,6 +64,7 @@ class Robot:
                  avg_fps: int):
         # initialize logging
         self.logger = Logger()
+        self.robot = motion.OmniRobot(robot_data=self)
         self.debug = debug
         self.debug_data_collection = debug_data_collection
         if use_realsense:
@@ -213,7 +213,7 @@ class Robot:
             self.search_end_time = time() + self.search_timeout
 
         elif (time() > self.search_end_time) and (self.search_substate != SearchState.DriveToSearch):
-            self.logger.log.info("--Searching-- Searched for too long, will drive to basket soon.")
+            self.logger.log.warning("--Searching-- Searched for too long, will drive to basket soon.")
             if self.basket_to_drive_to == None:
                 if self.enemy_basket_max_distance >= self.basket_max_distance:
                     self.basket_to_drive_to = self.enemy_basket_color
@@ -263,7 +263,7 @@ class Robot:
                     f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}, y_speed {y_speed}, rot_speed {rot_speed}")
                 self.robot.move(0, y_speed, rot_speed)
             elif self.basket_too_close_frames >= self.avg_fps:
-                self.logger.log.info(
+                self.logger.log.warning(
                     f"--SEARCHING-- Basket too close, distance: {self.baskets[self.basket_to_drive_to].distance}, back to rotating!")
                 self.basket_to_drive_to = None
                 self.basket_max_distance = 0
@@ -484,7 +484,7 @@ class Robot:
         except KeyboardInterrupt:
             self.logger.log.info("Closing....")
         except Exception as e:
-            self.logger.log.info("Error happened:", e)
+            self.logger.log.error("Error happened:", e)
         finally:
             self.robot.close()
             self.controller.stop()
