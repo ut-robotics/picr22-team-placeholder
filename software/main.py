@@ -8,7 +8,7 @@ from Color import Color
 from states import State, ThrowerState, SearchState, EscapeState
 from helper import calculate_throw_speed
 from referee import Referee
-import sys
+from logger import Logger
 
 class Robot:
     """The main class for %placeholder%"""
@@ -63,6 +63,8 @@ class Robot:
                  search_timeout: int,
                  search_min_basket_dist: int,
                  avg_fps: int):
+        # initialize logging
+        self.logger = Logger()
         self.debug = debug
         self.debug_data_collection = debug_data_collection
         if use_realsense:
@@ -118,7 +120,7 @@ class Robot:
             end = time()
             fps = 30 / (end - self.start)
             self.start = end
-            print("FPS: {}, framecount: {}".format(fps, self.frame_cnt))
+            self.logger.log.info("FPS: {}, framecount: {}".format(fps, self.frame_cnt))
 
     def display_camera_feed(self):
         debug_frame = self.processed_data.debug_frame
@@ -140,7 +142,7 @@ class Robot:
         if self.debug:
             self.display_camera_feed()
 
-        #print("CURRENT STATE -", self.current_state)
+        #self.logger.log.info("CURRENT STATE -", self.current_state)
 
         # -- REMOTE CONTROL STUFF --
         # stop button
@@ -161,7 +163,7 @@ class Robot:
 
         if self.prev_ball_count != self.ball_count:
             # this is for debugging
-            #print("ball_count: {}".format(self.ball_count))
+            #self.logger.log.info("ball_count: {}".format(self.ball_count))
             self.prev_ball_count = self.ball_count
 
         # first element is always the closest ball
@@ -193,14 +195,14 @@ class Robot:
     def searching_state(self):
         """State for searching for the ball"""
         if self.ball_count != 0: 
-            print("--SEARCHING-- BALL FOUND, MOVING TO DRIVE2BALL")
+            self.logger.log.info("--SEARCHING-- BALL FOUND, MOVING TO DRIVE2BALL")
             self.robot.stop()
             self.current_state = State.DriveToBall
             self.search_substate = SearchState.Off
             return
 
         if self.search_substate == SearchState.StartSearch:
-            print("StartSearch!!!")
+            self.logger.log.info("StartSearch!!!")
             if self.last_seen_ball != None:
                 if self.last_seen_ball.x >= self.middle_point:
                     self.search_substate = SearchState.Right
@@ -211,7 +213,7 @@ class Robot:
             self.search_end_time = time() + self.search_timeout
 
         elif (time() > self.search_end_time) and (self.search_substate != SearchState.DriveToSearch):
-            print("--Searching-- Searched for too long, will drive to basket soon.")
+            self.logger.log.info("--Searching-- Searched for too long, will drive to basket soon.")
             if self.basket_to_drive_to == None:
                 if self.enemy_basket_max_distance >= self.basket_max_distance:
                     self.basket_to_drive_to = self.enemy_basket_color
@@ -221,7 +223,7 @@ class Robot:
                 self.robot.stop()
                 self.search_substate = SearchState.DriveToSearch
             else:
-                print("basket does not exist, basket distances are", self.enemy_basket_max_distance, self.basket_max_distance,
+                self.logger.log.info("basket does not exist, basket distances are", self.enemy_basket_max_distance, self.basket_max_distance,
                       self.baskets[self.basket_color].exists, self.baskets[self.enemy_basket_color].exists, self.baskets[self.basket_to_drive_to])
 
         # TODO - maybe check lines and turn 45 degrees when hitting a line
@@ -235,10 +237,10 @@ class Robot:
                     self.enemy_basket_max_distance = self.baskets[self.enemy_basket_color].distance
 
         if self.search_substate == SearchState.Left:
-            print("--Searching-- Moving LEFT to look for ball")
+            self.logger.log.info("--Searching-- Moving LEFT to look for ball")
             self.robot.move(0, 0, self.search_speed, 0)
         elif self.search_substate == SearchState.Right:
-            print("--Searching-- Moving RIGHT to look for ball")
+            self.logger.log.info("--Searching-- Moving RIGHT to look for ball")
             self.robot.move(0, 0, -self.search_speed, 0)
 
         elif self.search_substate == SearchState.DriveToSearch: # TODO - we're not checking if the basket exists
@@ -257,11 +259,11 @@ class Robot:
 
                 y_speed = min(abs(y_speed), self.max_speed) * y_sign
                 rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
-                print(
+                self.logger.log.info(
                     f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}, y_speed {y_speed}, rot_speed {rot_speed}")
                 self.robot.move(0, y_speed, rot_speed)
             elif self.basket_too_close_frames >= self.avg_fps:
-                print(
+                self.logger.log.info(
                     f"--SEARCHING-- Basket too close, distance: {self.baskets[self.basket_to_drive_to].distance}, back to rotating!")
                 self.basket_to_drive_to = None
                 self.basket_max_distance = 0
@@ -273,11 +275,11 @@ class Robot:
     def drive_to_ball_state(self):
         """State for driving to the ball."""
         if self.no_balls_frames >= self.max_ball_miss:  # lost the ball
-            print(
+            self.logger.log.info(
                 f"--DriveToBall-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
             self.back_to_search_state()
             return
-        print("--DriveToBall-- Driving to ball.")
+        self.logger.log.info("--DriveToBall-- Driving to ball.")
 
         if not self.min_distance + 35 > self.ball.distance > self.min_distance - 35:
             rot_delta = self.middle_point - self.ball.x
@@ -291,7 +293,7 @@ class Robot:
 
             y_speed = min(abs(y_speed), self.max_speed) * y_sign
             rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
-            print(
+            self.logger.log.info(
                 f"--DriveToBall-- ball distance {self.ball.distance}, y_speed {y_speed}, rot_speed {rot_speed}")
             self.robot.move(0, y_speed, rot_speed)
         else:
@@ -302,13 +304,13 @@ class Robot:
     def orbiting_state(self):
         """State for orbiting around the ball and trying to find the basket."""
         if time() > self.orbit_start + self.max_orbit_time:
-            print("--ORBIT-- Orbiting for too long, going back to search")
+            self.logger.log.info("--ORBIT-- Orbiting for too long, going back to search")
             self.robot.stop()
             self.back_to_search_state()
             return
 
         if self.no_balls_frames >= self.max_ball_miss:  # lost the ball
-            print(
+            self.logger.log.info(
                 f"--Orbiting-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
             self.back_to_search_state()
             return
@@ -326,13 +328,13 @@ class Robot:
 
         rot_speed = self.max_speed * 0.7
 
-        print(f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
+        self.logger.log.info(f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
 
         if self.baskets[self.basket_color].exists:
             basket_delta = self.baskets[self.basket_color].x - \
                 self.middle_point
 
-            print(f"--Orbiting-- Basket delta {basket_delta}")
+            self.logger.log.info(f"--Orbiting-- Basket delta {basket_delta}")
 
             rot_speed = -1 * basket_delta * 0.009
             if abs(x_delta) <= 12 and abs(basket_delta) <= 15:
@@ -350,7 +352,7 @@ class Robot:
         y_speed = min(abs(y_speed), self.max_speed) * y_sign
         rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
 
-        print(f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")
+        self.logger.log.info(f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")
 
         self.robot.move(x_speed, y_speed, rot_speed)
 
@@ -364,7 +366,7 @@ class Robot:
             self.thrower_speed = calculate_throw_speed(
                 self.baskets[self.basket_color].distance)  # TODO - calibrate thrower
             self.thrower_substate = ThrowerState.MidThrow
-            print("--BallThrow-- Starting throw, basket distance:",
+            self.logger.log.info("--BallThrow-- Starting throw, basket distance:",
                   self.baskets[self.basket_color].distance, "speed:", self.thrower_speed)
             self.robot.move(0, self.throw_move_speed, 0, self.thrower_speed)
         elif self.thrower_substate == ThrowerState.MidThrow:
@@ -375,7 +377,7 @@ class Robot:
             self.robot.move(0, self.throw_move_speed,
                             rot_speed, self.thrower_speed)
         elif self.thrower_substate == ThrowerState.EndThrow:
-            print("--BallThrow-- Finishing throw.")
+            self.logger.log.info("--BallThrow-- Finishing throw.")
             self.back_to_search_state()
             self.thrower_substate = ThrowerState.Off
             self.thrower_speed = 0
@@ -406,10 +408,10 @@ class Robot:
             self.enemy_basket_color = Color(
                 2) if self.basket_color == Color(3) else Color(3)
             self.back_to_search_state()
-            print("STARTING ROBOT, basket:", self.basket_color)
+            self.logger.log.info("STARTING ROBOT, basket:", self.basket_color)
 
         elif cmd["signal"] == "stop":
-            print("STOPPING ROBOT")
+            self.logger.log.info("STOPPING ROBOT")
             self.current_state = State.Stopped
         else:
             raise ValueError("Unknown signal:", cmd["signal"])
@@ -424,7 +426,7 @@ class Robot:
             self.escape_substate = EscapeState.Reverse
             self.escape_state_end = time() + 0.7  # dont reverse for too long
         elif self.escape_substate == EscapeState.Reverse:
-            print("--ESCAPE-- Reversing")
+            self.logger.log.info("--ESCAPE-- Reversing")
             if time() > self.escape_state_end:
                 self.escape_substate = EscapeState.TurningFromBasket
                 # rotate for 2 seconds, or until opposite basket is found
@@ -432,7 +434,7 @@ class Robot:
             else:
                 self.robot.move(0, -self.max_speed * 0.75, 0)
         elif self.escape_substate == EscapeState.TurningFromBasket:
-            print("--ESCAPE-- Turning from basket")
+            self.logger.log.info("--ESCAPE-- Turning from basket")
             if (self.baskets[self.opposite_basket].exists):
                 self.robot.stop()
                 self.escape_substate = EscapeState.DrivingAway
@@ -444,7 +446,7 @@ class Robot:
             else:
                 self.robot.move(0, 0, -self.max_speed)
         elif self.escape_substate == EscapeState.DrivingAway:
-            print("--ESCAPE-- Driving away")
+            self.logger.log.info("--ESCAPE-- Driving away")
             if time() > self.escape_state_end:
                 self.escape_substate = EscapeState.Off
                 self.escape_state_end = 0
@@ -480,16 +482,15 @@ class Robot:
                     self.escape_from_basket_state()
 
         except KeyboardInterrupt:
-            print("Closing....")
+            self.logger.log.info("Closing....")
         except Exception as e:
-            print("Error happened:", e)
+            self.logger.log.info("Error happened:", e)
         finally:
             self.robot.close()
             self.controller.stop()
             cv2.destroyAllWindows()
             self.processor.stop()
             self.referee.close()
-            sys.exit()
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ class Referee:
         self.connect()
         self.process = mp.Process(target=self.listen, args=())
         self.process.start()
-        print("--REFEREE-- Started process!")
+        self.robot_data.logger.log.info("--REFEREE-- Started process!")
 
     def close(self):
         """Close the referee process"""
@@ -28,7 +28,7 @@ class Referee:
         self.process.join()
         self.process.close()
         self.ws.close()
-        print("--REFEREE-- Closed process!")
+        self.robot_data.logger.log.info("--REFEREE-- Closed process!")
 
     def connect(self):
         """Connect to the referee server"""
@@ -37,14 +37,14 @@ class Referee:
                 self.ws.connect(self.ip)
                 return True
             except ConnectionRefusedError:
-                print("--REFEREE-- Retrying...")
+                self.robot_data.logger.log.info("--REFEREE-- Retrying...")
                 time.sleep(1)
                 continue
         return False
 
     def listen(self):
         """Listen and add referee commands to queue"""
-        print("--REFEREE-- Listening to commands.")
+        self.robot_data.logger.log.info("--REFEREE-- Listening to commands.")
         while self.running:
             try:
                 msg = self.ws.recv()
@@ -53,18 +53,18 @@ class Referee:
                     if self.name in msg["targets"]:
                         self.queue.put(msg)
                 except json.JSONDecodeError:
-                    print("--REFEREE-- Received non-json message!")
+                    self.robot_data.logger.log.info("--REFEREE-- Received non-json message!")
                     continue
             except wsc.WebSocketConnectionClosedException:
-                print("--REFEREE-- Connection lost, reconnecting...")
+                self.robot_data.logger.log.info("--REFEREE-- Connection lost, reconnecting...")
                 if self.connect():
-                    print("--REFEREE-- Reconnected.")
+                    self.robot_data.logger.log.info("--REFEREE-- Reconnected.")
                     continue
                 else:
-                    print("--REFEREE-- Failed to reconnect.")
+                    self.robot_data.logger.log.info("--REFEREE-- Failed to reconnect.")
                     self.close()
             except KeyboardInterrupt:
-                print("--REFEREE-- Closing...")
+                self.robot_data.logger.log.info("--REFEREE-- Closing...")
                 break
 
     def get_cmd(self):
