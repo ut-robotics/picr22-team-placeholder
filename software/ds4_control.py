@@ -61,7 +61,7 @@ class RobotDS4Backend(Controller):
         Args:
             axis (Axis): Axis to stop
         """
-        self.robot_data.logger.log.info("Stopping axis", axis)
+        self.robot_data.logger.log.info(f"Stopping axis {axis}")
         if axis == Axis.X:
             self.x_speed = 0
         elif axis == Axis.Y:
@@ -81,8 +81,8 @@ class RobotDS4Backend(Controller):
             self.robot_data.logger.log.warning("Already at max speed!")
         else:
             self.robot_data.manual_thrower_speed += 10
-            self.robot_data.logger.log.warning("Increased thrower speed by 10, new speed:",
-                  self.robot_data.manual_thrower_speed)
+            self.robot_data.logger.log.warning(
+                f"Increased thrower speed by 10, new speed: {self.robot_data.manual_thrower_speed}")
             if self.thrower_active:
                 self.thrower_speed = self.robot_data.manual_thrower_speed
                 self.send_movement()
@@ -90,11 +90,12 @@ class RobotDS4Backend(Controller):
     def on_down_arrow_press(self):
         """Decreasing thrower speed"""
         if self.robot_data.manual_thrower_speed <= 50:  # the actual limit is 49, but we can't get that with our current decrease interval anyways
-            self.robot_data.logger.log.warning("Thrower - Already at minimum speed!")
+            self.robot_data.logger.log.warning(
+                "Thrower - Already at minimum speed!")
         else:
             self.robot_data.manual_thrower_speed -= 10
-            self.robot_data.logger.log.warning("Decreased thrower speed by 10, new speed:",
-                  self.robot_data.manual_thrower_speed)
+            self.robot_data.logger.log.warning(
+                f"Decreased thrower speed by 10, new speed: {self.robot_data.manual_thrower_speed}")
         if self.thrower_active:
             self.thrower_speed = self.robot_data.manual_thrower_speed
             self.send_movement()
@@ -207,8 +208,8 @@ class RobotDS4Backend(Controller):
                 self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.baskets[self.robot_data.basket_color].distance},{self.robot_data.ball.distance}\n"
                 self.robot_data.throw_end_time = time() + self.robot_data.throw_time
                 while time() < self.robot_data.throw_end_time:
-                    self.robot_data.logger.log.info("--BallThrowRemote-- Throwing ball, basket distance:",
-                          self.robot_data.baskets[self.robot_data.basket_color].distance)
+                    self.robot_data.logger.log.info(
+                        f"--BallThrowRemote-- Throwing ball, basket distance: {self.robot_data.baskets[self.robot_data.basket_color].distance}")
                     if self.throw_mode == ThrowMode.Manual:
                         self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
                                                    0, self.robot_data.manual_thrower_speed)
@@ -229,19 +230,21 @@ class RobotDS4Backend(Controller):
             if self.robot_data.baskets[self.robot_data.basket_color].exists:
                 self.robot_data.manual_thrower_speed = calculate_throw_speed(
                     self.robot_data.baskets[self.robot_data.basket_color].distance)
-                self.robot_data.logger.log.info("Adjusted thrower speed to",
-                      self.robot_data.manual_thrower_speed)
+                self.robot_data.logger.log.info(
+                    "Adjusted thrower speed to {self.robot_data.manual_thrower_speed}")
                 if self.thrower_active:
                     self.thrower_speed = self.robot_data.manual_thrower_speed
                     self.send_movement()
             else:
-                self.robot_data.logger.log.warning("No basket visible, unable to adjust.")
+                self.robot_data.logger.log.warning(
+                    "No basket visible, unable to adjust.")
 
     def on_L1_press(self):
         """Change basket throw mode"""
         if self.robot_data.current_state == State.RemoteControl:
             self.throw_mode = ThrowMode.Manual if ThrowMode.Assist else ThrowMode.Assist
-            self.robot_data.logger.log.info("Current thrower mode is now", self.throw_mode)
+            self.robot_data.logger.log.info(
+                f"Current thrower mode is now {self.throw_mode}")
 
     # MISC
     # switch modes

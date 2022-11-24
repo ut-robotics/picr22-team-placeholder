@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, IntEnum
 
 
 class State(Enum):
@@ -35,6 +35,6 @@ class EscapeState(Enum):
     TurningFromBasket = 3
     DrivingAway = 4
 
-class OrbitDirection(Enum):
+class OrbitDirection(IntEnum):
     Right = -1
     Left = 1

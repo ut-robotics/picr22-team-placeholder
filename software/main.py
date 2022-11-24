@@ -242,9 +242,6 @@ class Robot:
             if self.baskets[self.basket_to_drive_to].exists:
                 self.robot.stop()
                 self.search_substate = SearchState.DriveToSearch
-            else:
-                self.logger.log.info("basket does not exist, basket distances are", self.enemy_basket_max_distance, self.basket_max_distance,
-                                     self.baskets[self.basket_color].exists, self.baskets[self.enemy_basket_color].exists, self.baskets[self.basket_to_drive_to])
 
         # TODO - maybe check lines and turn 45 degrees when hitting a line
 
@@ -347,7 +344,7 @@ class Robot:
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.001
 
-        rot_speed = (self.orbit_direction) * self.max_speed * 0.7
+        rot_speed = int(self.orbit_direction) * self.max_speed * 0.7
 
         self.logger.log.info(
             f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
@@ -389,8 +386,8 @@ class Robot:
             self.thrower_speed = calculate_throw_speed(
                 self.baskets[self.basket_color].distance)  # TODO - calibrate thrower
             self.thrower_substate = ThrowerState.MidThrow
-            self.logger.log.info("--BallThrow-- Starting throw, basket distance:",
-                                 self.baskets[self.basket_color].distance, "speed:", self.thrower_speed)
+            self.logger.log.info(
+                f"--BallThrow-- Starting throw, basket distance: {self.baskets[self.basket_color].distance}, speed: {self.thrower_speed}")
             self.robot.move(0, self.throw_move_speed, 0, self.thrower_speed)
         elif self.thrower_substate == ThrowerState.MidThrow:
             rot_delta = self.middle_point - self.baskets[self.basket_color].x
@@ -426,18 +423,19 @@ class Robot:
             elif basket_str == "magenta":
                 self.basket_color = Color.MAGENTA
             else:
-                raise ValueError("Unknown basket colour:", basket_str)
+                raise ValueError(f"Unknown basket colour: {basket_str}")
 
             self.enemy_basket_color = Color(
                 2) if self.basket_color == Color(3) else Color(3)
             self.back_to_search_state()
-            self.logger.log.info("STARTING ROBOT, basket:", self.basket_color)
+            self.logger.log.info(
+                f"STARTING ROBOT, basket: {self.basket_color}")
 
         elif cmd["signal"] == "stop":
             self.logger.log.info("STOPPING ROBOT")
             self.current_state = State.Stopped
         else:
-            raise ValueError("Unknown signal:", cmd["signal"])
+            raise ValueError(f'Unknown signal: {cmd["signal"]}')
 
     def stop_state(self):
         """State for stopping."""
@@ -506,8 +504,8 @@ class Robot:
 
         except KeyboardInterrupt:
             self.logger.log.info("Closing....")
-        except Exception as e:
-            self.logger.log.error("Error happened:", e)
+        except:
+            self.logger.log.exception('')
         finally:
             self.robot.close()
             self.controller.stop()

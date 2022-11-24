@@ -9,8 +9,7 @@ class Referee:
     """Class for getting data from the referee server and making it accessible for the robot."""
 
     def __init__(self, robot_data):
-        self.ip = robot_data.referee_ip
-        self.name = robot_data.name
+        self.robot_data = robot_data
         self.queue = mp.Queue()
 
     def start(self):
@@ -34,12 +33,14 @@ class Referee:
         """Connect to the referee server"""
         for _ in range(15):  # Attempt reconnecting for ~15 seconds before giving up
             try:
-                self.ws.connect(self.ip)
+                self.ws.connect(self.robot_data.referee_ip)
                 return True
             except ConnectionRefusedError:
                 self.robot_data.logger.log.warning("--REFEREE-- Retrying...")
                 time.sleep(1)
                 continue
+            except:
+                self.robot_data.logger.log.exception('')   
         return False
 
     def listen(self):
@@ -50,7 +51,7 @@ class Referee:
                 msg = self.ws.recv()
                 try:
                     msg = json.loads(msg)
-                    if self.name in msg["targets"]:
+                    if self.robot_data.name in msg["targets"]:
                         self.queue.put(msg)
                 except json.JSONDecodeError:
                     self.robot_data.logger.log.error("--REFEREE-- Received non-json message!")
@@ -66,6 +67,8 @@ class Referee:
             except KeyboardInterrupt:
                 self.robot_data.logger.log.info("--REFEREE-- Closing...")
                 break
+            except:
+                self.robot_data.logger.log.exception('')   
 
     def get_cmd(self):
         """Attempt to get a command from queue"""
