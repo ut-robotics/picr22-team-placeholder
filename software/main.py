@@ -11,6 +11,12 @@ from referee import Referee
 from logger import Logger
 from random import choice
 
+# some objectives for the near future
+# TODO - state for getting ball out of thrower, could maybe make use of depth camera and check if a pixel's distance changes?
+# TODO - figure out why out robot has issues focusing on a single ball
+# TODO - figure out why the robot keeps jumping between orbiting, searching and drivetoball state
+# TODO - improve orbiting
+
 
 class Robot:
     """The main class for %placeholder%"""
@@ -65,7 +71,7 @@ class Robot:
                  name: str,
                  search_timeout: int,
                  search_min_basket_dist: int,
-                 avg_fps: int,
+                 max_frames: int,
                  orbit_dir_timeout_time: int):
         # initialize logging
         self.logger = Logger()
@@ -100,7 +106,7 @@ class Robot:
         self.enemy_basket_color = Color(
             2) if self.basket_color == Color(3) else Color(3)
         self.max_orbit_time = max_orbit_time
-        self.avg_fps = avg_fps
+        self.max_frames = max_frames
         self.search_timeout = search_timeout
         self.search_min_basket_dist = search_min_basket_dist
         self.controller = RobotDS4(robot_data=self)
@@ -190,7 +196,7 @@ class Robot:
             for basket in self.baskets:
                 if self.baskets[basket].exists:
                     if self.baskets[basket].distance < 600:
-                        if self.basket_too_close_frames > self.avg_fps:
+                        if self.basket_too_close_frames > self.max_frames:
                             self.opposite_basket = Color.MAGENTA if basket == Color.BLUE else Color.BLUE
                             self.current_state = State.EscapeFromBasket
                             self.escape_substate = EscapeState.StartEscape
@@ -279,7 +285,7 @@ class Robot:
                 self.logger.log.info(
                     f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}, y_speed {y_speed}, rot_speed {rot_speed}")
                 self.robot.move(0, y_speed, rot_speed)
-            elif self.basket_too_close_frames >= self.avg_fps:
+            elif self.basket_too_close_frames >= self.max_frames:
                 self.logger.log.warning(
                     f"--SEARCHING-- Basket too close, distance: {self.baskets[self.basket_to_drive_to].distance}, back to rotating!")
                 self.basket_to_drive_to = None
@@ -344,7 +350,7 @@ class Robot:
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.001
 
-        rot_speed = self.max_speed * 0.7
+        rot_speed = int(self.orbit_direction) * self.max_speed * 0.7
 
         self.logger.log.info(
             f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
@@ -530,12 +536,11 @@ if __name__ == "__main__":
     conf_max_orbit_time = 10  # seconds
     conf_manual_thrower_speed = 1000  # default for remote control
     conf_controller_analog_deadzone = 400
-    #conf_referee_ip = "ws://192.168.3.69:8222"
-    conf_referee_ip = "ws://192.168.3.220:8111" # referee server
+    conf_referee_ip = "ws://192.168.3.69:8222"
     conf_name = "placeholder"
     conf_search_timeout = 3  # TODO - adjust
     conf_search_min_basket_dist = 1200  # TODO - adjust
-    conf_avg_fps = 15  # for values that are tied to FPS in some way
+    conf_max_frames = 15  # for values that are tied to FPS in some way
     conf_orbit_dir_timeout_time = 6
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_time,
-                  conf_min_distance, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed, conf_referee_ip, conf_name, conf_search_timeout, conf_search_min_basket_dist, conf_avg_fps, conf_orbit_dir_timeout_time)
+                  conf_min_distance, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed, conf_referee_ip, conf_name, conf_search_timeout, conf_search_min_basket_dist, conf_max_frames, conf_orbit_dir_timeout_time)
