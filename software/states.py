@@ -34,3 +34,7 @@ class EscapeState(Enum):
     Reverse = 2
     TurningFromBasket = 3
     DrivingAway = 4
+
+class OrbitDirection(Enum):
+    Right = -1
+    Left = 1
