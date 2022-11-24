@@ -42,7 +42,7 @@ class Robot:
     last_seen_ball = None
     basket_to_drive_to = None
     escape_state_end = 0
-    orbit_direction = None
+    orbit_direction = choice([OrbitDirection.Left, OrbitDirection.Right])
     orbit_direction_timeout = 0
 
     def __init__(self,
@@ -126,7 +126,7 @@ class Robot:
             end = time()
             fps = 30 / (end - self.start)
             self.start = end
-            #self.logger.log.info(
+            # self.logger.log.info(
             #    "FPS: {}, framecount: {}".format(fps, self.frame_cnt))
 
     def display_camera_feed(self):
@@ -527,7 +527,7 @@ if __name__ == "__main__":
     conf_use_realsense = True
     conf_middle_offset = 0
     conf_basket_color = Color.BLUE
-    conf_max_orbit_time = 10  # seconds
+    conf_max_orbit_time = 15  # seconds
     conf_manual_thrower_speed = 1000  # default for remote control
     conf_controller_analog_deadzone = 400
     conf_referee_ip = "ws://192.168.3.69:8222"

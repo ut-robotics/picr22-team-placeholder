@@ -40,4 +40,4 @@ def calculate_throw_speed(basket_dist):
         int: ThrowerSpeed
     """
     # Values calibrated using linear regression
-    return int(basket_dist * 0.12285548836054287 + 726.8580692533924)
+    return int(basket_dist * 0.1242374809693249 + 726.840208932238)
