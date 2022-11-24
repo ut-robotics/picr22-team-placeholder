@@ -117,7 +117,7 @@ class ImageProcessor():
 
             # don't add if ball is further than the basket or too close to it
             if basket != None:
-                if basket.distance - 300 <= obj_dst:
+                if basket.distance - 500 <= obj_dst:
                     continue
 
             if self.debug:
