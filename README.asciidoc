@@ -66,3 +66,4 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 21.11.2022 - *Timo:* Programming. (2h)
 * 22.11.2022 - *Timo:* More programming. (4h)
 * 23.11.2022 - *Timo:* Code cleanup, fixes, fixing mechanical problems, implementing logging. (7h)
+* 24.11.2022 - *Timo:* "Improving" code, taking part in test competition. (8h)
