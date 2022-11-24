@@ -231,7 +231,7 @@ class RobotDS4Backend(Controller):
                 self.robot_data.manual_thrower_speed = calculate_throw_speed(
                     self.robot_data.baskets[self.robot_data.basket_color].distance)
                 self.robot_data.logger.log.info(
-                    "Adjusted thrower speed to {self.robot_data.manual_thrower_speed}")
+                    f"Adjusted thrower speed to {self.robot_data.manual_thrower_speed}")
                 if self.thrower_active:
                     self.thrower_speed = self.robot_data.manual_thrower_speed
                     self.send_movement()
@@ -242,7 +242,7 @@ class RobotDS4Backend(Controller):
     def on_L1_press(self):
         """Change basket throw mode"""
         if self.robot_data.current_state == State.RemoteControl:
-            self.throw_mode = ThrowMode.Manual if ThrowMode.Assist else ThrowMode.Assist
+            self.throw_mode = ThrowMode.Manual if self.throw_mode == ThrowMode.Assist else ThrowMode.Assist
             self.robot_data.logger.log.info(
                 f"Current thrower mode is now {self.throw_mode}")
 

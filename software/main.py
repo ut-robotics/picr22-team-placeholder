@@ -126,8 +126,8 @@ class Robot:
             end = time()
             fps = 30 / (end - self.start)
             self.start = end
-            self.logger.log.info(
-                "FPS: {}, framecount: {}".format(fps, self.frame_cnt))
+            #self.logger.log.info(
+            #    "FPS: {}, framecount: {}".format(fps, self.frame_cnt))
 
     def display_camera_feed(self):
         debug_frame = self.processed_data.debug_frame
@@ -199,7 +199,7 @@ class Robot:
                     else:
                         self.basket_too_close_frames = 0
 
-        if self.current_state != State.Orbiting:
+        if self.current_state not in [State.Orbiting, State.RemoteControl, State.Stopped]:
             # Randomize the direction to have a higher chance of actually getting the shorter way around, instead of always going left
             if time() > self.orbit_direction_timeout:
                 self.logger.log.info(
