@@ -13,7 +13,7 @@ from random import choice
 
 # some objectives for the near future
 # TODO - state for getting ball out of thrower, could maybe make use of depth camera and check if a pixel's distance changes?
-# TODO - figure out why out robot has issues focusing on a single ball
+# TODO - figure out why out robot has issues focusing on a single ball, based on logs it seemed to lose the ball very often
 # TODO - figure out why the robot keeps jumping between orbiting, searching and drivetoball state
 # TODO - improve orbiting
 
@@ -435,7 +435,7 @@ class Robot:
                 2) if self.basket_color == Color(3) else Color(3)
             self.back_to_search_state()
             self.logger.log.info(
-                f"STARTING ROBOT, basket: {self.basket_color}")
+                f"STARTING ROBOT, basket: {self.basket_color}") # TODO - log opponent robot name, so we can more easily figure out which match it is
 
         elif cmd["signal"] == "stop":
             self.logger.log.info("STOPPING ROBOT")
