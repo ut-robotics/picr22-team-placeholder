@@ -55,15 +55,19 @@ class ImageProcessor():
         with open(self.color_config, 'rb') as conf:
             self.colors_lookup = pickle.load(conf)
             self.set_segmentation_table(self.colors_lookup)
-        self.kernel = np.ones((3, 3), np.uint8)
-        self.fragmented = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
+        self.fragmented = np_zeros_jit(
+            self.camera.rgb_height, self.camera.rgb_width)
 
-        self.t_balls = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
-        self.t_basket_b = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
-        self.t_basket_m = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
+        self.t_balls = np_zeros_jit(
+            self.camera.rgb_height, self.camera.rgb_width)
+        self.t_basket_b = np_zeros_jit(
+            self.camera.rgb_height, self.camera.rgb_width)
+        self.t_basket_m = np_zeros_jit(
+            self.camera.rgb_height, self.camera.rgb_width)
         self.logger = logger
         self.debug = debug
-        self.debug_frame = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
+        self.debug_frame = np_zeros_jit(
+            self.camera.rgb_height, self.camera.rgb_width)
 
     def set_segmentation_table(self, table):
         segment.set_table(table)
@@ -75,8 +79,9 @@ class ImageProcessor():
         self.camera.close()
 
     def analyze_balls(self, t_balls, depth, fragments, basket) -> list:
-        t_balls = cv2.dilate(t_balls, self.kernel)
-        t_balls = cv2.erode(t_balls, self.kernel)
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        t_balls = cv2.dilate(t_balls, kernel)
+        t_balls = cv2.erode(t_balls, kernel)
         contours, hierarchy = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         balls = []
@@ -108,15 +113,18 @@ class ImageProcessor():
                 obj_dst = obj_y
             else:
                 try:
-                    obj_dst = np_average_jit(depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
-                except(ZeroDivisionError):
-                    self.logger.log.error("Ball attempted to divide by zero when averaging.")
+                    obj_dst = np_average_jit(
+                        depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
+                except (ZeroDivisionError):
+                    self.logger.log.error(
+                        "Ball attempted to divide by zero when averaging.")
                     continue
 
             # don't add if ball is further than the basket or too close to it
             if basket != None:
-                if basket.distance - 500 <= obj_dst:
-                    continue
+                if 160 < basket.x < 600:
+                    if basket.distance - 500 <= obj_dst:
+                        continue
 
             if self.debug:
                 self.debug_frame[ys, xs] = [0, 0, 0]
@@ -131,7 +139,8 @@ class ImageProcessor():
         return balls
 
     def analyze_baskets(self, t_basket, depth,  debug_color=(0, 255, 255)) -> list:
-        t_basket = cv2.morphologyEx(t_basket, cv2.MORPH_CLOSE, self.kernel)
+        kernel = np.ones((3, 3), np.uint8)
+        t_basket = cv2.morphologyEx(t_basket, cv2.MORPH_CLOSE, kernel)
         contours, hierarchy = cv2.findContours(
             t_basket, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         baskets = []
@@ -153,9 +162,11 @@ class ImageProcessor():
                 obj_dst = obj_y
             else:
                 try:
-                    obj_dst = np_average_jit(depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
-                except(ZeroDivisionError):
-                    self.logger.log.error("Basket attempted to divide by zero when averaging.")
+                    obj_dst = np_average_jit(
+                        depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
+                except (ZeroDivisionError):
+                    self.logger.log.error(
+                        "Basket attempted to divide by zero when averaging.")
                     continue
 
             baskets.append(Object(x=obj_x, y=obj_y, size=size,

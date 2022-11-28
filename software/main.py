@@ -14,11 +14,13 @@ from random import choice
 # some objectives for the near future
 # TODO - state for getting ball out of thrower, could maybe make use of depth camera and check if a pixel's distance changes?
 # TODO - improve orbiting
+# TODO - prevent the ball from getting stuck in front of a basket
 
 
 class Robot:
     """The main class for %placeholder%"""
     current_state = State.Stopped
+    prev_state = None
     thrower_substate = ThrowerState.Off
     thrower_speed = 0
     search_substate = SearchState.Off
@@ -154,7 +156,9 @@ class Robot:
         if self.debug:
             self.display_camera_feed()
 
-        #self.logger.log.info(f"CURRENT STATE - {self.current_state}")
+        if self.prev_state != self.current_state:
+            self.logger.log.info(f"CURRENT STATE - {self.current_state}")
+            self.prev_state = self.current_state
 
         # -- REMOTE CONTROL STUFF --
         # stop button
@@ -203,6 +207,8 @@ class Robot:
                             self.basket_too_close_frames += 1
                     else:
                         self.basket_too_close_frames = 0
+                else:
+                    self.basket_too_close_frames = 0
 
         if self.current_state not in [State.Orbiting, State.RemoteControl, State.Stopped]:
             # Randomize the direction to have a higher chance of actually getting the shorter way around, instead of always going left
@@ -296,7 +302,11 @@ class Robot:
                     self.basket_too_close_frames += 1
             else:
                 self.logger.log.warning(
-                    "--Searching-- Drive2Search: Basket does not exist!")
+                    "--Searching-- Drive2Search: Basket does not exist, going back to rotating!")
+                self.basket_to_drive_to = None
+                self.basket_max_distance = 0
+                self.enemy_basket_max_distance = 0
+                self.back_to_search_state()
 
     def drive_to_ball_state(self):
         """State for driving to the ball."""
