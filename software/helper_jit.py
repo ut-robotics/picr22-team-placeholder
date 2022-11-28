@@ -53,8 +53,8 @@ def find_black_near_ball(fragments, object_coords, frag_size, look_range):
         y1 = 0
     if x2 > frag_size[1]:
         x2 = frag_size[1] - 1
-    if y2 > frag_size[0]:
-        y2 = frag_size[0] - 1
+    if y2 > 450:
+        y2 = 450
 
     black_count = 0
     for x in prange(x1, x2):

@@ -5,13 +5,14 @@ import camera
 import image_processor
 from helper import get_colors_pkl_path
 from Color import *
+from logger import Logger
 MAX_HISTORY = 10  # how many times we can possibly undo
 
 
 def nothing(x):
     pass
 
-
+logger = Logger(name="%ColourConfig%")
 cv2.namedWindow('image')
 cv2.namedWindow('rgb')
 cv2.namedWindow('mask')
@@ -30,7 +31,7 @@ old_lookups = list()
 # camera instance for realsense cameras
 cap = camera.RealsenseCamera(exposure=100)
 
-processor = image_processor.ImageProcessor(cap, debug=True)
+processor = image_processor.ImageProcessor(cap, logger=logger, debug=True)
 
 cv2.createTrackbar('brush_size', 'image', 3, 10, nothing)
 cv2.createTrackbar('noise', 'image', 1, 5, nothing)
@@ -82,8 +83,8 @@ cv2.namedWindow('rgb')
 cv2.setMouseCallback('rgb', choose_color)
 cv2.setMouseCallback('mask', choose_color)
 
-print("Quit: 'q', Save 's', Erase selected color 'e', Undo 'u'")
-print("Balls 'g', Magenta basket='m', Blue basket='b', Field='f', White='w', Black='d', Other='o'")
+logger.log.info("Quit: 'q', Save 's', Erase selected color 'e', Undo 'u'")
+logger.log.info("Balls 'g', Magenta basket='m', Blue basket='b', Field='f', White='w', Black='d', Other='o'")
 
 cap.open()
 
@@ -109,9 +110,9 @@ while (True):
         break
     elif k == ord('u'):
         if len(old_lookups) <= 0:
-            print("No more undos!")
+            logger.log.warning("No more undos!")
         else:
-            print("Undo'd.")
+            logger.log.info("Undo'd.")
             colors_lookup = np.copy(old_lookups.pop())
     elif k in keyDict:
         col = keyDict[k]
@@ -120,9 +121,9 @@ while (True):
     elif k == ord('s'):
         with open(pkl_path, 'wb') as fh:
             pickle.dump(colors_lookup, fh, -1)
-        print('saved')
+        logger.log.info('saved')
     elif k == ord('e'):
-        print('erased')
+        logger.log.info('erased')
         colors_lookup[colors_lookup == p] = 0
 
 # When everything done, release the capture

@@ -84,7 +84,7 @@ class Robot:
         else:
             # camera instance for normal web cameras
             self.cam = camera.OpenCVCamera(id=2)
-        self.processor = image_processor.ImageProcessor(self.cam, debug=debug)
+        self.processor = image_processor.ImageProcessor(self.cam, logger=self.logger, debug=debug)
         self.processor.start()
         self.middle_point = self.cam.rgb_width // 2 + middle_offset
         self.camera_deadzone = camera_deadzone
@@ -132,8 +132,8 @@ class Robot:
             end = time()
             fps = 30 / (end - self.start)
             self.start = end
-            # self.logger.log.info(
-            #    "FPS: {}, framecount: {}".format(fps, self.frame_cnt))
+            #self.logger.log.info(
+            #   "FPS: {}, framecount: {}".format(fps, self.frame_cnt))
 
     def display_camera_feed(self):
         debug_frame = self.processed_data.debug_frame
@@ -434,8 +434,9 @@ class Robot:
             self.enemy_basket_color = Color(
                 2) if self.basket_color == Color(3) else Color(3)
             self.back_to_search_state()
+            opponent_index = 0 if robot_index == 1 else 1
             self.logger.log.info(
-                f"STARTING ROBOT, basket: {self.basket_color}") # TODO - log opponent robot name, so we can more easily figure out which match it is
+                f"STARTING ROBOT, basket: {self.basket_color}, opponent: {cmd['targets'][opponent_index]}") # TODO - log opponent robot name, so we can more easily figure out which match it is
 
         elif cmd["signal"] == "stop":
             self.logger.log.info("STOPPING ROBOT")

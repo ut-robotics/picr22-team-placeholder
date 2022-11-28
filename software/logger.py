@@ -26,7 +26,7 @@ class TerminalFormatter(logging.Formatter):
 
 
 class Logger():
-    def __init__(self):
+    def __init__(self, name="%placeholder%"):
         # make the logs dir if it doesn't exist already
         if not os.path.exists("logs"):
             os.mkdir("logs")
@@ -38,7 +38,7 @@ class Logger():
         # displaying log in terminal
         ch = logging.StreamHandler()
         ch.setFormatter(TerminalFormatter())
-        self.log = logging.getLogger("%placeholder%")
+        self.log = logging.getLogger(name)
         self.log.addHandler(fh)
         self.log.addHandler(ch)
         self.log.setLevel(logging.DEBUG)  # TODO - make log level adjustable in main.py

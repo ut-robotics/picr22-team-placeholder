@@ -48,7 +48,7 @@ class ProcessedResults():
 
 # Main processor class. processes segmented information
 class ImageProcessor():
-    def __init__(self, camera, color_config=get_colors_pkl_path(), debug=False):
+    def __init__(self, camera, logger, color_config=get_colors_pkl_path(), debug=False):
         self.camera = camera
 
         self.color_config = color_config
@@ -61,7 +61,7 @@ class ImageProcessor():
         self.t_balls = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
         self.t_basket_b = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
         self.t_basket_m = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
-
+        self.logger = logger
         self.debug = debug
         self.debug_frame = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
 
@@ -107,7 +107,11 @@ class ImageProcessor():
             if depth is None:
                 obj_dst = obj_y
             else:
-                obj_dst = np_average_jit(depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
+                try:
+                    obj_dst = np_average_jit(depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
+                except(ZeroDivisionError):
+                    self.logger.log.error("Ball attempted to divide by zero when averaging.")
+                    continue
 
             # don't add if ball is further than the basket or too close to it
             if basket != None:
@@ -148,7 +152,11 @@ class ImageProcessor():
             if depth is None:
                 obj_dst = obj_y
             else:
-                obj_dst = np_average_jit(depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
+                try:
+                    obj_dst = np_average_jit(depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
+                except(ZeroDivisionError):
+                    self.logger.log.error("Basket attempted to divide by zero when averaging.")
+                    continue
 
             baskets.append(Object(x=obj_x, y=obj_y, size=size,
                            distance=obj_dst, exists=True))
