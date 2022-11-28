@@ -4,7 +4,7 @@ import _pickle as pickle
 import numpy as np
 import cv2
 import Color as c
-from helper_jit import find_black_near_ball
+from helper_jit import find_black_near_ball, np_zeros_jit, np_average_jit
 from helper import get_colors_pkl_path
 
 
@@ -55,20 +55,15 @@ class ImageProcessor():
         with open(self.color_config, 'rb') as conf:
             self.colors_lookup = pickle.load(conf)
             self.set_segmentation_table(self.colors_lookup)
+        self.kernel = np.ones((3, 3), np.uint8)
+        self.fragmented = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
 
-        self.fragmented = np.zeros(
-            (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
-
-        self.t_balls = np.zeros(
-            (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
-        self.t_basket_b = np.zeros(
-            (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
-        self.t_basket_m = np.zeros(
-            (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
+        self.t_balls = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
+        self.t_basket_b = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
+        self.t_basket_m = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
 
         self.debug = debug
-        self.debug_frame = np.zeros(
-            (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
+        self.debug_frame = np_zeros_jit(self.camera.rgb_height, self.camera.rgb_width)
 
     def set_segmentation_table(self, table):
         segment.set_table(table)
@@ -80,9 +75,8 @@ class ImageProcessor():
         self.camera.close()
 
     def analyze_balls(self, t_balls, depth, fragments, basket) -> list:
-        kernel = np.ones((3, 3), np.uint8)
-        t_balls = cv2.dilate(t_balls, kernel)
-        t_balls = cv2.erode(t_balls, kernel)
+        t_balls = cv2.dilate(t_balls, self.kernel)
+        t_balls = cv2.erode(t_balls, self.kernel)
         contours, hierarchy = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         balls = []
@@ -113,7 +107,7 @@ class ImageProcessor():
             if depth is None:
                 obj_dst = obj_y
             else:
-                obj_dst = np.average(depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
+                obj_dst = np_average_jit(depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
 
             # don't add if ball is further than the basket or too close to it
             if basket != None:
@@ -133,8 +127,7 @@ class ImageProcessor():
         return balls
 
     def analyze_baskets(self, t_basket, depth,  debug_color=(0, 255, 255)) -> list:
-        kernel = np.ones((3, 3), np.uint8)
-        t_basket = cv2.morphologyEx(t_basket, cv2.MORPH_CLOSE, kernel)
+        t_basket = cv2.morphologyEx(t_basket, cv2.MORPH_CLOSE, self.kernel)
         contours, hierarchy = cv2.findContours(
             t_basket, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         baskets = []
@@ -155,7 +148,7 @@ class ImageProcessor():
             if depth is None:
                 obj_dst = obj_y
             else:
-                obj_dst = np.average(depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
+                obj_dst = np_average_jit(depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
 
             baskets.append(Object(x=obj_x, y=obj_y, size=size,
                            distance=obj_dst, exists=True))

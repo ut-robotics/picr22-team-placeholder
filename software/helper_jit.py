@@ -1,8 +1,35 @@
 # File for helper functions utilizing jit
-from numba import jit
+from numba import njit, prange
+import numpy as np
 
 
-@jit(nopython=True)
+@njit
+def np_average_jit(array):
+    """Compute the weighted average along the specified axis.
+
+    Args:
+        array (list): List to calculate the average from
+
+    Returns:
+        float: Weighted average
+    """
+    return np.average(array)
+
+@njit
+def np_zeros_jit(height, width):
+    """Return a new array of given shape, filled with zeros.
+
+    Args:
+        height (int): Array height
+        width (int): Array width
+
+    Returns:
+        list: New array
+    """
+    return np.zeros(
+            (height, width), dtype=np.uint8)
+
+@njit(parallel=True, fastmath=True)
 def find_black_near_ball(fragments, object_coords, frag_size, look_range):
     """Returns how many black frames were found near the ball
 
@@ -30,8 +57,8 @@ def find_black_near_ball(fragments, object_coords, frag_size, look_range):
         y2 = frag_size[0] - 1
 
     black_count = 0
-    for x in range(x1, x2):
-        for y in range(y1, y2):
+    for x in prange(x1, x2):
+        for y in prange(y1, y2):
             if fragments[y][x] == 6:
                 black_count += 1
     return black_count
