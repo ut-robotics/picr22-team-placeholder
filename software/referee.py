@@ -31,17 +31,15 @@ class Referee:
 
     def connect(self):
         """Connect to the referee server"""
-        for _ in range(15):  # Attempt reconnecting for ~15 seconds before giving up
+        while True:  # Attempt reconnecting while the code is running
             try:
                 self.ws.connect(self.robot_data.referee_ip)
                 return True
             except ConnectionRefusedError:
-                self.robot_data.logger.log.warning("--REFEREE-- Retrying...")
                 time.sleep(1)
                 continue
             except:
-                self.robot_data.logger.log.exception('')   
-        return False
+                self.robot_data.logger.log.exception('')
 
     def listen(self):
         """Listen and add referee commands to queue"""

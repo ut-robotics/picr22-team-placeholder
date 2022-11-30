@@ -68,7 +68,9 @@ class ImageProcessor():
         self.debug = debug
         self.debug_frame = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
-
+        self.ball_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        self.basket_kernel = np.ones((3, 3), np.uint8)
+        
     def set_segmentation_table(self, table):
         segment.set_table(table)
 
@@ -79,9 +81,8 @@ class ImageProcessor():
         self.camera.close()
 
     def analyze_balls(self, t_balls, depth, fragments, basket) -> list:
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-        t_balls = cv2.dilate(t_balls, kernel)
-        t_balls = cv2.erode(t_balls, kernel)
+        t_balls = cv2.dilate(t_balls, self.ball_kernel)
+        t_balls = cv2.erode(t_balls, self.ball_kernel)
         contours, hierarchy = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         balls = []
@@ -139,8 +140,7 @@ class ImageProcessor():
         return balls
 
     def analyze_baskets(self, t_basket, depth,  debug_color=(0, 255, 255)) -> list:
-        kernel = np.ones((3, 3), np.uint8)
-        t_basket = cv2.morphologyEx(t_basket, cv2.MORPH_CLOSE, kernel)
+        t_basket = cv2.morphologyEx(t_basket, cv2.MORPH_CLOSE, self.basket_kernel)
         contours, hierarchy = cv2.findContours(
             t_basket, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         baskets = []
