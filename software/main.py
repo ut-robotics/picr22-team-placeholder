@@ -14,7 +14,7 @@ from random import choice
 # some objectives for the near future
 # TODO - state for getting ball out of thrower, could maybe make use of depth camera and check if a pixel's distance changes?
 # TODO - improve orbiting
-# TODO - prevent the ball from getting stuck in front of a basket
+# TODO - prevent the robot from getting stuck in front of a basket
 
 
 class Robot:
@@ -358,17 +358,18 @@ class Robot:
 
         # TODO - adjust these values to improve orbiting
         x_delta = self.middle_point - self.ball.x
-        x_speed = -1 * x_delta * 0.0018
+        x_speed = -1 * x_delta * 0.0048
 
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.001
 
-        rot_speed = int(self.orbit_direction) * self.max_speed * 0.7
+        rot_speed = int(self.orbit_direction) * self.max_speed * 0.5
 
         self.logger.log.info(
             f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
 
         if self.baskets[self.basket_color].exists:
+            x_speed = -1 * x_delta * 0.0018
             basket_delta = self.baskets[self.basket_color].x - \
                 self.middle_point
 
