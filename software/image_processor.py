@@ -48,7 +48,7 @@ class ProcessedResults():
 
 # Main processor class. processes segmented information
 class ImageProcessor():
-    def __init__(self, camera, logger, color_config=get_colors_pkl_path(), debug=False):
+    def __init__(self, camera, logger, min_basket_distance, color_config=get_colors_pkl_path(), debug=False):
         self.camera = camera
 
         self.color_config = color_config
@@ -66,11 +66,12 @@ class ImageProcessor():
             self.camera.rgb_height, self.camera.rgb_width)
         self.logger = logger
         self.debug = debug
+        self.min_basket_distance = min_basket_distance
         self.debug_frame = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
         self.ball_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         self.basket_kernel = np.ones((3, 3), np.uint8)
-        
+
     def set_segmentation_table(self, table):
         segment.set_table(table)
 
@@ -120,11 +121,12 @@ class ImageProcessor():
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")
                     continue
-
+            if obj_dst == 0:
+                continue
             # don't add if ball is further than the basket or too close to it
             if basket != None:
                 if 160 < basket.x < 600:
-                    if basket.distance - 500 <= obj_dst:
+                    if basket.distance - self.min_basket_distance <= obj_dst:
                         continue
 
             if self.debug:
@@ -140,7 +142,8 @@ class ImageProcessor():
         return balls
 
     def analyze_baskets(self, t_basket, depth,  debug_color=(0, 255, 255)) -> list:
-        t_basket = cv2.morphologyEx(t_basket, cv2.MORPH_CLOSE, self.basket_kernel)
+        t_basket = cv2.morphologyEx(
+            t_basket, cv2.MORPH_CLOSE, self.basket_kernel)
         contours, hierarchy = cv2.findContours(
             t_basket, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         baskets = []

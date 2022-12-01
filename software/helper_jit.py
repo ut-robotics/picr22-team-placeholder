@@ -29,7 +29,7 @@ def np_zeros_jit(height, width):
     return np.zeros(
             (height, width), dtype=np.uint8)
 
-@njit(parallel=True, fastmath=True)
+@njit(parallel=True, fastmath=True, cache=True)
 def find_black_near_ball(fragments, object_coords, frag_size, look_range):
     """Returns how many black frames were found near the ball
 

@@ -15,7 +15,7 @@ from random import choice
 # TODO - state for getting ball out of thrower, could maybe make use of depth camera and check if a pixel's distance changes?
 # TODO - improve orbiting
 # TODO - prevent the robot from getting stuck in front of a basket
-
+# TODO - prevent robot from reversing forever
 
 class Robot:
     """The main class for %placeholder%"""
@@ -73,7 +73,8 @@ class Robot:
                  search_min_basket_dist: int,
                  max_frames: int,
                  orbit_dir_timeout_time: int,
-                 min_basket_dist: int):
+                 min_basket_dist: int,
+                 camera_min_basket_dist: int):
         # initialize logging
         self.logger = Logger()
         self.robot = motion.OmniRobot(robot_data=self)
@@ -86,7 +87,7 @@ class Robot:
             # camera instance for normal web cameras
             self.cam = camera.OpenCVCamera(id=2)
         self.processor = image_processor.ImageProcessor(
-            self.cam, logger=self.logger, debug=debug)
+            self.cam, logger=self.logger, debug=debug, min_basket_distance=camera_min_basket_dist)
         self.processor.start()
         self.middle_point = self.cam.rgb_width // 2 + middle_offset
         self.camera_deadzone = camera_deadzone
@@ -326,7 +327,7 @@ class Robot:
             y_speed = -self.max_speed * y_delta * 0.01
             rot_speed = -self.max_speed * rot_delta * 0.003
 
-            y_sign = 1 if y_speed >= 0 else -1
+            y_sign = 1 if y_speed >= 0 else -1 # TODO - figure out something for when ball gets stuck on thrower
             rot_sign = -1 if rot_speed >= 0 else 1
 
             y_speed = min(abs(y_speed), self.max_speed) * y_sign
@@ -564,5 +565,6 @@ if __name__ == "__main__":
     conf_max_frames = 15  # for values that are tied to FPS in some way
     conf_orbit_dir_timeout_time = 6
     conf_min_basket_dist = 1200
+    conf_camera_min_basket_dist = 700
     robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_time,
-                  conf_min_distance, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed, conf_referee_ip, conf_name, conf_search_timeout, conf_search_min_basket_dist, conf_max_frames, conf_orbit_dir_timeout_time, conf_min_basket_dist)
+                  conf_min_distance, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed, conf_referee_ip, conf_name, conf_search_timeout, conf_search_min_basket_dist, conf_max_frames, conf_orbit_dir_timeout_time, conf_min_basket_dist, conf_camera_min_basket_dist)
