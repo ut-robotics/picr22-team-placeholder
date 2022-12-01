@@ -125,7 +125,7 @@ class ImageProcessor():
                 continue
             # don't add if ball is further than the basket or too close to it
             if basket != None:
-                if 160 < basket.x < 600:
+                if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
                     if basket.distance - self.min_basket_distance <= obj_dst:
                         continue
 

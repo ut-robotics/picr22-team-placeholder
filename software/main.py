@@ -15,7 +15,7 @@ from random import choice
 # TODO - state for getting ball out of thrower, could maybe make use of depth camera and check if a pixel's distance changes?
 # TODO - improve orbiting
 # TODO - prevent the robot from getting stuck in front of a basket
-# TODO - prevent robot from reversing forever
+# TODO - prevent robot from reversing forever, ACTIVATE THROWER WITH speed 570, this also applies to TODO-1
 
 class Robot:
     """The main class for %placeholder%"""
