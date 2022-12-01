@@ -4,6 +4,7 @@ import _pickle as pickle
 import numpy as np
 import cv2
 import Color as c
+from helper_jit import find_black_near_ball, np_zeros_jit, np_average_jit
 from helper import get_colors_pkl_path
 
 
@@ -47,27 +48,29 @@ class ProcessedResults():
 
 # Main processor class. processes segmented information
 class ImageProcessor():
-    def __init__(self, camera, color_config=get_colors_pkl_path(), debug=False):
+    def __init__(self, camera, logger, min_basket_distance, color_config=get_colors_pkl_path(), debug=False):
         self.camera = camera
 
         self.color_config = color_config
         with open(self.color_config, 'rb') as conf:
             self.colors_lookup = pickle.load(conf)
             self.set_segmentation_table(self.colors_lookup)
+        self.fragmented = np_zeros_jit(
+            self.camera.rgb_height, self.camera.rgb_width)
 
-        self.fragmented = np.zeros(
-            (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
-
-        self.t_balls = np.zeros(
-            (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
-        self.t_basket_b = np.zeros(
-            (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
-        self.t_basket_m = np.zeros(
-            (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
-
+        self.t_balls = np_zeros_jit(
+            self.camera.rgb_height, self.camera.rgb_width)
+        self.t_basket_b = np_zeros_jit(
+            self.camera.rgb_height, self.camera.rgb_width)
+        self.t_basket_m = np_zeros_jit(
+            self.camera.rgb_height, self.camera.rgb_width)
+        self.logger = logger
         self.debug = debug
-        self.debug_frame = np.zeros(
-            (self.camera.rgb_height, self.camera.rgb_width), dtype=np.uint8)
+        self.min_basket_distance = min_basket_distance
+        self.debug_frame = np_zeros_jit(
+            self.camera.rgb_height, self.camera.rgb_width)
+        self.ball_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        self.basket_kernel = np.ones((3, 3), np.uint8)
 
     def set_segmentation_table(self, table):
         segment.set_table(table)
@@ -78,16 +81,17 @@ class ImageProcessor():
     def stop(self):
         self.camera.close()
 
-    def analyze_balls(self, t_balls, depth, fragments) -> list:
+    def analyze_balls(self, t_balls, depth, fragments, basket) -> list:
+        t_balls = cv2.dilate(t_balls, self.ball_kernel)
+        t_balls = cv2.erode(t_balls, self.ball_kernel)
         contours, hierarchy = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
         balls = []
-
+        frag_x, frag_y = np.shape(fragments)
         for contour in contours:
 
             # ball filtering logic goes here. Example includes filtering by size and an example how to get pixels from
-            # the bottom center of the fram to the ball
+            # the bottom center of the frame to the ball
 
             size = cv2.contourArea(contour)
 
@@ -95,6 +99,10 @@ class ImageProcessor():
                 continue
 
             x, y, w, h = cv2.boundingRect(contour)
+            black_count = find_black_near_ball(
+                fragments, (x, y, w, h), (frag_x, frag_y), 50)
+            if black_count > 180:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
+                continue
 
             ys = np.array(
                 np.arange(y + h, self.camera.rgb_height), dtype=np.uint16)
@@ -106,7 +114,20 @@ class ImageProcessor():
             if depth is None:
                 obj_dst = obj_y
             else:
-                obj_dst = np.average(depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
+                try:
+                    obj_dst = np_average_jit(
+                        depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
+                except (ZeroDivisionError):
+                    self.logger.log.error(
+                        "Ball attempted to divide by zero when averaging.")
+                    continue
+            if obj_dst == 0:
+                continue
+            # don't add if ball is further than the basket or too close to it
+            if basket != None:
+                if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
+                    if basket.distance - self.min_basket_distance <= obj_dst:
+                        continue
 
             if self.debug:
                 self.debug_frame[ys, xs] = [0, 0, 0]
@@ -121,10 +142,12 @@ class ImageProcessor():
         return balls
 
     def analyze_baskets(self, t_basket, depth,  debug_color=(0, 255, 255)) -> list:
+        t_basket = cv2.morphologyEx(
+            t_basket, cv2.MORPH_CLOSE, self.basket_kernel)
         contours, hierarchy = cv2.findContours(
             t_basket, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
         baskets = []
+
         for contour in contours:
 
             # basket filtering logic goes here. Example includes size filtering of the basket
@@ -141,7 +164,13 @@ class ImageProcessor():
             if depth is None:
                 obj_dst = obj_y
             else:
-                obj_dst = np.average(depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
+                try:
+                    obj_dst = np_average_jit(
+                        depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
+                except (ZeroDivisionError):
+                    self.logger.log.error(
+                        "Basket attempted to divide by zero when averaging.")
+                    continue
 
             baskets.append(Object(x=obj_x, y=obj_y, size=size,
                            distance=obj_dst, exists=True))
@@ -172,12 +201,19 @@ class ImageProcessor():
 
         if self.debug:
             self.debug_frame = np.copy(color_frame)
-
-        balls = self.analyze_balls(self.t_balls, depth_frame, self.fragmented)
         basket_b = self.analyze_baskets(
             self.t_basket_b, depth_frame, debug_color=c.Color.BLUE.color.tolist())
         basket_m = self.analyze_baskets(
             self.t_basket_m, depth_frame, debug_color=c.Color.MAGENTA.color.tolist())
+        if basket_b.exists and basket_m.exists:
+            basket_to_check = basket_b if basket_b.distance > basket_m.distance else basket_m
+        elif True in [basket_b.exists, basket_m.exists]:
+            basket_to_check = basket_b if basket_b.exists else basket_m
+        else:
+            basket_to_check = None
+
+        balls = self.analyze_balls(
+            self.t_balls, depth_frame, self.fragmented, basket_to_check)
 
         return ProcessedResults(balls=balls,
                                 basket_b=basket_b,
