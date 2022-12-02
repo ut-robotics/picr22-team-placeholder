@@ -71,3 +71,5 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 25.11.2022 - *Jens:* Made new baseplate design, new thrower design, etc (5h)
 * 28.11.2022 - *Artur:* Soldering the PCB. (3h)
 * 28.11.2022 - *Timo:* Bug fixes, presentation. (5h)
+* 01.12.2022 - *Timo:* Code cleanup and fixes, getting code approved. (2h)
+* 02.12.2022 - *Timo:* Code cleanup. (2.5h)
