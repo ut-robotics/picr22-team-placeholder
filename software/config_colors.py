@@ -29,9 +29,6 @@ try:
 except:
     colors_lookup = np.zeros(0x1000000, dtype=np.uint8)
 old_lookups = list()
-# camera instance for normal web cameras
-#cap = camera.OpenCVCamera(id = 2)
-# camera instance for realsense cameras
 cap = camera.RealsenseCamera(exposure=100)
 
 processor = image_processor.ImageProcessor(

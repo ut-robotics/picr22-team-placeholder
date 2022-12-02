@@ -17,10 +17,11 @@ class OmniRobot():
 
     def __init__(self, robot_data):
         self.robot_data = robot_data
-        self.wheelDistanceFromCenter = self.robot_data.config["motor"]["wheel_distance_from_center"]
-        self.wheelAngles = self.string_to_angles(
+        self.wheel_distance_from_center = self.robot_data.config[
+            "motor"]["wheel_distance_from_center"]
+        self.wheel_angles = self.string_to_angles(
             self.robot_data.config["motor"]["motor_order"])
-        self.wheelSpeedToMainboardUnits = self.robot_data.config["motor"]["gearbox_reduction_ratio"] * \
+        self.wheel_speed_to_mainboard_units = self.robot_data.config["motor"]["gearbox_reduction_ratio"] * \
             self.robot_data.config["motor"]["encoder_edges_per_motor_revolution"] / \
             (2 * math.pi * self.robot_data.config["motor"]["wheel_radius"]
              * self.robot_data.config["motor"]["pid_control_frequency"])
@@ -78,47 +79,48 @@ class OmniRobot():
         else:
             self.robot_data.logger.log.warning("Serial not open!")
 
-    def send(self, speeds, throwerSpeed, disableFailsafe=0):
+    def send(self, speeds, thrower_speed, disable_failsafe=0):
         """This function sends speeds to the mainboard.
 
         Args:
             speeds (list of ints): List of speeds to send (X, Y and rotational)
-            throwerSpeed (int): Speed to use for the thrower
-            disableFailsafe (int, optional): Enables continuous movement. Defaults to 0.
+            thrower_speed (int): Speed to use for the thrower
+            disable_failsafe (int, optional): Enables continuous movement. Defaults to 0.
         """
         sent_data = struct.pack(
-            '<hhhHBH', speeds[0], speeds[1], speeds[2], throwerSpeed, disableFailsafe, 0xAAAA)
+            '<hhhHBH', speeds[0], speeds[1], speeds[2], thrower_speed, disable_failsafe, 0xAAAA)
         self.ser.write(sent_data)
         received_data = self.ser.read(8)
-        actual_speed1, actual_speed2, actual_speed3, _ = struct.unpack(
-            '<hhhH', received_data)
-        # self.robot_data.logger.log.info(
-        #    f"Sent speed: {speeds}, Actual speed: [{actual_speed1}, {actual_speed2}, {actual_speed3}]")
+        if self.robot_data.config["logging"]["motor_speeds"]:
+            actual_speed1, actual_speed2, actual_speed3, _ = struct.unpack(
+                '<hhhH', received_data)
+            self.robot_data.logger.log.info(
+                f"Sent speed: {speeds}, Actual speed: [{actual_speed1}, {actual_speed2}, {actual_speed3}]")
 
-    def get_wheel_speed(self, motorID, robotSpeed, robotDirectionAngle, robotAngularVelocity):
+    def get_wheel_speed(self, motor_ID, robot_speed, robot_direction_angle, robot_angular_velocity):
         """Calculate wheel speed in mainboard units
 
         Args:
-            motorID (int): ID of the current wheel
-            robotSpeed (float): Robot speed in metres
-            robotDirectionAngle (float): Direction angle of the robot
-            robotAngularVelocity (float): Angular velocity of the robot
+            motor_ID (int): ID of the current wheel
+            robot_speed (float): Robot speed in metres
+            robot_direction_angle (float): Direction angle of the robot
+            robot_angular_velocity (float): Angular velocity of the robot
 
         Returns:
             int: Wheel angular speed in mainboard units
         """
-        wheelLinearVelocity = robotSpeed * \
-            math.cos(robotDirectionAngle -
-                     self.wheelAngles[motorID]) + self.wheelDistanceFromCenter * robotAngularVelocity
-        wheelAngularSpeedInMainboardUnits = wheelLinearVelocity * \
-            self.wheelSpeedToMainboardUnits
-        if math.isnan(wheelAngularSpeedInMainboardUnits):
+        wheel_linear_velocity = robot_speed * \
+            math.cos(robot_direction_angle -
+                     self.wheel_angles[motor_ID]) + self.wheel_distance_from_center * robot_angular_velocity
+        wheel_angular_speed_in_mainboard_units = wheel_linear_velocity * \
+            self.wheel_speed_to_mainboard_units
+        if math.isnan(wheel_angular_speed_in_mainboard_units):
             self.robot_data.logger.log.warning("Tried to send NaN as speeds!")
             return 0
         else:
-            return wheelAngularSpeedInMainboardUnits
+            return wheel_angular_speed_in_mainboard_units
 
-    def move(self, x_speed, y_speed, rot_speed, thrower_speed=0, disableFailsafe=0):
+    def move(self, x_speed, y_speed, rot_speed, thrower_speed=0, disable_failsafe=0):
         """Move the robot
 
         Args:
@@ -126,13 +128,13 @@ class OmniRobot():
             y_speed (float): Speed on the Y axis (metres)
             rot_speed (float): Rotational speed
             thrower_speed (int, optional): Speed to use for the thrower. Defaults to 0.
-            disableFailsafe (int, optional): Enables continuous movement. Defaults to 0.
+            disable_failsafe (int, optional): Enables continuous movement. Defaults to 0.
         """
         robot_speed = math.sqrt(x_speed**2 + y_speed**2)
         robot_angle = math.atan2(y_speed, x_speed)
         speeds = [int(self.get_wheel_speed(i, robot_speed,
                       robot_angle, rot_speed)) for i in range(3)]
-        self.send(speeds, thrower_speed, disableFailsafe=disableFailsafe)
+        self.send(speeds, thrower_speed, disable_failsafe=disable_failsafe)
 
     def stop(self):
         """Stops all the motors."""

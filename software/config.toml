@@ -3,21 +3,24 @@ name = "placeholder"                  # the name of our funny bot
 referee_ip = "ws://192.168.3.69:8222" # referee server IP
 
 [debug]
-debug = false          # whether to show debug camera
-data_collection = true # TODO - just make this default, it doesnt affect much
+debug = false # whether to show debug camera
+
+[logging]
+fps_counter = false # log current framerate
+ball_count = false  # log ball count
+motor_speeds = false # log motor speeds
 
 [orbit]
-max_orbit_time = 10        # max orbit time in seconds before timeout
+max_orbit_time = 10  # max orbit time in seconds before timeout
 dir_timeout_time = 6 # time in seconds until we randomize the direction (unless we are currently orbiting)
 
 [camera]
-middle_offset = 0            # how much the camera's middle point is offset
-deadzone = 5                 # how many pixels to ignore in the middle
+middle_offset = 0     # how much the camera's middle point is offset
+deadzone = 5          # how many pixels to ignore in the middle
 min_basket_dist = 700 # the minimum distance to start detecting balls from. TODO - wouldnt this conflict with escape state?
-max_frames = 15              # for values that are tied to FPS in some way
-max_ball_miss = 5            # how many times we can miss the ball before starting to look for a new one
-use_realsense = true   # use realsense instead of opencv2 camera. TODO: this is probably broken, so remove this
-undo_count = 10 # how many times we can undo in config_colors
+max_frames = 15       # for values that are tied to FPS in some way
+max_ball_miss = 5     # how many times we can miss the ball before starting to look for a new one
+undo_count = 10       # how many times we can undo in config_colors
 
 [controller]
 analog_deadzone = 400       # deadzone for controller analog sticks
@@ -30,7 +33,7 @@ throw_move_speed = 0.375 # speed that we use while throwing the ball
 search_speed = 2         # speed to use while rotating in search mode
 
 [search]
-timeout = 3            # time in seconds until we start attempting to drive to the opposite basket
+timeout = 3 # time in seconds until we start attempting to drive to the opposite basket
 
 [thrower]
 time = 1.1037      # time in seconds how long we stay in throw state

@@ -17,84 +17,118 @@ from random import choice
 # TODO - prevent the robot from getting stuck in front of a basket
 # TODO - prevent robot from reversing forever, ACTIVATE THROWER WITH speed 570, this also applies to TODO-1
 
+
 class Robot:
     """The main class for %placeholder%"""
+
+    # -- STATES --
     current_state = State.Stopped
     prev_state = None
     thrower_substate = ThrowerState.Off
-    thrower_speed = 0
     search_substate = SearchState.Off
     escape_substate = EscapeState.Off
-    basket_too_close_frames = 0
-    opposite_basket = None  # for escapestate, we'll go towards this basket
-    # to make the game more interesting, we'll randomly decide where we'll look first
-    first_search_dir = choice([SearchState.Left, SearchState.Right])
-    # FPS counter
-    start = time()
-    frame_cnt = 0
 
-    # probably not needed, just for debugging right now to cut down on log spam
-    prev_ball_count = 0
+    # -- FRAMECOUNTS --
+    basket_too_close_frames = 0
     no_balls_frames = 0
-    orbit_start = 0
+
+    # -- TIMEOUTS --
     throw_end_time = 0
-    processed_data = 0
-    ball_count = 0
-    ball = None
+    search_end_time = 0
+    escape_state_end_time = 0
+    orbit_start_time = 0
+    orbit_direction_timeout = 0
+
+    # -- BASKETS --
+    opposite_basket = None  # for escapestate, we'll go towards this basket
     baskets = {Color.BLUE: None, Color.MAGENTA: None}
     basket_max_distance = 0
     enemy_basket_max_distance = 0
-    search_end_time = 0
-    last_seen_ball = None
     basket_to_drive_to = None
-    escape_state_end = 0
+    # this can be changed from referee command anyways, this is just a value to default to
+    basket_color = Color.BLUE
+
+    # -- BALLS --
+    ball_count = 0
+    ball = None
+    last_seen_ball = None
+
+    # -- DIRECTIONS --
+    # to make the game more interesting, we'll randomly decide directions
+    first_search_dir = choice([SearchState.Left, SearchState.Right])
     orbit_direction = choice([OrbitDirection.Left, OrbitDirection.Right])
-    orbit_direction_timeout = 0
-    basket_color = Color.BLUE # this can be changed from referee command anyways, this is just a value to default to
+
+    # -- VARIA --
+    thrower_speed = 0
+    processed_data = None
+
     def __init__(self):
-        # initialize logging
+        # -- LOGGING --
         self.logger = Logger()
+
+        # -- CONFIG --
         self.config = load_config()
-        self.robot = motion.OmniRobot(robot_data=self)
+
+        # -- FPS counter --
+        if self.config["logging"]["fps_counter"]:
+            self.start = time()
+            self.frame_cnt = 0
+
+        # -- BALLS --
+        if self.config["logging"]["ball_count"]:
+            self.prev_ball_count = 0
+
+        # -- DEBUG --
         self.debug = self.config["debug"]["debug"]
-        self.debug_data_collection = self.config["debug"]["data_collection"]
-        if self.config["camera"]["use_realsense"]:
-            # camera instance for realsense cameras
-            self.cam = camera.RealsenseCamera(exposure=100)
-        else:
-            # camera instance for normal web cameras
-            self.cam = camera.OpenCVCamera(id=2)
-        self.processor = image_processor.ImageProcessor(
-            self.cam, logger=self.logger, debug=self.debug, min_basket_distance=self.config["camera"]["min_basket_dist"])
-        self.processor.start()
-        self.middle_point = self.cam.rgb_width // 2 + self.config["camera"]["middle_offset"]
-        self.camera_deadzone = self.config["camera"]["deadzone"]
 
-        self.robot.open()
-        self.analog_deadzone = self.config["controller"]["analog_deadzone"]
-        self.manual_thrower_speed = self.config["controller"]["manual_thrower_speed"]
+        # -- SEARCH --
+        self.search_timeout = self.config["search"]["timeout"]
+        self.enemy_basket_color = Color(
+            2) if self.basket_color == Color(3) else Color(3)
 
-        self.max_speed = self.config["movement"]["max_speed"]
-        self.throw_move_speed = self.config["movement"]["throw_move_speed"]
-        self.search_speed = self.config["movement"]["search_speed"]
-        self.throw_time = self.config["thrower"]["time"]  # how long to stay in throw state
+        # -- ORBIT --
+        self.orbit_dir_timeout_time = self.config["orbit"]["dir_timeout_time"]
+        self.max_orbit_time = self.config["orbit"]["max_orbit_time"]
+
+        # -- THROWER --
+        # how long to stay in throw state
+        self.throw_time = self.config["thrower"]["time"]
         # how far the ball has to be to prepare for throw, approx 10 cm
         self.min_distance = self.config["thrower"]["min_distance"]
 
+        # -- MOVEMENT --
+        self.max_speed = self.config["movement"]["max_speed"]
+        self.throw_move_speed = self.config["movement"]["throw_move_speed"]
+        self.search_speed = self.config["movement"]["search_speed"]
+        # for escaping and searching, so we don't drive into the basket
+        self.min_basket_dist = self.config["movement"]["min_basket_dist"]
+        self.robot = motion.OmniRobot(robot_data=self)
+        self.robot.open()
+
+        # -- CAMERA --
+        self.cam = camera.RealsenseCamera(exposure=100)
+        self.processor = image_processor.ImageProcessor(
+            self.cam, logger=self.logger, debug=self.debug, min_basket_distance=self.config["camera"]["min_basket_dist"])
+        self.processor.start()
+        self.middle_point = self.cam.rgb_width // 2 + \
+            self.config["camera"]["middle_offset"]
+        self.camera_deadzone = self.config["camera"]["deadzone"]
         self.max_ball_miss = self.config["camera"]["max_ball_miss"]
-        self.enemy_basket_color = Color(
-            2) if self.basket_color == Color(3) else Color(3)
-        self.max_orbit_time = self.config["orbit"]["max_orbit_time"]
         self.max_frames = self.config["camera"]["max_frames"]
-        self.search_timeout = self.config["search"]["timeout"]
-        self.min_basket_dist = self.config["movement"]["min_basket_dist"] # for escaping and searching, so we don't drive into the basket
+
+        # -- CONTROLLER --
+        self.analog_deadzone = self.config["controller"]["analog_deadzone"]
+        self.manual_thrower_speed = self.config["controller"]["manual_thrower_speed"]
         self.controller = RobotDS4(robot_data=self)
         self.controller.start()
-        self.referee_ip = self.config["robot"]["referee_ip"]
+
+        # -- REFEREE --
         self.name = self.config["robot"]["name"]
+        self.referee_ip = self.config["robot"]["referee_ip"]
         self.referee = Referee(robot_data=self)
-        self.orbit_dir_timeout_time = self.config["orbit"]["dir_timeout_time"]
         self.referee.start()
+
+        # -- THE MAIN LOOP --
         self.main_loop()
 
     def back_to_search_state(self):
@@ -111,10 +145,11 @@ class Robot:
             end = time()
             fps = 30 / (end - self.start)
             self.start = end
-            # self.logger.log.info(
-            #   "FPS: {}, framecount: {}".format(fps, self.frame_cnt))
+            self.logger.log.info(
+                "FPS: {}, framecount: {}".format(fps, self.frame_cnt))
 
     def display_camera_feed(self):
+        """Displays camera feed. NOTE: very performance intensive"""
         debug_frame = self.processed_data.debug_frame
         cv2.imshow('debug', debug_frame)
         k = cv2.waitKey(1) & 0xff
@@ -128,7 +163,8 @@ class Robot:
 
         # -- BOILERPLATE CAMERA CODE, DO NOT TOUCH UNLESS REALLY NECESSARY --
         # FPS counter
-        self.fps_counter()
+        if self.config["logging"]["fps_counter"]:
+            self.fps_counter()
 
         # Debug stuff, turn off when we don't need camera
         if self.debug:
@@ -143,11 +179,6 @@ class Robot:
         if self.controller.is_stopped():
             raise KeyboardInterrupt
 
-        # verify if robot is remote controlled, no autonomous stuff if robot is remote controlled
-        if not self.debug_data_collection:  # data collection requires camera
-            if self.current_state == State.RemoteControl:
-                return
-
         # -- AUTONOMOUS STUFF --
         self.ball_count = len(self.processed_data.balls)
         if self.ball_count == 0:
@@ -155,10 +186,11 @@ class Robot:
         else:
             self.no_balls_frames = 0
 
-        if self.prev_ball_count != self.ball_count:
-            # this is for debugging
-            #self.logger.log.info("ball_count: {}".format(self.ball_count))
-            self.prev_ball_count = self.ball_count
+        if self.config["logging"]["ball_count"]:
+            if self.prev_ball_count != self.ball_count:
+                # this is for debugging
+                self.logger.log.info("ball_count: {}".format(self.ball_count))
+                self.prev_ball_count = self.ball_count
 
         # first element is always the closest ball
         if self.ball_count > 0:
@@ -199,11 +231,28 @@ class Robot:
         else:
             self.orbit_direction_timeout = time() + self.orbit_dir_timeout_time
 
+    def drive_to_object(self, object_x, object_dist):
+        """Drive to an object
+
+        Args:
+            object_x (int): X coordinate of the object we want to drive to
+            object_dist (int): Distance of the object we want to drive to
+        """
+        rot_delta = self.middle_point - object_x
+        y_delta = self.min_distance - object_dist
+        y_speed = -self.max_speed * y_delta * 0.01
+        rot_speed = -1 * rot_delta * 0.003
+        y_sign = 1 if y_speed >= 0 else -1
+        rot_sign = -1 if rot_speed >= 0 else 1
+        y_speed = min(abs(y_speed), self.max_speed) * y_sign
+        rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
+        self.robot.move(0, y_speed, rot_speed)
+
     def searching_state(self):
         """State for searching for the ball"""
         if self.ball_count != 0:
             self.logger.log.info(
-                "--SEARCHING-- BALL FOUND, MOVING TO DRIVE2BALL")
+                "--SEARCHING-- BALL FOUND, MOVING TO DRIVETOBALL")
             self.robot.stop()
             self.current_state = State.DriveToBall
             self.search_substate = SearchState.Off
@@ -253,22 +302,10 @@ class Robot:
             if self.baskets[self.basket_to_drive_to].exists:
                 if not self.min_basket_dist > self.baskets[self.basket_to_drive_to].distance:
                     self.basket_too_close_frames = 0
-                    rot_delta = self.middle_point - \
-                        self.baskets[self.basket_to_drive_to].x
-                    y_delta = self.min_distance - \
-                        self.baskets[self.basket_to_drive_to].distance
-
-                    y_speed = -self.max_speed * y_delta * 0.0006
-                    rot_speed = -1 * rot_delta * 0.003
-
-                    y_sign = 1 if y_speed >= 0 else -1
-                    rot_sign = -1 if rot_speed >= 0 else 1
-
-                    y_speed = min(abs(y_speed), self.max_speed) * y_sign
-                    rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
+                    self.drive_to_object(
+                        self.baskets[self.basket_to_drive_to].x, self.baskets[self.basket_to_drive_to].distance)
                     self.logger.log.info(
-                        f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}, y_speed {y_speed}, rot_speed {rot_speed}")
-                    self.robot.move(0, y_speed, rot_speed)
+                        f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}")
                 elif self.basket_too_close_frames >= self.max_frames:
                     self.logger.log.warning(
                         f"--SEARCHING-- Basket too close, distance: {self.baskets[self.basket_to_drive_to].distance}, back to rotating!")
@@ -290,34 +327,23 @@ class Robot:
         """State for driving to the ball."""
         if self.no_balls_frames >= self.max_ball_miss:  # lost the ball
             self.logger.log.info(
-                f"--DriveToBall-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
+                f"--Drive2Ball-- Haven't seen ball for {self.max_ball_miss} frames, going back to search.")
             self.back_to_search_state()
             return
-        self.logger.log.info("--DriveToBall-- Driving to ball.")
+        self.logger.log.info("--Drive2Ball-- Driving to the ball.")
 
         if not self.min_distance + 35 > self.ball.distance > self.min_distance - 35:
-            rot_delta = self.middle_point - self.ball.x
-            y_delta = self.min_distance - self.ball.distance
-
-            y_speed = -self.max_speed * y_delta * 0.01
-            rot_speed = -self.max_speed * rot_delta * 0.003
-
-            y_sign = 1 if y_speed >= 0 else -1 # TODO - figure out something for when ball gets stuck on thrower
-            rot_sign = -1 if rot_speed >= 0 else 1
-
-            y_speed = min(abs(y_speed), self.max_speed) * y_sign
-            rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
+            self.drive_to_object(self.ball.x, self.ball.distance)
             self.logger.log.info(
-                f"--DriveToBall-- ball distance {self.ball.distance}, y_speed {y_speed}, rot_speed {rot_speed}")
-            self.robot.move(0, y_speed, rot_speed)
+                f"--Drive2Ball-- Ball distance {self.ball.distance}.")
         else:
             self.robot.stop()
             self.current_state = State.Orbiting
-            self.orbit_start = time()
+            self.orbit_start_time = time()
 
     def orbiting_state(self):
         """State for orbiting around the ball and trying to find the basket."""
-        if time() > self.orbit_start + self.max_orbit_time:
+        if time() > self.orbit_start_time + self.max_orbit_time:
             self.logger.log.info(
                 "--ORBIT-- Orbiting for too long, going back to search")
             self.robot.stop()
@@ -448,13 +474,13 @@ class Robot:
         """State for escaping in case we get too close to the basket"""
         if self.escape_substate == EscapeState.StartEscape:
             self.escape_substate = EscapeState.Reverse
-            self.escape_state_end = time() + 0.7  # dont reverse for too long
+            self.escape_state_end_time = time() + 0.7  # dont reverse for too long
         elif self.escape_substate == EscapeState.Reverse:
             self.logger.log.info("--ESCAPE-- Reversing")
-            if time() > self.escape_state_end:
+            if time() > self.escape_state_end_time:
                 self.escape_substate = EscapeState.TurningFromBasket
                 # rotate for 2 seconds, or until opposite basket is found
-                self.escape_state_end = time() + 2
+                self.escape_state_end_time = time() + 2
             else:
                 self.robot.move(0, -self.max_speed * 0.75, 0)
         elif self.escape_substate == EscapeState.TurningFromBasket:
@@ -462,23 +488,24 @@ class Robot:
             if (self.baskets[self.opposite_basket].exists):
                 self.robot.stop()
                 self.escape_substate = EscapeState.DrivingAway
-                self.escape_state_end = time() + 1
-            elif time() > self.escape_state_end:
+                self.escape_state_end_time = time() + 1
+            elif time() > self.escape_state_end_time:
                 self.escape_substate = EscapeState.Off
-                self.escape_state_end = 0
+                self.escape_state_end_time = 0
                 self.back_to_search_state()  # go back to searching and hope for the best
             else:
                 self.robot.move(0, 0, -self.max_speed)
         elif self.escape_substate == EscapeState.DrivingAway:
             self.logger.log.info("--ESCAPE-- Driving away")
-            if time() > self.escape_state_end:
+            if time() > self.escape_state_end_time:
                 self.escape_substate = EscapeState.Off
-                self.escape_state_end = 0
+                self.escape_state_end_time = 0
                 self.back_to_search_state()  # go back to searching and hope for the best
             else:
                 self.robot.move(0, self.max_speed*0.75, 0)
 
     def main_loop(self):
+        """The main loop for our funny bot, where we decide what to do"""
         try:
             while True:
                 self.parse_referee_cmd()

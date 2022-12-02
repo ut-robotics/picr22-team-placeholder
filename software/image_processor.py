@@ -50,25 +50,33 @@ class ProcessedResults():
 class ImageProcessor():
     def __init__(self, camera, logger, min_basket_distance, color_config=get_colors_pkl_path(), debug=False):
         self.camera = camera
-
+        self.logger = logger
+        self.debug = debug
+        self.min_basket_distance = min_basket_distance # distance to stop ignoring balls from
+        
+        # -- COLOUR CONFIG --
         self.color_config = color_config
         with open(self.color_config, 'rb') as conf:
             self.colors_lookup = pickle.load(conf)
             self.set_segmentation_table(self.colors_lookup)
+        
+        # -- FRAGMENTED --
         self.fragmented = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
 
+        # -- OBJECTS -- 
         self.t_balls = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
         self.t_basket_b = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
         self.t_basket_m = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
-        self.logger = logger
-        self.debug = debug
-        self.min_basket_distance = min_basket_distance
+        
+        # -- DEBUG FRAME --
         self.debug_frame = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
+        
+        # -- KERNELS --
         self.ball_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         self.basket_kernel = np.ones((3, 3), np.uint8)
 
@@ -84,7 +92,7 @@ class ImageProcessor():
     def analyze_balls(self, t_balls, depth, fragments, basket) -> list:
         t_balls = cv2.dilate(t_balls, self.ball_kernel)
         t_balls = cv2.erode(t_balls, self.ball_kernel)
-        contours, hierarchy = cv2.findContours(
+        contours, _ = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         balls = []
         frag_x, frag_y = np.shape(fragments)
@@ -144,7 +152,7 @@ class ImageProcessor():
     def analyze_baskets(self, t_basket, depth,  debug_color=(0, 255, 255)) -> list:
         t_basket = cv2.morphologyEx(
             t_basket, cv2.MORPH_CLOSE, self.basket_kernel)
-        contours, hierarchy = cv2.findContours(
+        contours, _ = cv2.findContours(
             t_basket, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         baskets = []
 

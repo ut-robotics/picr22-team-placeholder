@@ -15,6 +15,7 @@ def np_average_jit(array):
     """
     return np.average(array)
 
+
 @njit
 def np_zeros_jit(height, width):
     """Return a new array of given shape, filled with zeros.
@@ -27,7 +28,8 @@ def np_zeros_jit(height, width):
         list: New array
     """
     return np.zeros(
-            (height, width), dtype=np.uint8)
+        (height, width), dtype=np.uint8)
+
 
 @njit(parallel=True, fastmath=True, cache=True)
 def find_black_near_ball(fragments, object_coords, frag_size, look_range):
