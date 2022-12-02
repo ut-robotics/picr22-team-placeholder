@@ -1,5 +1,6 @@
 # File for helper functions
 import os
+import tomli
 
 
 def map_range(x, in_min, in_max, out_min, out_max):
@@ -30,6 +31,8 @@ def get_colors_pkl_path():
     return pkl_path
 
 # 0.375,834,919.3,270.4375 - it physically cannot hit from this distance
+
+
 def calculate_throw_speed(basket_dist):
     """Calculates throw speed based on basket distance 
 
@@ -41,3 +44,17 @@ def calculate_throw_speed(basket_dist):
     """
     # Values calibrated using linear regression
     return int(basket_dist * 0.12437404909026954 + 725.776765144907)
+
+
+def load_config():
+    """Returns the config data
+
+    Returns:
+        dict: configuration
+    """
+    config_path = "config.toml"
+    if not os.path.exists(config_path) and os.path.exists(os.path.join("software", config_path)):
+        config_path = os.path.join("software", config_path)
+    with open(config_path, "rb") as f:
+        config = tomli.load(f)
+    return config

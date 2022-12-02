@@ -6,7 +6,7 @@ from time import time
 from ds4_control import RobotDS4
 from Color import Color
 from states import State, ThrowerState, SearchState, EscapeState, OrbitDirection
-from helper import calculate_throw_speed
+from helper import calculate_throw_speed, load_config
 from referee import Referee
 from logger import Logger
 from random import choice
@@ -50,75 +50,50 @@ class Robot:
     escape_state_end = 0
     orbit_direction = choice([OrbitDirection.Left, OrbitDirection.Right])
     orbit_direction_timeout = 0
-
-    def __init__(self,
-                 debug: bool,
-                 camera_deadzone: int,
-                 max_speed: float,
-                 search_speed: float,
-                 throw_time: float,
-                 min_distance: int,
-                 max_ball_miss: int,
-                 use_realsense: bool,
-                 middle_offset: int,
-                 basket_color: Color,
-                 max_orbit_time: int,
-                 manual_thrower_speed: int,
-                 analog_deadzone: int,
-                 debug_data_collection: bool,
-                 throw_move_speed: float,
-                 referee_ip: str,
-                 name: str,
-                 search_timeout: int,
-                 search_min_basket_dist: int,
-                 max_frames: int,
-                 orbit_dir_timeout_time: int,
-                 min_basket_dist: int,
-                 camera_min_basket_dist: int):
+    basket_color = Color.BLUE # this can be changed from referee command anyways, this is just a value to default to
+    def __init__(self):
         # initialize logging
         self.logger = Logger()
+        self.config = load_config()
         self.robot = motion.OmniRobot(robot_data=self)
-        self.debug = debug
-        self.debug_data_collection = debug_data_collection
-        if use_realsense:
+        self.debug = self.config["debug"]["debug"]
+        self.debug_data_collection = self.config["debug"]["data_collection"]
+        if self.config["camera"]["use_realsense"]:
             # camera instance for realsense cameras
             self.cam = camera.RealsenseCamera(exposure=100)
         else:
             # camera instance for normal web cameras
             self.cam = camera.OpenCVCamera(id=2)
         self.processor = image_processor.ImageProcessor(
-            self.cam, logger=self.logger, debug=debug, min_basket_distance=camera_min_basket_dist)
+            self.cam, logger=self.logger, debug=self.debug, min_basket_distance=self.config["camera"]["min_basket_dist"])
         self.processor.start()
-        self.middle_point = self.cam.rgb_width // 2 + middle_offset
-        self.camera_deadzone = camera_deadzone
+        self.middle_point = self.cam.rgb_width // 2 + self.config["camera"]["middle_offset"]
+        self.camera_deadzone = self.config["camera"]["deadzone"]
 
         self.robot.open()
-        self.analog_deadzone = analog_deadzone
-        self.manual_thrower_speed = manual_thrower_speed
+        self.analog_deadzone = self.config["controller"]["analog_deadzone"]
+        self.manual_thrower_speed = self.config["controller"]["manual_thrower_speed"]
 
-        self.max_speed = max_speed
-        self.throw_move_speed = throw_move_speed
-        self.search_speed = search_speed
-        self.throw_time = throw_time  # how long to stay in throw state
+        self.max_speed = self.config["movement"]["max_speed"]
+        self.throw_move_speed = self.config["movement"]["throw_move_speed"]
+        self.search_speed = self.config["movement"]["search_speed"]
+        self.throw_time = self.config["thrower"]["time"]  # how long to stay in throw state
         # how far the ball has to be to prepare for throw, approx 10 cm
-        self.min_distance = min_distance
+        self.min_distance = self.config["thrower"]["min_distance"]
 
-        self.max_ball_miss = max_ball_miss
-
-        self.basket_color = basket_color
+        self.max_ball_miss = self.config["camera"]["max_ball_miss"]
         self.enemy_basket_color = Color(
             2) if self.basket_color == Color(3) else Color(3)
-        self.max_orbit_time = max_orbit_time
-        self.max_frames = max_frames
-        self.search_timeout = search_timeout
-        self.search_min_basket_dist = search_min_basket_dist # for drive 2 ball
-        self.min_basket_dist = min_basket_dist # for escaping
+        self.max_orbit_time = self.config["orbit"]["max_orbit_time"]
+        self.max_frames = self.config["camera"]["max_frames"]
+        self.search_timeout = self.config["search"]["timeout"]
+        self.min_basket_dist = self.config["movement"]["min_basket_dist"] # for escaping and searching, so we don't drive into the basket
         self.controller = RobotDS4(robot_data=self)
         self.controller.start()
-        self.referee_ip = referee_ip
-        self.name = name
+        self.referee_ip = self.config["robot"]["referee_ip"]
+        self.name = self.config["robot"]["name"]
         self.referee = Referee(robot_data=self)
-        self.orbit_dir_timeout_time = orbit_dir_timeout_time
+        self.orbit_dir_timeout_time = self.config["orbit"]["dir_timeout_time"]
         self.referee.start()
         self.main_loop()
 
@@ -276,7 +251,7 @@ class Robot:
 
         elif self.search_substate == SearchState.DriveToSearch:
             if self.baskets[self.basket_to_drive_to].exists:
-                if not self.search_min_basket_dist > self.baskets[self.basket_to_drive_to].distance:
+                if not self.min_basket_dist > self.baskets[self.basket_to_drive_to].distance:
                     self.basket_too_close_frames = 0
                     rot_delta = self.middle_point - \
                         self.baskets[self.basket_to_drive_to].x
@@ -543,28 +518,4 @@ class Robot:
 
 
 if __name__ == "__main__":
-    conf_debug = False
-    conf_debug_data_collection = True
-    conf_camera_deadzone = 5
-    conf_max_speed = 1
-    conf_throw_move_speed = 0.375
-    conf_search_speed = 2
-    conf_throw_time = 1.1037
-    conf_min_distance = 340
-    conf_max_ball_miss = 5
-    conf_use_realsense = True
-    conf_middle_offset = 0
-    conf_basket_color = Color.BLUE
-    conf_max_orbit_time = 10  # seconds
-    conf_manual_thrower_speed = 1000  # default for remote control
-    conf_controller_analog_deadzone = 400
-    conf_referee_ip = "ws://192.168.3.69:8222"
-    conf_name = "placeholder"
-    conf_search_timeout = 3  # TODO - adjust
-    conf_search_min_basket_dist = 1200  # TODO - adjust
-    conf_max_frames = 15  # for values that are tied to FPS in some way
-    conf_orbit_dir_timeout_time = 6
-    conf_min_basket_dist = 1200
-    conf_camera_min_basket_dist = 700
-    robot = Robot(conf_debug, conf_camera_deadzone, conf_max_speed, conf_search_speed, conf_throw_time,
-                  conf_min_distance, conf_max_ball_miss, conf_use_realsense, conf_middle_offset, conf_basket_color, conf_max_orbit_time, conf_manual_thrower_speed, conf_controller_analog_deadzone, conf_debug_data_collection, conf_throw_move_speed, conf_referee_ip, conf_name, conf_search_timeout, conf_search_min_basket_dist, conf_max_frames, conf_orbit_dir_timeout_time, conf_min_basket_dist, conf_camera_min_basket_dist)
+    robot = Robot()

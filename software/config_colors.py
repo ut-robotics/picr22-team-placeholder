@@ -3,18 +3,21 @@ import numpy as np
 import _pickle as pickle
 import camera
 import image_processor
-from helper import get_colors_pkl_path
+from helper import get_colors_pkl_path, load_config
 from Color import *
 from logger import Logger
-MAX_HISTORY = 10  # how many times we can possibly undo
 
 
 def nothing(x):
     pass
 
+
+config = load_config()
+# how many times we can possibly undo
+MAX_HISTORY = config["camera"]["undo_count"]
 logger = Logger(name="%ColourConfig%")
 cv2.namedWindow('image')
-cv2.namedWindow('rgb')
+cv2.namedWindow('debug')
 cv2.namedWindow('mask')
 cv2.moveWindow('mask', 400, 0)
 
@@ -31,7 +34,8 @@ old_lookups = list()
 # camera instance for realsense cameras
 cap = camera.RealsenseCamera(exposure=100)
 
-processor = image_processor.ImageProcessor(cap, logger=logger, debug=True)
+processor = image_processor.ImageProcessor(
+    cap, logger=logger, debug=True, min_basket_distance=config["camera"]["min_basket_dist"])
 
 cv2.createTrackbar('brush_size', 'image', 3, 10, nothing)
 cv2.createTrackbar('noise', 'image', 1, 5, nothing)
@@ -78,22 +82,19 @@ def choose_color(event, x, y, flags, param):
         noise = cv2.getTrackbarPos('noise', 'image')
         change_color(noise, brush_size, mouse_x, mouse_y)
 
-
-cv2.namedWindow('rgb')
-cv2.setMouseCallback('rgb', choose_color)
+cv2.setMouseCallback('debug', choose_color)
 cv2.setMouseCallback('mask', choose_color)
 
 logger.log.info("Quit: 'q', Save 's', Erase selected color 'e', Undo 'u'")
-logger.log.info("Balls 'g', Magenta basket='m', Blue basket='b', Field='f', White='w', Black='d', Other='o'")
+logger.log.info(
+    "Balls 'g', Magenta basket='m', Blue basket='b', Field='f', White='w', Black='d', Other='o'")
 
 cap.open()
 
 while (True):
-    processedData = processor.process_frame()
+    processed_data = processor.process_frame()
 
-    rgb = processedData.color_frame
-
-    cv2.imshow('rgb', rgb)
+    rgb = processed_data.color_frame
 
     fragmented = colors_lookup[rgb[:, :, 0] +
                                rgb[:, :, 1] * 0x100 + rgb[:, :, 2] * 0x10000]
@@ -103,6 +104,9 @@ while (True):
         frame[fragmented == int(color)] = color.color
 
     cv2.imshow('mask', frame)
+
+    debug_frame = processed_data.debug_frame
+    cv2.imshow('debug', debug_frame)
 
     k = cv2.waitKey(1) & 0xff
 

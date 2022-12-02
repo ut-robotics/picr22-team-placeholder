@@ -16,17 +16,27 @@ class OmniRobot():
     """Movement code class"""
 
     def __init__(self, robot_data):
-        gearboxReductionRatio = 18.75
-        encoderEdgesPerMotorRevolution = 64
-        wheelRadius = 0.035  # metres
-        pidControlFrequency = 100  # Hz
-        # middle, left, right
-        self.wheelAngles = np.radians([240, 0, 120])
-        self.wheelSpeedToMainboardUnits = gearboxReductionRatio * \
-            encoderEdgesPerMotorRevolution / \
-            (2 * math.pi * wheelRadius * pidControlFrequency)
-        self.wheelDistanceFromCenter = 0.11  # metres
         self.robot_data = robot_data
+        self.wheelDistanceFromCenter = self.robot_data.config["motor"]["wheel_distance_from_center"]
+        self.wheelAngles = self.string_to_angles(
+            self.robot_data.config["motor"]["motor_order"])
+        self.wheelSpeedToMainboardUnits = self.robot_data.config["motor"]["gearbox_reduction_ratio"] * \
+            self.robot_data.config["motor"]["encoder_edges_per_motor_revolution"] / \
+            (2 * math.pi * self.robot_data.config["motor"]["wheel_radius"]
+             * self.robot_data.config["motor"]["pid_control_frequency"])
+
+    def string_to_angles(self, angle_str):
+        angles_list = list()
+        for char in angle_str.lower().strip():
+            if char == "c":
+                angles_list.append(240)
+            elif char == "l":
+                angles_list.append(0)
+            elif char == "r":
+                angles_list.append(120)
+            else:
+                raise ValueError(f"Invalid wheel position {char}!")
+        return np.radians(angles_list)
 
     def find_serial_port(self):
         """Finds the serial port corresponding to the mainboard
@@ -82,7 +92,7 @@ class OmniRobot():
         received_data = self.ser.read(8)
         actual_speed1, actual_speed2, actual_speed3, _ = struct.unpack(
             '<hhhH', received_data)
-        #self.robot_data.logger.log.info(
+        # self.robot_data.logger.log.info(
         #    f"Sent speed: {speeds}, Actual speed: [{actual_speed1}, {actual_speed2}, {actual_speed3}]")
 
     def get_wheel_speed(self, motorID, robotSpeed, robotDirectionAngle, robotAngularVelocity):
