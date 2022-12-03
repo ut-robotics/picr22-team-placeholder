@@ -136,9 +136,10 @@ class ImageProcessor():
                 continue
             # don't add if ball is further than the basket or too close to it
             if basket != None:
-                if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
-                    if basket.distance - self.min_basket_distance <= obj_dst:
-                        continue
+                if basket.distance < 3000: # TODO - 3000 is a random number, its just that the distance is a bit iffy at long distances
+                    if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
+                        if basket.distance - self.min_basket_distance <= obj_dst:
+                            continue
 
             if self.debug:
                 self.debug_frame[ys, xs] = [0, 0, 0]
