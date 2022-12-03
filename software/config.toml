@@ -36,8 +36,10 @@ search_speed = 2         # speed to use while rotating in search mode
 timeout = 3 # time in seconds until we start attempting to drive to the opposite basket
 
 [thrower]
-time = 1.1037      # time in seconds how long we stay in throw state
+time = 1.2137      # time in seconds how long we stay in throw state
 min_distance = 340 # minimum distance from ball to start the throw from
+emergency_duration = 2
+emergency_interval = 6
 
 [motor]
 motor_order = "CLR"                     # motor order as a string: L - left, C - centre, R - right
