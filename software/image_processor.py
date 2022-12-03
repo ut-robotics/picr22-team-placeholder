@@ -48,7 +48,7 @@ class ProcessedResults():
 
 # Main processor class. processes segmented information
 class ImageProcessor():
-    def __init__(self, camera, logger, min_basket_distance, color_config=get_colors_pkl_path(), debug=False):
+    def __init__(self, camera, logger, min_basket_distance, color_config=get_colors_pkl_path(), debug=False, colors_lookup=None):
         self.camera = camera
         self.logger = logger
         self.debug = debug
@@ -56,9 +56,12 @@ class ImageProcessor():
         
         # -- COLOUR CONFIG --
         self.color_config = color_config
-        with open(self.color_config, 'rb') as conf:
-            self.colors_lookup = pickle.load(conf)
-            self.set_segmentation_table(self.colors_lookup)
+        if colors_lookup is None:
+            with open(self.color_config, 'rb') as conf:
+                self.colors_lookup = pickle.load(conf)
+        else:
+            self.colors_lookup = colors_lookup
+        self.set_segmentation_table(self.colors_lookup)
         
         # -- FRAGMENTED --
         self.fragmented = np_zeros_jit(

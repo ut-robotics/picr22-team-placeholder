@@ -15,7 +15,7 @@ def nothing(x):
 config = load_config()
 # how many times we can possibly undo
 MAX_HISTORY = config["camera"]["undo_count"]
-logger = Logger(name="%ColourConfig%")
+logger = Logger("%ColourConfig%")
 cv2.namedWindow('image')
 cv2.namedWindow('debug')
 cv2.namedWindow('mask')
@@ -32,7 +32,7 @@ old_lookups = list()
 cap = camera.RealsenseCamera(exposure=100)
 
 processor = image_processor.ImageProcessor(
-    cap, logger=logger, debug=True, min_basket_distance=config["camera"]["min_basket_dist"])
+    cap, logger=logger, debug=True, min_basket_distance=config["camera"]["min_basket_dist"], colors_lookup=colors_lookup)
 
 cv2.createTrackbar('brush_size', 'image', 3, 10, nothing)
 cv2.createTrackbar('noise', 'image', 1, 5, nothing)
@@ -59,14 +59,13 @@ def change_color(noise, brush_size, mouse_x, mouse_y):
         max(0, mouse_y-brush_size):min(cap.rgb_height, mouse_y+brush_size+1),
         max(0, mouse_x-brush_size):min(cap.rgb_width, mouse_x+brush_size+1), :].reshape((-1, 3)).astype('int32')
     noises = range(-noise, noise+1)
-    old_lookups.append(colors_lookup.copy())
-    if len(old_lookups) > MAX_HISTORY:
-        old_lookups.pop(0)  # remove oldest item
+    add_undo()
     for r in noises:
         for g in noises:
             for b in noises:
                 colors_lookup[((ob[:, 0]+r) + (ob[:, 1]+g) * 0x100 +
                                (ob[:, 2]+b) * 0x10000).clip(0, 0xffffff)] = p
+    processor.set_segmentation_table(processor.colors_lookup)
 
 # mouse callback function
 
@@ -78,6 +77,13 @@ def choose_color(event, x, y, flags, param):
         brush_size = cv2.getTrackbarPos('brush_size', 'image')
         noise = cv2.getTrackbarPos('noise', 'image')
         change_color(noise, brush_size, mouse_x, mouse_y)
+
+
+def add_undo():
+    old_lookups.append(colors_lookup.copy())
+    if len(old_lookups) > MAX_HISTORY:
+        old_lookups.pop(0)  # remove oldest item
+
 
 cv2.setMouseCallback('debug', choose_color)
 cv2.setMouseCallback('mask', choose_color)
@@ -114,7 +120,8 @@ while (True):
             logger.log.warning("No more undos!")
         else:
             logger.log.info("Undo'd.")
-            colors_lookup = np.copy(old_lookups.pop())
+            np.copyto(colors_lookup, old_lookups.pop())
+            processor.set_segmentation_table(processor.colors_lookup)
     elif k in keyDict:
         col = keyDict[k]
         logger.log.info(f"Switched to: {col}")
@@ -122,13 +129,15 @@ while (True):
     elif k == ord('s'):
         with open(pkl_path, 'wb') as fh:
             pickle.dump(colors_lookup, fh, -1)
-        logger.log.info('saved')
+        logger.log.info('Saved data to file.')
     elif k == ord('e'):
-        logger.log.info('erased')
+        logger.log.info('Erased color.')
+        add_undo()
         colors_lookup[colors_lookup == p] = 0
+        processor.set_segmentation_table(processor.colors_lookup)
 
 # When everything done, release the capture
-
+logger.log.info("Closing...")
 cap.close()
 
 cv2.destroyAllWindows()
