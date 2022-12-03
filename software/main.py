@@ -12,10 +12,8 @@ from logger import Logger
 from random import choice
 
 # some objectives for the near future
-# TODO - state for getting ball out of thrower, could maybe make use of depth camera and check if a pixel's distance changes?
 # TODO - improve orbiting
 # TODO - prevent the robot from getting stuck in front of a basket
-# TODO - prevent robot from reversing forever, ACTIVATE THROWER WITH speed 570, this also applies to TODO-1
 
 
 class Robot:
@@ -38,6 +36,7 @@ class Robot:
     escape_state_end_time = 0
     orbit_start_time = 0
     orbit_direction_timeout = 0
+    thrower_emergency_activation_time = 0  # to prevent the ball from getting stuck
 
     # -- BASKETS --
     opposite_basket = None  # for escapestate, we'll go towards this basket
@@ -95,6 +94,8 @@ class Robot:
         self.throw_time = self.config["thrower"]["time"]
         # how far the ball has to be to prepare for throw, approx 10 cm
         self.min_distance = self.config["thrower"]["min_distance"]
+        self.thrower_emergency_duration = self.config["thrower"]["emergency_duration"]
+        self.thrower_emergency_interval = self.config["thrower"]["emergency_interval"]
 
         # -- MOVEMENT --
         self.max_speed = self.config["movement"]["max_speed"]
@@ -246,7 +247,17 @@ class Robot:
         rot_sign = -1 if rot_speed >= 0 else 1
         y_speed = min(abs(y_speed), self.max_speed) * y_sign
         rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
-        self.robot.move(0, y_speed, rot_speed)
+        thrower_speed = 0
+        if y_sign == -1:
+            # activate thrower to get balls out
+            thrower_speed = 570
+        elif time() > self.thrower_emergency_activation_time:
+            if time() > self.thrower_emergency_activation_time + self.thrower_emergency_duration:
+                self.thrower_emergency_activation_time = time(
+                ) + self.thrower_emergency_activation_time
+            else:
+                thrower_speed = 570
+        self.robot.move(0, y_speed, rot_speed, thrower_speed)
 
     def searching_state(self):
         """State for searching for the ball"""
@@ -256,6 +267,8 @@ class Robot:
             self.robot.stop()
             self.current_state = State.DriveToBall
             self.search_substate = SearchState.Off
+            self.thrower_emergency_activation_time = time(
+            ) + self.thrower_emergency_activation_time
             return
 
         if self.search_substate == SearchState.StartSearch:
@@ -280,6 +293,8 @@ class Robot:
             if self.baskets[self.basket_to_drive_to].exists:
                 self.robot.stop()
                 self.search_substate = SearchState.DriveToSearch
+                self.thrower_emergency_activation_time = time(
+                ) + self.thrower_emergency_activation_time
 
         # TODO - maybe check lines and turn 45 degrees when hitting a line
 
@@ -343,7 +358,7 @@ class Robot:
 
     def orbiting_state(self):
         """State for orbiting around the ball and trying to find the basket."""
-        if time() > self.orbit_start_time + self.max_orbit_time:
+        if time() > self.orbit_start_time + self.max_orbit_time:  # TODO - rethink how we timeout, the robot will just find the same ball again instantly
             self.logger.log.info(
                 "--ORBIT-- Orbiting for too long, going back to search")
             self.robot.stop()
@@ -363,7 +378,6 @@ class Robot:
         # TODO - adjust these values to improve orbiting
         x_delta = self.middle_point - self.ball.x
         x_speed = -1 * x_delta * 0.0048
-
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.001
 
@@ -390,6 +404,9 @@ class Robot:
         x_sign = 1 if x_speed >= 0 else -1
         y_sign = 1 if y_speed >= 0 else -1
         rot_sign = 1 if rot_speed >= 0 else -1
+        if not self.baskets[self.basket_color].exists:
+            if abs(x_speed) < 0.15:  # TODO - x speed still has issues with almost stopping
+                x_speed = 0.15
 
         x_speed = min(abs(x_speed), self.max_speed) * x_sign
         y_speed = min(abs(y_speed), self.max_speed) * y_sign
