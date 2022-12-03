@@ -102,7 +102,7 @@ class Robot:
         self.search_speed = self.config["movement"]["search_speed"]
         # for escaping and searching, so we don't drive into the basket
         self.min_basket_dist = self.config["movement"]["min_basket_dist"]
-        self.robot = motion.OmniRobot(robot_data=self)
+        self.robot = motion.OmniRobot(logger=self.logger, config=self.config)
         self.robot.open()
 
         # -- CAMERA --
@@ -240,7 +240,7 @@ class Robot:
         """
         rot_delta = self.middle_point - object_x
         y_delta = self.min_distance - object_dist
-        y_speed = -self.max_speed * y_delta * 0.01
+        y_speed = -self.max_speed * y_delta * 0.005
         rot_speed = -1 * rot_delta * 0.003
         y_sign = 1 if y_speed >= 0 else -1
         rot_sign = -1 if rot_speed >= 0 else 1
@@ -303,7 +303,7 @@ class Robot:
                 if not self.min_basket_dist > self.baskets[self.basket_to_drive_to].distance:
                     self.basket_too_close_frames = 0
                     self.drive_to_object(
-                        self.baskets[self.basket_to_drive_to].x, self.baskets[self.basket_to_drive_to].distance)
+                        self.baskets[self.basket_to_drive_to].x, self.baskets[self.basket_to_drive_to].distance - (self.min_basket_dist / 1.5))
                     self.logger.log.info(
                         f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}")
                 elif self.basket_too_close_frames >= self.max_frames:

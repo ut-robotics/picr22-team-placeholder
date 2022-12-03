@@ -117,7 +117,7 @@ while (True):
             colors_lookup = np.copy(old_lookups.pop())
     elif k in keyDict:
         col = keyDict[k]
-        print(col)
+        logger.log.info(f"Switched to: {col}")
         p = int(col)
     elif k == ord('s'):
         with open(pkl_path, 'wb') as fh:

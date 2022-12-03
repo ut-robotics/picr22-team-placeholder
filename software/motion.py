@@ -15,16 +15,17 @@ class SerialPortNotFound(Exception):
 class OmniRobot():
     """Movement code class"""
 
-    def __init__(self, robot_data):
-        self.robot_data = robot_data
-        self.wheel_distance_from_center = self.robot_data.config[
+    def __init__(self, logger, config):
+        self.logger = logger
+        self.config = config
+        self.wheel_distance_from_center = self.config[
             "motor"]["wheel_distance_from_center"]
         self.wheel_angles = self.string_to_angles(
-            self.robot_data.config["motor"]["motor_order"])
-        self.wheel_speed_to_mainboard_units = self.robot_data.config["motor"]["gearbox_reduction_ratio"] * \
-            self.robot_data.config["motor"]["encoder_edges_per_motor_revolution"] / \
-            (2 * math.pi * self.robot_data.config["motor"]["wheel_radius"]
-             * self.robot_data.config["motor"]["pid_control_frequency"])
+            self.config["motor"]["motor_order"])
+        self.wheel_speed_to_mainboard_units = self.config["motor"]["gearbox_reduction_ratio"] * \
+            self.config["motor"]["encoder_edges_per_motor_revolution"] / \
+            (2 * math.pi * self.config["motor"]["wheel_radius"]
+             * self.config["motor"]["pid_control_frequency"])
 
     def string_to_angles(self, angle_str):
         angles_list = list()
@@ -68,16 +69,16 @@ class OmniRobot():
         self.ser.port = self.find_serial_port()
         self.ser.baudrate = 9600
         self.ser.open()
-        self.robot_data.logger.log.info("Serial opened")
+        self.logger.log.info("Serial opened")
 
     def close(self):
         """Closes the serial connection with the mainboard."""
         if self.ser.isOpen():
             self.stop()
             self.ser.close()
-            self.robot_data.logger.log.info("Serial closed")
+            self.logger.log.info("Serial closed")
         else:
-            self.robot_data.logger.log.warning("Serial not open!")
+            self.logger.log.warning("Serial not open!")
 
     def send(self, speeds, thrower_speed, disable_failsafe=0):
         """This function sends speeds to the mainboard.
@@ -91,10 +92,10 @@ class OmniRobot():
             '<hhhHBH', speeds[0], speeds[1], speeds[2], thrower_speed, disable_failsafe, 0xAAAA)
         self.ser.write(sent_data)
         received_data = self.ser.read(8)
-        if self.robot_data.config["logging"]["motor_speeds"]:
+        if self.config["logging"]["motor_speeds"]:
             actual_speed1, actual_speed2, actual_speed3, _ = struct.unpack(
                 '<hhhH', received_data)
-            self.robot_data.logger.log.info(
+            self.logger.log.info(
                 f"Sent speed: {speeds}, Actual speed: [{actual_speed1}, {actual_speed2}, {actual_speed3}]")
 
     def get_wheel_speed(self, motor_ID, robot_speed, robot_direction_angle, robot_angular_velocity):
@@ -115,7 +116,7 @@ class OmniRobot():
         wheel_angular_speed_in_mainboard_units = wheel_linear_velocity * \
             self.wheel_speed_to_mainboard_units
         if math.isnan(wheel_angular_speed_in_mainboard_units):
-            self.robot_data.logger.log.warning("Tried to send NaN as speeds!")
+            self.logger.log.warning("Tried to send NaN as speeds!")
             return 0
         else:
             return wheel_angular_speed_in_mainboard_units
