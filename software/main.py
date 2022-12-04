@@ -13,8 +13,11 @@ from random import choice
 import numpy as np
 
 # some objectives for the near future
+# TODO - orbit X speed is sometimes too aggressive, especially when multiple balls
 # TODO - improve orbiting
+# TODO - issues with purple basket, speed is usually too fast
 # TODO - prevent the robot from getting stuck in front of a basket
+# TODO - has issues when opponent robot is in front of the other basket, doesnt want to cross the halfline of the arena OR calculates distance based on the other robot
 
 
 class Robot:
