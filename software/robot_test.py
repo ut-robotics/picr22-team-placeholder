@@ -15,4 +15,4 @@ if __name__ == "__main__":
             robot.motor_test(speed=10, thrower=thrower_speed)
     except KeyboardInterrupt:
         robot.close()
-        print("Stopping...")
+        logger.log.info("Stopping...")
