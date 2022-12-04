@@ -6,8 +6,8 @@ referee_ip = "ws://192.168.3.69:8222" # referee server IP
 debug = false # whether to show debug camera
 
 [logging]
-fps_counter = false # log current framerate
-ball_count = false  # log ball count
+fps_counter = false  # log current framerate
+ball_count = false   # log ball count
 motor_speeds = false # log motor speeds
 
 [orbit]
@@ -17,8 +17,8 @@ dir_timeout_time = 6 # time in seconds until we randomize the direction (unless 
 [camera]
 middle_offset = 0     # how much the camera's middle point is offset
 deadzone = 5          # how many pixels to ignore in the middle
-min_basket_dist = 700 # the minimum distance to start detecting balls from. TODO - wouldnt this conflict with escape state?
-max_frames = 15       # for values that are tied to FPS in some way
+min_basket_dist = 800 # the minimum distance to start detecting balls from. TODO - wouldnt this conflict with escape state?
+max_frames = 10       # for values that are tied to FPS in some way
 max_ball_miss = 5     # how many times we can miss the ball before starting to look for a new one
 undo_count = 10       # how many times we can undo in config_colors
 
@@ -27,19 +27,20 @@ analog_deadzone = 400       # deadzone for controller analog sticks
 manual_thrower_speed = 1000 # default for remote control
 
 [movement]
-min_basket_dist = 1200   # minimum distance before turning to escape state
-max_speed = 1            # max speed of the motors
-throw_move_speed = 0.375 # speed that we use while throwing the ball
-search_speed = 2         # speed to use while rotating in search mode
+min_basket_dist = 700         # minimum distance before turning to escape state
+patrol_min_basket_dist = 1200 # distance to drive to when patrolling
+max_speed = 1                 # max speed of the motors
+throw_move_speed = 0.375      # speed that we use while throwing the ball
+search_speed = 2              # speed to use while rotating in search mode
 
 [search]
 timeout = 3 # time in seconds until we start attempting to drive to the opposite basket
 
 [thrower]
-time = 1.2137      # time in seconds how long we stay in throw state
-min_distance = 340 # minimum distance from ball to start the throw from
-emergency_duration = 2
-emergency_interval = 6
+time = 1.2137          # time in seconds how long we stay in throw state
+min_distance = 340     # minimum distance from ball to start the throw from
+emergency_duration = 2 # time in seconds for how long we activate thrower to throw any stuck balls out
+emergency_interval = 2 # time in seconds for the interval of emergency throw
 
 [motor]
 motor_order = "CLR"                     # motor order as a string: L - left, C - centre, R - right

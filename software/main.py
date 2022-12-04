@@ -10,6 +10,7 @@ from helper import calculate_throw_speed, load_config
 from referee import Referee
 from logger import Logger
 from random import choice
+import numpy as np
 
 # some objectives for the near future
 # TODO - improve orbiting
@@ -29,6 +30,7 @@ class Robot:
     # -- FRAMECOUNTS --
     basket_too_close_frames = 0
     no_balls_frames = 0
+    basket_no_basket_frames = 0
 
     # -- TIMEOUTS --
     throw_end_time = 0
@@ -56,6 +58,7 @@ class Robot:
     # to make the game more interesting, we'll randomly decide directions
     first_search_dir = choice([SearchState.Left, SearchState.Right])
     orbit_direction = choice([OrbitDirection.Left, OrbitDirection.Right])
+    escape_direction = None
 
     # -- VARIA --
     thrower_speed = 0
@@ -103,6 +106,7 @@ class Robot:
         self.search_speed = self.config["movement"]["search_speed"]
         # for escaping and searching, so we don't drive into the basket
         self.min_basket_dist = self.config["movement"]["min_basket_dist"]
+        self.patrol_min_basket_dist = self.config["movement"]["patrol_min_basket_dist"]
         self.robot = motion.OmniRobot(logger=self.logger, config=self.config)
         self.robot.open()
 
@@ -204,22 +208,31 @@ class Robot:
         self.baskets[Color.MAGENTA] = self.processed_data.basket_m
         self.baskets[Color.BLUE] = self.processed_data.basket_b
 
-        if self.current_state not in [State.Stopped, State.RemoteControl, State.Debug]:
+        if self.current_state not in [State.Stopped, State.RemoteControl, State.Debug, State.EscapeFromBasket]:
             if self.search_substate == SearchState.DriveToSearch:
                 return
             for basket in self.baskets:
                 if self.baskets[basket].exists:
+                    self.basket_no_basket_frames = 0
                     if self.baskets[basket].distance < self.min_basket_dist:
                         if self.basket_too_close_frames > self.max_frames:
+                            self.logger.log.error("BASKETING TIME")
                             self.opposite_basket = Color.MAGENTA if basket == Color.BLUE else Color.BLUE
                             self.current_state = State.EscapeFromBasket
                             self.escape_substate = EscapeState.StartEscape
                         else:
                             self.basket_too_close_frames += 1
+                            self.logger.log.warning(
+                                f"BASKET TOO CLOSE.... {self.baskets[basket].distance}")
                     else:
                         self.basket_too_close_frames = 0
+                        self.logger.log.warning(
+                            f"safe.... {self.baskets[basket].distance}")
                 else:
-                    self.basket_too_close_frames = 0
+                    self.basket_no_basket_frames += 1
+                    if self.basket_no_basket_frames > self.max_frames:
+                        self.logger.log.warning(f"no basket...")
+                        self.basket_too_close_frames = 0
 
         if self.current_state not in [State.Orbiting, State.RemoteControl, State.Stopped]:
             # Randomize the direction to have a higher chance of actually getting the shorter way around, instead of always going left
@@ -253,11 +266,29 @@ class Robot:
             thrower_speed = 570
         elif time() > self.thrower_emergency_activation_time:
             if time() > self.thrower_emergency_activation_time + self.thrower_emergency_duration:
-                self.thrower_emergency_activation_time = time(
-                ) + self.thrower_emergency_activation_time
+                self.logger.log.info(
+                    f"no thrower activation, time is {time()} but activation time is {self.thrower_emergency_activation_time + self.thrower_emergency_duration}")
+                self.thrower_emergency_activation_time = time() + self.thrower_emergency_interval
             else:
                 thrower_speed = 570
+                self.logger.log.info("throwing!!")
+        else:
+            self.logger.log.info(
+                f"not thrower time yet - {time()} and {self.thrower_emergency_activation_time}")
         self.robot.move(0, y_speed, rot_speed, thrower_speed)
+
+    def get_search_direction(self):
+        if self.escape_direction != None:
+            direction = self.escape_direction
+            self.escape_direction = None
+        elif self.last_seen_ball != None:
+            if self.last_seen_ball.x >= self.middle_point:
+                direction = SearchState.Right
+            else:
+                direction = SearchState.Left
+        else:
+            direction = self.first_search_dir  # this is randomly generated
+        return direction
 
     def searching_state(self):
         """State for searching for the ball"""
@@ -268,18 +299,12 @@ class Robot:
             self.current_state = State.DriveToBall
             self.search_substate = SearchState.Off
             self.thrower_emergency_activation_time = time(
-            ) + self.thrower_emergency_activation_time
+            ) + self.thrower_emergency_interval
             return
 
         if self.search_substate == SearchState.StartSearch:
             self.logger.log.info("StartSearch!!!")
-            if self.last_seen_ball != None:
-                if self.last_seen_ball.x >= self.middle_point:
-                    self.search_substate = SearchState.Right
-                else:
-                    self.search_substate = SearchState.Left
-            else:
-                self.search_substate = self.first_search_dir  # this is randomly generated
+            self.search_substate = self.get_search_direction()
             self.search_end_time = time() + self.search_timeout
 
         elif (time() > self.search_end_time) and (self.search_substate != SearchState.DriveToSearch):
@@ -294,7 +319,7 @@ class Robot:
                 self.robot.stop()
                 self.search_substate = SearchState.DriveToSearch
                 self.thrower_emergency_activation_time = time(
-                ) + self.thrower_emergency_activation_time
+                ) + self.thrower_emergency_interval
 
         # TODO - maybe check lines and turn 45 degrees when hitting a line
 
@@ -315,12 +340,15 @@ class Robot:
 
         elif self.search_substate == SearchState.DriveToSearch:
             if self.baskets[self.basket_to_drive_to].exists:
-                if not self.min_basket_dist > self.baskets[self.basket_to_drive_to].distance:
+                ideal_distance = self.baskets[self.basket_to_drive_to].distance - (
+                    self.patrol_min_basket_dist / 1.5)
+
+                if not self.patrol_min_basket_dist > self.baskets[self.basket_to_drive_to].distance:
                     self.basket_too_close_frames = 0
                     self.drive_to_object(
-                        self.baskets[self.basket_to_drive_to].x, self.baskets[self.basket_to_drive_to].distance - (self.min_basket_dist / 1.5))
+                        self.baskets[self.basket_to_drive_to].x, ideal_distance)
                     self.logger.log.info(
-                        f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}")
+                        f"--Searching-- Drive2Search: Basket Dist: {self.baskets[self.basket_to_drive_to].distance}, ideal distance: {ideal_distance}")
                 elif self.basket_too_close_frames >= self.max_frames:
                     self.logger.log.warning(
                         f"--SEARCHING-- Basket too close, distance: {self.baskets[self.basket_to_drive_to].distance}, back to rotating!")
@@ -400,17 +428,16 @@ class Robot:
                 self.thrower_substate = ThrowerState.StartThrow
                 self.throw_end_time = time() + self.throw_time
                 return
-
-        x_sign = 1 if x_speed >= 0 else -1
-        y_sign = 1 if y_speed >= 0 else -1
-        rot_sign = 1 if rot_speed >= 0 else -1
+        self.logger.log.info(f"desired speed {x_speed}")
         if not self.baskets[self.basket_color].exists:
+            x_sign = np.sign(x_speed)
             if abs(x_speed) < 0.15:  # TODO - x speed still has issues with almost stopping
-                x_speed = 0.15
+                x_speed = 0.15 * x_sign
 
-        x_speed = min(abs(x_speed), self.max_speed) * x_sign
-        y_speed = min(abs(y_speed), self.max_speed) * y_sign
-        rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
+        # Clamp the x_speed, y_speed, and rot_speed values
+        x_speed = np.clip(x_speed, -self.max_speed, self.max_speed)
+        y_speed = np.clip(y_speed, -self.max_speed, self.max_speed)
+        rot_speed = np.clip(rot_speed, -self.max_speed, self.max_speed)
 
         self.logger.log.info(
             f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")
@@ -492,6 +519,7 @@ class Robot:
         if self.escape_substate == EscapeState.StartEscape:
             self.escape_substate = EscapeState.Reverse
             self.escape_state_end_time = time() + 0.7  # dont reverse for too long
+            self.escape_direction = self.get_search_direction()
         elif self.escape_substate == EscapeState.Reverse:
             self.logger.log.info("--ESCAPE-- Reversing")
             if time() > self.escape_state_end_time:
@@ -505,13 +533,18 @@ class Robot:
             if (self.baskets[self.opposite_basket].exists):
                 self.robot.stop()
                 self.escape_substate = EscapeState.DrivingAway
-                self.escape_state_end_time = time() + 1
+                self.escape_state_end_time = time() + 1.5
             elif time() > self.escape_state_end_time:
                 self.escape_substate = EscapeState.Off
                 self.escape_state_end_time = 0
                 self.back_to_search_state()  # go back to searching and hope for the best
             else:
-                self.robot.move(0, 0, -self.max_speed)
+                if self.escape_direction == SearchState.Left:
+                    self.robot.move(0, 0, self.search_speed)
+                elif self.escape_direction == SearchState.Right:
+                    self.robot.move(0, 0, -self.search_speed)
+                else:
+                    raise ValueError(self.escape_direction)
         elif self.escape_substate == EscapeState.DrivingAway:
             self.logger.log.info("--ESCAPE-- Driving away")
             if time() > self.escape_state_end_time:

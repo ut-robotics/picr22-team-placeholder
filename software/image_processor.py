@@ -52,8 +52,9 @@ class ImageProcessor():
         self.camera = camera
         self.logger = logger
         self.debug = debug
-        self.min_basket_distance = min_basket_distance # distance to stop ignoring balls from
-        
+        # distance to stop ignoring balls from
+        self.min_basket_distance = min_basket_distance
+
         # -- COLOUR CONFIG --
         self.color_config = color_config
         if colors_lookup is None:
@@ -62,23 +63,23 @@ class ImageProcessor():
         else:
             self.colors_lookup = colors_lookup
         self.set_segmentation_table(self.colors_lookup)
-        
+
         # -- FRAGMENTED --
         self.fragmented = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
 
-        # -- OBJECTS -- 
+        # -- OBJECTS --
         self.t_balls = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
         self.t_basket_b = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
         self.t_basket_m = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
-        
+
         # -- DEBUG FRAME --
         self.debug_frame = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
-        
+
         # -- KERNELS --
         self.ball_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         self.basket_kernel = np.ones((3, 3), np.uint8)
@@ -93,8 +94,7 @@ class ImageProcessor():
         self.camera.close()
 
     def analyze_balls(self, t_balls, depth, fragments, basket) -> list:
-        t_balls = cv2.dilate(t_balls, self.ball_kernel)
-        t_balls = cv2.erode(t_balls, self.ball_kernel)
+        t_balls = cv2.morphologyEx(t_balls, cv2.MORPH_OPEN, self.ball_kernel)
         contours, _ = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         balls = []
@@ -136,8 +136,9 @@ class ImageProcessor():
                 continue
             # don't add if ball is further than the basket or too close to it
             if basket != None:
-                if basket.distance < 3000: # TODO - 3000 is a random number, its just that the distance is a bit iffy at long distances
+                if basket.distance < 3000:  # TODO - 3000 is a random number, its just that the distance is a bit iffy at long distances
                     if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
+                        # TODO - fix getting stuck when ball jumps from OK to too far distance
                         if basket.distance - self.min_basket_distance <= obj_dst:
                             continue
 
