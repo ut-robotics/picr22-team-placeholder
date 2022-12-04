@@ -132,8 +132,8 @@ class ImageProcessor():
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")
                     continue
-            if obj_dst == 0:
-                continue
+            #if obj_dst == 0:
+            #    continue
             # don't add if ball is further than the basket or too close to it
             if basket != None:
                 if basket.distance < 3000:  # TODO - 3000 is a random number, its just that the distance is a bit iffy at long distances
@@ -195,7 +195,7 @@ class ImageProcessor():
         if self.debug:
             if basket.exists:
                 cv2.circle(self.debug_frame, (basket.x, basket.y),
-                           20, debug_color, -1)
+                           5, debug_color, -1)
 
         return basket
 
