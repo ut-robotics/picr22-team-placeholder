@@ -113,7 +113,7 @@ class ImageProcessor():
             x, y, w, h = cv2.boundingRect(contour)
             black_count = find_black_near_ball(
                 fragments, (x, y, w, h), (frag_x, frag_y), 50)
-            if black_count > 180:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
+            if black_count > 200:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
                 continue
 
             ys = np.array(
@@ -136,14 +136,15 @@ class ImageProcessor():
             #if obj_dst == 0: # TODO - sometimes good, sometimes bad to filter out zero
             #    continue
             
+            # TODO - add a counter maybe
             # don't add if ball is further than the basket or too close to it
-            if basket != None:
-                if basket.distance < 3000:  # TODO - 3000 is a random number, its just that the distance is a bit iffy at long distances
+            #if basket != None:
+                #if basket.distance < 3000:  # TODO - 3000 is a random number, its just that the distance is a bit iffy at long distances
                     #self.logger.log.info(f"Basket distance: {basket.distance}, basket Y: {basket.y}, ball distance: {obj_dst}, ball Y: {obj_y}")
-                    if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
+                    #if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
                         # TODO - fix getting stuck when ball jumps from OK to too far distance
-                        if basket.distance - self.min_basket_distance <= obj_dst:
-                            continue
+                    #    if basket.distance - self.min_basket_distance <= obj_dst:
+                    #        continue
                 #self.logger.log.warning(f"{basket.distance - self.min_basket_distance} > {obj_dst}")                      
             if self.debug:
                 self.debug_frame[ys, xs] = [0, 0, 0]

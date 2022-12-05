@@ -18,7 +18,7 @@ import numpy as np
 # TODO - issues with purple basket, speed is usually too fast
 # TODO - prevent the robot from getting stuck in front of a basket
 # TODO - has issues when opponent robot is in front of the other basket, doesnt want to cross the halfline of the arena OR calculates distance based on the other robot
-
+# TODO - issues when balls are close to lines
 
 class Robot:
     """The main class for %placeholder%"""
@@ -408,11 +408,11 @@ class Robot:
 
         # TODO - adjust these values to improve orbiting
         x_delta = self.middle_point - self.ball.x
-        x_speed = -1 * x_delta * 0.0048
+        x_speed = -1 * 0.45
         y_delta = self.min_distance - self.ball.distance
-        y_speed = -1 * y_delta * 0.001
+        y_speed = -1 * y_delta * 0.005
 
-        rot_speed = int(self.orbit_direction) * self.max_speed * 0.5
+        rot_speed = 1 * 3 * (x_delta / (self.cam.rgb_width // 2))
 
         self.logger.log.info(
             f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
@@ -425,22 +425,20 @@ class Robot:
             self.logger.log.info(f"--Orbiting-- Basket delta {basket_delta}")
 
             rot_speed = -1 * basket_delta * 0.009
+            
             if abs(x_delta) <= 12 and abs(basket_delta) <= 15:
                 self.robot.stop()
                 self.current_state = State.BallThrow
                 self.thrower_substate = ThrowerState.StartThrow
                 self.throw_end_time = time() + self.throw_time
                 return
+            
         self.logger.log.info(f"desired speed {x_speed}")
-        if not self.baskets[self.basket_color].exists:
-            x_sign = np.sign(x_speed)
-            if abs(x_speed) < 0.2:  # TODO - x speed still has issues with almost stopping
-                x_speed = 0.2 * x_sign
 
         # Clamp the x_speed, y_speed, and rot_speed values
         x_speed = np.clip(x_speed, -self.max_speed, self.max_speed)
         y_speed = np.clip(y_speed, -self.max_speed, self.max_speed)
-        rot_speed = np.clip(rot_speed, -self.max_speed, self.max_speed)
+        #rot_speed = np.clip(rot_speed, -self.max_speed, self.max_speed)
 
         self.logger.log.info(
             f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")

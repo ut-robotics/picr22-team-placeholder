@@ -47,8 +47,8 @@ def find_black_near_ball(
     Returns:
         int: black_frame_count
     """
-    x1 = object_coords[0] - look_range
-    y1 = object_coords[1] - look_range
+    x1 = object_coords[0]
+    y1 = object_coords[1] + object_coords[3]
     x2 = object_coords[0] + object_coords[2] + look_range
     y2 = object_coords[1] + object_coords[3] + look_range
     # make sure it doesn't go out of bounds

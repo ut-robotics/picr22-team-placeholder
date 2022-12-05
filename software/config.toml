@@ -1,6 +1,6 @@
 [robot]
-name = "placeholder"                  # the name of our funny bot
-referee_ip = "ws://192.168.3.69:8222" # referee server IP
+name = "placeholder2"                  # the name of our funny bot
+referee_ip = "ws://192.168.3.28:8222" # referee server IP
 
 [debug]
 debug = false # whether to show debug camera
@@ -17,7 +17,7 @@ dir_timeout_time = 6 # time in seconds until we randomize the direction (unless 
 [camera]
 middle_offset = 0     # how much the camera's middle point is offset
 deadzone = 5          # how many pixels to ignore in the middle
-min_basket_dist = 800 # the minimum distance to start detecting balls from. TODO - wouldnt this conflict with escape state?
+min_basket_dist = 850 # the minimum distance to start detecting balls from. TODO - wouldnt this conflict with escape state?
 max_frames = 10       # for values that are tied to FPS in some way
 max_ball_miss = 5     # how many times we can miss the ball before starting to look for a new one
 undo_count = 10       # how many times we can undo in config_colors
