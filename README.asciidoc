@@ -74,3 +74,4 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 01.12.2022 - *Timo:* Code cleanup and fixes, getting code approved. (2h)
 * 02.12.2022 - *Timo:* Code cleanup. (2.5h)
 * 03.12.2022 - *Timo:* Fixes, code to hopefully save the robot when balls get stuck. (2.5h)
+* 04.12.2022 - *Jens:* Mechanics design and fixing issues (5h)
