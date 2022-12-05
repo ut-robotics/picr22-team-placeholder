@@ -21,6 +21,7 @@ min_basket_dist = 800 # the minimum distance to start detecting balls from. TODO
 max_frames = 10       # for values that are tied to FPS in some way
 max_ball_miss = 5     # how many times we can miss the ball before starting to look for a new one
 undo_count = 10       # how many times we can undo in config_colors
+avg_history = 20      # how many times to save old basket values for averaging
 
 [controller]
 analog_deadzone = 400       # deadzone for controller analog sticks
