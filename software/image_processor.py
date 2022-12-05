@@ -48,7 +48,7 @@ class ProcessedResults():
 
 # Main processor class. processes segmented information
 class ImageProcessor():
-    def __init__(self, camera, logger, min_basket_distance, color_config=get_colors_pkl_path(), debug=False, colors_lookup=None):
+    def __init__(self, camera, logger, min_basket_distance, color_config=get_colors_pkl_path(), debug=False, colors_lookup=None, avg_history=20):
         self.camera = camera
         self.logger = logger
         self.debug = debug
@@ -79,7 +79,8 @@ class ImageProcessor():
         # -- DEBUG FRAME --
         self.debug_frame = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
-
+        self.basket_distances = list()
+        self.avg_history = avg_history
         # -- KERNELS --
         self.ball_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         self.basket_kernel = np.ones((3, 3), np.uint8)
@@ -132,16 +133,18 @@ class ImageProcessor():
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")
                     continue
-            #if obj_dst == 0:
+            #if obj_dst == 0: # TODO - sometimes good, sometimes bad to filter out zero
             #    continue
+            
             # don't add if ball is further than the basket or too close to it
             if basket != None:
                 if basket.distance < 3000:  # TODO - 3000 is a random number, its just that the distance is a bit iffy at long distances
+                    #self.logger.log.info(f"Basket distance: {basket.distance}, basket Y: {basket.y}, ball distance: {obj_dst}, ball Y: {obj_y}")
                     if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
                         # TODO - fix getting stuck when ball jumps from OK to too far distance
                         if basket.distance - self.min_basket_distance <= obj_dst:
                             continue
-
+                #self.logger.log.warning(f"{basket.distance - self.min_basket_distance} > {obj_dst}")                      
             if self.debug:
                 self.debug_frame[ys, xs] = [0, 0, 0]
                 cv2.circle(self.debug_frame, (obj_x, obj_y),
@@ -184,7 +187,10 @@ class ImageProcessor():
                     self.logger.log.error(
                         "Basket attempted to divide by zero when averaging.")
                     continue
-
+            self.basket_distances.append(obj_dst)
+            if len(self.basket_distances) > self.avg_history:
+                self.basket_distances.pop(0)  # remove oldest item
+            obj_dst = np_average_jit(self.basket_distances)
             baskets.append(Object(x=obj_x, y=obj_y, size=size,
                            distance=obj_dst, exists=True))
 

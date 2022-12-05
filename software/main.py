@@ -116,7 +116,7 @@ class Robot:
         # -- CAMERA --
         self.cam = camera.RealsenseCamera(exposure=100)
         self.processor = image_processor.ImageProcessor(
-            self.cam, logger=self.logger, debug=self.debug, min_basket_distance=self.config["camera"]["min_basket_dist"])
+            self.cam, logger=self.logger, debug=self.debug, min_basket_distance=self.config["camera"]["min_basket_dist"], avg_history=self.config["camera"]["avg_history"])
         self.processor.start()
         self.middle_point = self.cam.rgb_width // 2 + \
             self.config["camera"]["middle_offset"]
@@ -434,8 +434,8 @@ class Robot:
         self.logger.log.info(f"desired speed {x_speed}")
         if not self.baskets[self.basket_color].exists:
             x_sign = np.sign(x_speed)
-            if abs(x_speed) < 0.15:  # TODO - x speed still has issues with almost stopping
-                x_speed = 0.15 * x_sign
+            if abs(x_speed) < 0.2:  # TODO - x speed still has issues with almost stopping
+                x_speed = 0.2 * x_sign
 
         # Clamp the x_speed, y_speed, and rot_speed values
         x_speed = np.clip(x_speed, -self.max_speed, self.max_speed)
