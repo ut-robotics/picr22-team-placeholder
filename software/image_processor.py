@@ -111,10 +111,13 @@ class ImageProcessor():
                 continue
 
             x, y, w, h = cv2.boundingRect(contour)
-            black_count = find_black_near_ball(
+            black_count, white_count, dimensions = find_black_near_ball(
                 fragments, (x, y, w, h), (frag_x, frag_y), 50)
-            if black_count > 200:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
-                continue
+            # TODO - expose this as a config variable
+            if black_count > 600:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
+                if white_count < 300:
+                    #self.logger.log.info(f"Too much black: {black_count}, white count: {white_count}")
+                    continue
 
             ys = np.array(
                 np.arange(y + h, self.camera.rgb_height), dtype=np.uint16)
@@ -133,23 +136,26 @@ class ImageProcessor():
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")
                     continue
-            #if obj_dst == 0: # TODO - sometimes good, sometimes bad to filter out zero
+            # if obj_dst == 0: # TODO - sometimes good, sometimes bad to filter out zero
             #    continue
-            
+
             # TODO - add a counter maybe
             # don't add if ball is further than the basket or too close to it
-            #if basket != None:
-                #if basket.distance < 3000:  # TODO - 3000 is a random number, its just that the distance is a bit iffy at long distances
+            # if basket != None:
+                # if basket.distance < 3000:  # TODO - 3000 is a random number, its just that the distance is a bit iffy at long distances
                     #self.logger.log.info(f"Basket distance: {basket.distance}, basket Y: {basket.y}, ball distance: {obj_dst}, ball Y: {obj_y}")
-                    #if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
-                        # TODO - fix getting stuck when ball jumps from OK to too far distance
+                    # if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
+                    # TODO - fix getting stuck when ball jumps from OK to too far distance
                     #    if basket.distance - self.min_basket_distance <= obj_dst:
                     #        continue
-                #self.logger.log.warning(f"{basket.distance - self.min_basket_distance} > {obj_dst}")                      
+                #self.logger.log.warning(f"{basket.distance - self.min_basket_distance} > {obj_dst}")
             if self.debug:
                 self.debug_frame[ys, xs] = [0, 0, 0]
                 cv2.circle(self.debug_frame, (obj_x, obj_y),
                            10, (0, 255, 0), 2)
+                # self.logger.log.info(dimensions)
+                cv2.rectangle(self.debug_frame, (dimensions[0], dimensions[1]), (
+                    dimensions[2], dimensions[3]), (0, 255, 0), 3)
 
             balls.append(Object(x=obj_x, y=obj_y, size=size,
                          distance=obj_dst, exists=True))

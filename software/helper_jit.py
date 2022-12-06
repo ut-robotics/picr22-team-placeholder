@@ -2,6 +2,7 @@
 from typing import List, Tuple
 from numba import njit, prange
 import numpy as np
+from math import floor
 
 @njit
 def np_average_jit(array: List[float]) -> float:
@@ -47,10 +48,10 @@ def find_black_near_ball(
     Returns:
         int: black_frame_count
     """
-    x1 = object_coords[0]
-    y1 = object_coords[1] + object_coords[3]
-    x2 = object_coords[0] + object_coords[2] + look_range
-    y2 = object_coords[1] + object_coords[3] + look_range
+    x1 = object_coords[0] - look_range
+    y1 = object_coords[1] - look_range
+    x2 = object_coords[0] + look_range
+    y2 = floor(object_coords[1] + object_coords[2] + (look_range * 1.25))
     # make sure it doesn't go out of bounds
     if x1 < 0:
         x1 = 0
@@ -62,8 +63,11 @@ def find_black_near_ball(
         y2 = 450
 
     black_count = 0
+    white_count = 0
     for x in prange(x1, x2):
         for y in prange(y1, y2):
             if image_fragments[y][x] == 6:
                 black_count += 1
-    return black_count
+            elif image_fragments[y][x] == 5:
+                white_count += 1
+    return black_count, white_count, (x1, y1, x2, y2)

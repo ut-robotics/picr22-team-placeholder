@@ -13,13 +13,11 @@ from random import choice
 import numpy as np
 
 # some objectives for the near future
-# TODO - orbit X speed is sometimes too aggressive, especially when multiple balls
 # TODO - improve orbiting
-# TODO - issues with purple basket, speed is usually too fast
-# TODO - prevent the robot from getting stuck in front of a basket
+# TODO - prevent the robot from getting stuck in front of a basket. NOTE: ball basket detection currently commented out, so this is not a major issue atm
 # TODO - has issues when opponent robot is in front of the other basket, doesnt want to cross the halfline of the arena OR calculates distance based on the other robot
-# TODO - issues when balls are close to lines
-
+# TODO - rework line detection
+# TODO - make drive 2 ball less aggressive
 class Robot:
     """The main class for %placeholder%"""
 
@@ -259,12 +257,10 @@ class Robot:
         y_delta = self.min_distance - object_dist
         y_speed = -self.max_speed * y_delta * 0.005
         rot_speed = -1 * rot_delta * 0.003
-        y_sign = 1 if y_speed >= 0 else -1
-        rot_sign = -1 if rot_speed >= 0 else 1
-        y_speed = min(abs(y_speed), self.max_speed) * y_sign
-        rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
+        y_speed = np.clip(y_speed, -self.max_speed, self.max_speed)
+        rot_speed = np.clip(rot_speed, -self.max_speed, self.max_speed) * -1
         thrower_speed = 0
-        if y_sign == -1:
+        if y_speed < 0:
             # activate thrower to get balls out
             thrower_speed = 570
         elif time() > self.thrower_emergency_activation_time:
@@ -425,14 +421,14 @@ class Robot:
             self.logger.log.info(f"--Orbiting-- Basket delta {basket_delta}")
 
             rot_speed = -1 * basket_delta * 0.009
-            
+
             if abs(x_delta) <= 12 and abs(basket_delta) <= 15:
                 self.robot.stop()
                 self.current_state = State.BallThrow
                 self.thrower_substate = ThrowerState.StartThrow
                 self.throw_end_time = time() + self.throw_time
                 return
-            
+
         self.logger.log.info(f"desired speed {x_speed}")
 
         # Clamp the x_speed, y_speed, and rot_speed values
