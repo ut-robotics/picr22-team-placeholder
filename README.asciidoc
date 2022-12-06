@@ -77,3 +77,4 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 04.12.2022 - *Jens:* Mechanics design and fixing issues (5h)
 * 04.12.2022 - *Timo:* Programming, fixing basket escape logic. (7h)
 * 05.12.2022 - *Timo:* Code adjustment and fixed orbiting with the help of Akustav. (4h)
+* 06.12.2022 - *Timo:* Variable adjusting, making use of white pixels in line detection. (3h)
