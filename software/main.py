@@ -13,11 +13,10 @@ from random import choice
 import numpy as np
 
 # some objectives for the near future
-# TODO - improve orbiting
 # TODO - prevent the robot from getting stuck in front of a basket. NOTE: ball basket detection currently commented out, so this is not a major issue atm
 # TODO - has issues when opponent robot is in front of the other basket, doesnt want to cross the halfline of the arena OR calculates distance based on the other robot
 # TODO - rework line detection
-# TODO - make drive 2 ball less aggressive
+
 class Robot:
     """The main class for %placeholder%"""
 
@@ -375,7 +374,7 @@ class Robot:
         self.logger.log.info("--Drive2Ball-- Driving to the ball.")
 
         if not self.min_distance + 35 > self.ball.distance > self.min_distance - 35:
-            self.drive_to_object(self.ball.x, self.ball.distance)
+            self.drive_to_object(self.ball.x, self.ball.distance - 30) # TODO - make it accessible from config maybe
             self.logger.log.info(
                 f"--Drive2Ball-- Ball distance {self.ball.distance}.")
         else:
