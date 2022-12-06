@@ -1,6 +1,6 @@
 [robot]
-name = "placeholder2"                  # the name of our funny bot
-referee_ip = "ws://192.168.3.28:8222" # referee server IP
+name = "placeholder"                  # the name of our funny bot
+referee_ip = "ws://192.168.3.69:8222" # referee server IP
 
 [debug]
 debug = false # whether to show debug camera
