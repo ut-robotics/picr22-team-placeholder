@@ -76,7 +76,7 @@ class RobotDS4Backend(Controller):
     # Thrower
     def on_up_arrow_press(self):
         """Increasing thrower speed"""
-        if self.robot_data.manual_thrower_speed >= 2000:
+        if self.robot_data.manual_thrower_speed >= 2047:
             self.robot_data.logger.log.warning("Already at max speed!")
         else:
             self.robot_data.manual_thrower_speed += 10

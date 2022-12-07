@@ -140,7 +140,7 @@ class ImageProcessor():
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")
                     continue
-                
+
             # if obj_dst == 0: # NOTE - sometimes good, sometimes bad to filter out zero
             #    continue
             # TODO - add a counter maybe
@@ -190,10 +190,24 @@ class ImageProcessor():
             obj_y = int(y + (h/4))
             if depth is None:
                 obj_dst = obj_y
-            else:
+            else:  # in case of obstacle, -30
                 try:
+                    # TODO - clean this mess up
+                    y1 = obj_y - 4
+                    y2 = obj_y + 4
+                    x1 = obj_x - 4
+                    x2 = obj_x + 4
+                    if y1 < y:
+                        y1 = y
+                    if y2 > (y+h):
+                        y2 = y+h
+                    if x1 < x:
+                        x1 = x
+                    if x2 < (x+w):
+                        x2 = x+w
+
                     obj_dst = np_average_jit(
-                        depth[obj_y-4:obj_y+4, obj_x-4:obj_x+4])  # TODO - verify that this is actually on the object
+                        depth[y1:y2, x1:x2])  # TODO - verify that this is actually on the object
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Basket attempted to divide by zero when averaging.")
@@ -202,6 +216,7 @@ class ImageProcessor():
             if len(self.basket_distances) > self.avg_history:
                 self.basket_distances.pop(0)  # remove oldest item
             obj_dst = np_average_jit(self.basket_distances)
+            self.logger.log.info(f"Basket distance: {obj_dst}")
             baskets.append(Object(x=obj_x, y=obj_y, size=size,
                            distance=obj_dst, exists=True))
 

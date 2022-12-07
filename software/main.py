@@ -408,11 +408,11 @@ class Robot:
 
         # NOTE - adjust these values to improve orbiting
         x_delta = self.middle_point - self.ball.x
-        x_speed = -1 * 0.45
+        x_speed = self.orbit_direction * 0.45
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.005
 
-        rot_speed = 1 * 3 * (x_delta / self.middle_point) # TODO - reimplement random rot direction (?)
+        rot_speed = 3 * (x_delta / self.middle_point)
 
         self.logger.log.info(
             f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
@@ -432,8 +432,6 @@ class Robot:
                 self.thrower_substate = ThrowerState.StartThrow
                 self.throw_end_time = time() + self.throw_time
                 return
-
-        self.logger.log.info(f"desired speed {x_speed}")
 
         # Clamp the x_speed, y_speed, and rot_speed values
         x_speed = np.clip(x_speed, -self.max_speed, self.max_speed)
