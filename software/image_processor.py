@@ -135,14 +135,14 @@ class ImageProcessor():
             else:
                 try:
                     obj_dst = np_average_jit(
-                        depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])  # TODO - verify that this is actually on the object
+                        depth[obj_y-1:obj_y+1, obj_x-1:obj_x+1])  # TODO - verify that this is actually on the object
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")
                     continue
+                
             # if obj_dst == 0: # NOTE - sometimes good, sometimes bad to filter out zero
             #    continue
-
             # TODO - add a counter maybe
             # don't add if ball is further than the basket or too close to it
             # if basket != None:
@@ -187,13 +187,13 @@ class ImageProcessor():
             x, y, w, h = cv2.boundingRect(contour)
 
             obj_x = int(x + (w/2))
-            obj_y = int(y + (h/2))
+            obj_y = int(y + (h/4))
             if depth is None:
                 obj_dst = obj_y
             else:
                 try:
                     obj_dst = np_average_jit(
-                        depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])  # TODO - verify that this is actually on the object
+                        depth[obj_y-4:obj_y+4, obj_x-4:obj_x+4])  # TODO - verify that this is actually on the object
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Basket attempted to divide by zero when averaging.")

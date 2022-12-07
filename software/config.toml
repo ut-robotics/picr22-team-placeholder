@@ -22,7 +22,7 @@ min_basket_dist = 850 # the minimum distance to start detecting balls from. TODO
 max_frames = 10       # for values that are tied to FPS in some way
 max_ball_miss = 5     # how many times we can miss the ball before starting to look for a new one
 undo_count = 10       # how many times we can undo in config_colors
-avg_history = 10      # how many times to save old basket values for averaging
+avg_history = 5      # how many times to save old basket values for averaging
 max_black_count = 600 # how many black pixels have to be in the frame for us to ignore the ball
 min_white_count = 300 # how many white pixels have to be in the frame for us to use the ball despite of the black pixels
 

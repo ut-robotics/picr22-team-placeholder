@@ -198,7 +198,11 @@ class RobotDS4Backend(Controller):
         """Attempt to throw the ball"""
         if self.robot_data.current_state == State.RemoteControl:
             # we can't get ball data if there's no ball and no point if robot can't find basket
-            if (self.robot_data.ball == None) or (self.robot_data.baskets[self.robot_data.basket_color].distance == -1):
+            if self.robot_data.ball == None:
+                self.robot_data.logger.log.warning("No ball found!")
+                return
+            elif self.robot_data.baskets[self.robot_data.basket_color].distance == -1:
+                self.robot_data.logger.log.warning("No basket found!")
                 return
             self.robot_data.logger.log.info("Saved speeds")
             self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.baskets[self.robot_data.basket_color].distance},{self.robot_data.ball.distance}\n"
