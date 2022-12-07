@@ -9,6 +9,7 @@ debug = false # whether to show debug camera
 fps_counter = false  # log current framerate
 ball_count = false   # log ball count
 motor_speeds = false # log motor speeds
+log_level = 10       # log level, default is DEBUG. Levels: CRITICAL = 50, ERROR = 40, WARNING = 30, INFO = 20, DEBUG = 10
 
 [orbit]
 max_orbit_time = 10  # max orbit time in seconds before timeout
@@ -22,6 +23,8 @@ max_frames = 10       # for values that are tied to FPS in some way
 max_ball_miss = 5     # how many times we can miss the ball before starting to look for a new one
 undo_count = 10       # how many times we can undo in config_colors
 avg_history = 10      # how many times to save old basket values for averaging
+max_black_count = 600 # how many black pixels have to be in the frame for us to ignore the ball
+min_white_count = 300 # how many white pixels have to be in the frame for us to use the ball despite of the black pixels
 
 [controller]
 analog_deadzone = 400       # deadzone for controller analog sticks
@@ -33,6 +36,7 @@ patrol_min_basket_dist = 1200 # distance to drive to when patrolling
 max_speed = 1                 # max speed of the motors
 throw_move_speed = 0.375      # speed that we use while throwing the ball
 search_speed = 2              # speed to use while rotating in search mode
+drive2ball_deadzone = 35      # deadzone for how close we get to the ball in drive2ball
 
 [search]
 timeout = 3 # time in seconds until we start attempting to drive to the opposite basket

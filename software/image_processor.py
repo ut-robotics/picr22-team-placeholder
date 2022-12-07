@@ -48,12 +48,13 @@ class ProcessedResults():
 
 # Main processor class. processes segmented information
 class ImageProcessor():
-    def __init__(self, camera, logger, min_basket_distance, color_config=get_colors_pkl_path(), debug=False, colors_lookup=None, avg_history=20):
+    def __init__(self, camera, logger, config, color_config=get_colors_pkl_path(), debug=False, colors_lookup=None):
         self.camera = camera
         self.logger = logger
         self.debug = debug
+        self.config = config
         # distance to stop ignoring balls from
-        self.min_basket_distance = min_basket_distance
+        self.min_basket_distance = self.config["camera"]["min_basket_dist"]
 
         # -- COLOUR CONFIG --
         self.color_config = color_config
@@ -71,16 +72,20 @@ class ImageProcessor():
         # -- OBJECTS --
         self.t_balls = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
+        self.max_black_count = self.config["camera"]["max_black_count"]
+        self.min_white_count = self.config["camera"]["min_white_count"]
         self.t_basket_b = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
         self.t_basket_m = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
+        # moving average for baskets
+        self.avg_history = self.config["camera"]["avg_history"]
 
         # -- DEBUG FRAME --
         self.debug_frame = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
         self.basket_distances = list()
-        self.avg_history = avg_history
+
         # -- KERNELS --
         self.ball_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         self.basket_kernel = np.ones((3, 3), np.uint8)
@@ -113,9 +118,8 @@ class ImageProcessor():
             x, y, w, h = cv2.boundingRect(contour)
             black_count, white_count, dimensions = find_black_near_ball(
                 fragments, (x, y, w, h), (frag_x, frag_y), 50)
-            # TODO - expose this as a config variable
-            if black_count > 600:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
-                if white_count < 300:
+            if black_count > self.max_black_count:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
+                if white_count < self.min_white_count:
                     #self.logger.log.info(f"Too much black: {black_count}, white count: {white_count}")
                     continue
 
@@ -131,12 +135,12 @@ class ImageProcessor():
             else:
                 try:
                     obj_dst = np_average_jit(
-                        depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
+                        depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])  # TODO - verify that this is actually on the object
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")
                     continue
-            # if obj_dst == 0: # TODO - sometimes good, sometimes bad to filter out zero
+            # if obj_dst == 0: # NOTE - sometimes good, sometimes bad to filter out zero
             #    continue
 
             # TODO - add a counter maybe
@@ -189,7 +193,7 @@ class ImageProcessor():
             else:
                 try:
                     obj_dst = np_average_jit(
-                        depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
+                        depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])  # TODO - verify that this is actually on the object
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Basket attempted to divide by zero when averaging.")

@@ -35,7 +35,7 @@ class TerminalFormatter(logging.Formatter):
 class Logger:
     """Custom logger for the project."""
 
-    def __init__(self, name="%placeholder%"):
+    def __init__(self, log_level, name="%placeholder%"):
         # Create the logs directory if it does not already exist
         if not os.path.exists("logs"):
             os.mkdir("logs")
@@ -52,7 +52,7 @@ class Logger:
         self.log = logging.getLogger(name)
         self.log.addHandler(fh)
         self.log.addHandler(ch)
-        self.log.setLevel(logging.DEBUG)  # TODO: Make log level adjustable in main.py
+        self.log.setLevel(log_level)
 
 
 if __name__ == "__main__":

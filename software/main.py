@@ -17,6 +17,7 @@ import numpy as np
 # TODO - has issues when opponent robot is in front of the other basket, doesnt want to cross the halfline of the arena OR calculates distance based on the other robot
 # TODO - rework line detection
 
+
 class Robot:
     """The main class for %placeholder%"""
 
@@ -65,11 +66,12 @@ class Robot:
     processed_data = None
 
     def __init__(self):
-        # -- LOGGING --
-        self.logger = Logger()
-
         # -- CONFIG --
         self.config = load_config()
+
+        # -- LOGGING --
+        self.logger = Logger(
+            self.config["logging"]["log_level"], name="%placeholder%")
 
         # -- FPS counter --
         if self.config["logging"]["fps_counter"]:
@@ -107,13 +109,16 @@ class Robot:
         # for escaping and searching, so we don't drive into the basket
         self.min_basket_dist = self.config["movement"]["min_basket_dist"]
         self.patrol_min_basket_dist = self.config["movement"]["patrol_min_basket_dist"]
+        self.drive_to_ball_deadzone = self.config["movement"]["drive2ball_deadzone"]
+        # this is the distance we use for driving to the ball, it's slightly shorter so the robot wouldn't drive into the ball at full speed most of the time
+        self.drive_to_ball_minus_drive_dist = self.drive_to_ball_deadzone * 0.85
         self.robot = motion.OmniRobot(logger=self.logger, config=self.config)
         self.robot.open()
 
         # -- CAMERA --
         self.cam = camera.RealsenseCamera(exposure=100)
         self.processor = image_processor.ImageProcessor(
-            self.cam, logger=self.logger, debug=self.debug, min_basket_distance=self.config["camera"]["min_basket_dist"], avg_history=self.config["camera"]["avg_history"])
+            self.cam, logger=self.logger, debug=self.debug, config=self.config)
         self.processor.start()
         self.middle_point = self.cam.rgb_width // 2 + \
             self.config["camera"]["middle_offset"]
@@ -374,7 +379,7 @@ class Robot:
         self.logger.log.info("--Drive2Ball-- Driving to the ball.")
 
         if not self.min_distance + 35 > self.ball.distance > self.min_distance - 35:
-            self.drive_to_object(self.ball.x, self.ball.distance - 30) # TODO - make it accessible from config maybe
+            self.drive_to_object(self.ball.x, self.ball.distance - 30)  # *0.85
             self.logger.log.info(
                 f"--Drive2Ball-- Ball distance {self.ball.distance}.")
         else:
@@ -401,13 +406,13 @@ class Robot:
             self.back_to_search_state()
             return
 
-        # TODO - adjust these values to improve orbiting
+        # NOTE - adjust these values to improve orbiting
         x_delta = self.middle_point - self.ball.x
         x_speed = -1 * 0.45
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.005
 
-        rot_speed = 1 * 3 * (x_delta / (self.cam.rgb_width // 2))
+        rot_speed = 1 * 3 * (x_delta / self.middle_point) # TODO - reimplement random rot direction (?)
 
         self.logger.log.info(
             f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")

@@ -5,8 +5,9 @@ from helper import load_config
 
 if __name__ == "__main__":
     config = load_config()
-    config["logging"]["motor_speeds"] = True # we're forcing this on so we can actually get feedback whether the motors work as expected
-    logger = Logger("%MOTOR-TESTER%")
+    # we're forcing this on so we can actually get feedback whether the motors work as expected
+    config["logging"]["motor_speeds"] = True
+    logger = Logger(config["logging"]["log_level"], name="%MOTOR-TESTER%")
     robot = motion.OmniRobot(config=config, logger=logger)
     robot.open()
     thrower_speed = 0

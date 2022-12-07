@@ -15,7 +15,7 @@ def nothing(x):
 config = load_config()
 # how many times we can possibly undo
 MAX_HISTORY = config["camera"]["undo_count"]
-logger = Logger("%ColourConfig%")
+logger = Logger(config["logging"]["log_level"], name="%ColourConfig%")
 cv2.namedWindow('image')
 cv2.namedWindow('debug')
 cv2.namedWindow('mask')
