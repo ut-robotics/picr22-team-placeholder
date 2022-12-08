@@ -92,7 +92,7 @@ class ImageProcessor():
 
     def set_segmentation_table(self, table):
         segment.set_table(table)
-
+        
     def start(self):
         self.camera.open()
 
@@ -192,7 +192,6 @@ class ImageProcessor():
             if len(self.basket_distances) > self.avg_history:
                 self.basket_distances.pop(0)  # remove oldest item
             obj_dst = np_average_jit(self.basket_distances)
-            self.logger.log.info(f"Basket distance: {obj_dst}")
             baskets.append(Object(x=obj_x, y=obj_y, size=size,
                            distance=obj_dst, exists=True))
 

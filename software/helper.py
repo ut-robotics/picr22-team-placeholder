@@ -40,10 +40,10 @@ def calculate_throw_speed(basket_dist: float) -> int:
         int: ThrowerSpeed
     """
     # Values calibrated using linear regression
-    # return int(basket_dist * 0.12765884018885787 + 682.6310331063094) # wednesday old calibration
+    #return int(basket_dist * 0.12765884018885787 + 682.6310331063094) # wednesday old calibration
     # return int(basket_dist * 0.12437404909026954 + 725.776765144907) - 50 # pre wednesday calibration
-    return int(basket_dist * 0.12166747423199367 + 677.9587284233271) # wednesday new calibration
-
+    #return int(basket_dist * 0.12166747423199367 + 677.9587284233271) # wednesday new calibration
+    return int(basket_dist * 0.12429200986031244 + 681.6616520569161) # mix of both wednesday measurements
 
 def load_config() -> dict:
     """Returns the config data
