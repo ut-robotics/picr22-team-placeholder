@@ -231,8 +231,6 @@ class Robot:
                                 f"BASKET TOO CLOSE.... {self.baskets[basket].distance}")
                     else:
                         self.basket_too_close_frames = 0
-                        self.logger.log.warning(
-                            f"safe.... {self.baskets[basket].distance}")
                 else:
                     self.basket_no_basket_frames += 1
                     if self.basket_no_basket_frames > self.max_frames:
