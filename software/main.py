@@ -466,10 +466,11 @@ class Robot:
             rot_speed = -1 * rot_delta * 0.003
             rot_sign = -1 if rot_speed >= 0 else 1
             rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
+            self.logger.log.info(f"--BallThrow-- Throwing, current basket distance {self.baskets[self.basket_color].distance}.")
             self.robot.move(0, self.throw_move_speed,
                             rot_speed, self.thrower_speed)
         elif self.thrower_substate == ThrowerState.EndThrow:
-            self.logger.log.info("--BallThrow-- Finishing throw.")
+            self.logger.log.info(f"--BallThrow-- Finishing throw, current basket distance {self.baskets[self.basket_color].distance}.")
             self.back_to_search_state()
             self.thrower_substate = ThrowerState.Off
             self.thrower_speed = 0
