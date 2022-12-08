@@ -497,8 +497,13 @@ class Robot:
                 2) if self.basket_color == Color(3) else Color(3)
             self.back_to_search_state()
             opponent_index = 0 if robot_index == 1 else 1
-            self.logger.log.info(
-                f"STARTING ROBOT, basket: {self.basket_color}, opponent: {cmd['targets'][opponent_index]}")
+            if len(cmd["targets"]) > 1:
+                self.logger.log.info(
+                    f"STARTING ROBOT, basket: {self.basket_color}, opponent: {cmd['targets'][opponent_index]}")
+            else:
+                self.logger.log.info(
+                    f"STARTING ROBOT, basket: {self.basket_color}, no opponent.")
+                
         elif cmd["signal"] == "stop":
             self.logger.log.info("STOPPING ROBOT")
             self.current_state = State.Stopped
