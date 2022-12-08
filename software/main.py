@@ -378,8 +378,9 @@ class Robot:
             return
         self.logger.log.info("--Drive2Ball-- Driving to the ball.")
 
+        # TODO - either rework this or expose constants in config
         if not self.min_distance + 35 > self.ball.distance > self.min_distance - 35:
-            self.drive_to_object(self.ball.x, self.ball.distance - 30)  # *0.85
+            self.drive_to_object(self.ball.x, self.ball.distance - 30)
             self.logger.log.info(
                 f"--Drive2Ball-- Ball distance {self.ball.distance}.")
         else:
@@ -433,10 +434,9 @@ class Robot:
                 self.throw_end_time = time() + self.throw_time
                 return
 
-        # Clamp the x_speed, y_speed, and rot_speed values
+        # Clamp the x_speed and y_speed values
         x_speed = np.clip(x_speed, -self.max_speed, self.max_speed)
         y_speed = np.clip(y_speed, -self.max_speed, self.max_speed)
-        #rot_speed = np.clip(rot_speed, -self.max_speed, self.max_speed)
 
         self.logger.log.info(
             f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")
@@ -452,7 +452,7 @@ class Robot:
             if self.baskets[self.basket_color].exists:
                 # all our data is from slightly away from the ball, so always adjusting the speed is a bad idea
                 self.thrower_speed = calculate_throw_speed(
-                    self.baskets[self.basket_color].distance)  # TODO - calibrate thrower
+                    self.baskets[self.basket_color].distance)
                 self.thrower_substate = ThrowerState.MidThrow
                 self.logger.log.info(
                     f"--BallThrow-- Starting throw, basket distance: {self.baskets[self.basket_color].distance}, speed: {self.thrower_speed}")
@@ -483,7 +483,7 @@ class Robot:
         if self.name in cmd["targets"]:
             robot_index = cmd["targets"].index(self.name)
             if robot_index > 1:
-                return  # this should also never happen
+                return  # this should never happen
         else:
             robot_index = None
             return  # we filter it in referee already, so this shouldnt happen, but better safe than sorry

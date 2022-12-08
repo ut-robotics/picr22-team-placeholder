@@ -30,9 +30,6 @@ def get_colors_pkl_path() -> str:
         pkl_path = os.path.join("software", pkl_path)
     return pkl_path
 
-# 0.375,834,919.3,270.4375 - it physically cannot hit from this distance
-
-
 def calculate_throw_speed(basket_dist: float) -> int:
     """Calculates throw speed based on basket distance 
 
@@ -44,8 +41,8 @@ def calculate_throw_speed(basket_dist: float) -> int:
     """
     # Values calibrated using linear regression
     # return int(basket_dist * 0.12765884018885787 + 682.6310331063094) # wednesday old calibration
-    return int(basket_dist * 0.12166747423199367 + 677.9587284233271) # wednesday new calibration
     # return int(basket_dist * 0.12437404909026954 + 725.776765144907) - 50 # pre wednesday calibration
+    return int(basket_dist * 0.12166747423199367 + 677.9587284233271) # wednesday new calibration
 
 
 def load_config() -> dict:

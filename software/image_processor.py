@@ -4,7 +4,7 @@ import _pickle as pickle
 import numpy as np
 import cv2
 import Color as c
-from helper_jit import find_black_near_ball, np_zeros_jit, np_average_jit
+from helper_jit import find_pixels_near_ball, np_zeros_jit, np_average_jit
 from helper import get_colors_pkl_path
 
 
@@ -116,11 +116,10 @@ class ImageProcessor():
                 continue
 
             x, y, w, h = cv2.boundingRect(contour)
-            black_count, white_count, dimensions = find_black_near_ball(
+            black_count, white_count, dimensions = find_pixels_near_ball(
                 fragments, (x, y, w, h), (frag_x, frag_y), 50)
             if black_count > self.max_black_count:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
                 if white_count < self.min_white_count:
-                    #self.logger.log.info(f"Too much black: {black_count}, white count: {white_count}")
                     continue
 
             ys = np.array(
@@ -141,23 +140,10 @@ class ImageProcessor():
                         "Ball attempted to divide by zero when averaging.")
                     continue
 
-            # if obj_dst == 0: # NOTE - sometimes good, sometimes bad to filter out zero
-            #    continue
-            # TODO - add a counter maybe
-            # don't add if ball is further than the basket or too close to it
-            # if basket != None:
-                # if basket.distance < 3000:  # TODO - 3000 is a random number, its just that the distance is a bit iffy at long distances
-                    #self.logger.log.info(f"Basket distance: {basket.distance}, basket Y: {basket.y}, ball distance: {obj_dst}, ball Y: {obj_y}")
-                    # if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
-                    # TODO - fix getting stuck when ball jumps from OK to too far distance
-                    #    if basket.distance - self.min_basket_distance <= obj_dst:
-                    #        continue
-                #self.logger.log.warning(f"{basket.distance - self.min_basket_distance} > {obj_dst}")
             if self.debug:
                 self.debug_frame[ys, xs] = [0, 0, 0]
                 cv2.circle(self.debug_frame, (obj_x, obj_y),
                            10, (0, 255, 0), 2)
-                # self.logger.log.info(dimensions)
                 cv2.rectangle(self.debug_frame, (dimensions[0], dimensions[1]), (
                     dimensions[2], dimensions[3]), (0, 255, 0), 3)
 
@@ -190,24 +176,14 @@ class ImageProcessor():
             obj_y = int(y + (h/4))
             if depth is None:
                 obj_dst = obj_y
-            else:  # in case of obstacle, -30
+            else:  # TODO - implement speed increase if there are too many other pixels. distance in case of obstacle is at least -30
                 try:
-                    # TODO - clean this mess up
-                    y1 = obj_y - 4
-                    y2 = obj_y + 4
-                    x1 = obj_x - 4
-                    x2 = obj_x + 4
-                    if y1 < y:
-                        y1 = y
-                    if y2 > (y+h):
-                        y2 = y+h
-                    if x1 < x:
-                        x1 = x
-                    if x2 < (x+w):
-                        x2 = x+w
-
+                    y1 = max(obj_y - 4, y)
+                    y2 = min(obj_y + 4, y + h)
+                    x1 = max(obj_x - 4, x)
+                    x2 = min(obj_x + 4, x + w)
                     obj_dst = np_average_jit(
-                        depth[y1:y2, x1:x2])  # TODO - verify that this is actually on the object
+                        depth[y1:y2, x1:x2])
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Basket attempted to divide by zero when averaging.")

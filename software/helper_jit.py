@@ -4,6 +4,7 @@ from numba import njit, prange
 import numpy as np
 from math import floor
 
+
 @njit
 def np_average_jit(array: List[float]) -> float:
     """Compute the weighted average along the specified axis.
@@ -15,6 +16,7 @@ def np_average_jit(array: List[float]) -> float:
         float: Weighted average
     """
     return np.average(array)
+
 
 @njit
 def np_zeros_jit(height: int, width: int) -> List[int]:
@@ -30,14 +32,15 @@ def np_zeros_jit(height: int, width: int) -> List[int]:
     return np.zeros(
         (height, width), dtype=np.uint8)
 
+
 @njit(parallel=True, fastmath=True, cache=True)
-def find_black_near_ball(
+def find_pixels_near_ball(
     image_fragments: np.array,
     object_coords: Tuple[int, int, int, int],
     frag_size: Tuple[int, int],
     look_range: int
-) -> int:
-    """Returns how many black frames were found near the ball
+) -> Tuple[int, int, Tuple[int, int, int, int]]:
+    """Returns how many black and white frames were found near the ball.
 
     Args:
         image_fragments (np.array): image fragments
@@ -46,22 +49,18 @@ def find_black_near_ball(
         look_range (int): how much to extend looking area compared to object size
 
     Returns:
-        int: black_frame_count
+        tuple: black_frame_count, white_frame_count, (x1, y1, x2, y2)
     """
-    x1 = object_coords[0] - look_range
-    y1 = object_coords[1] - look_range
-    x2 = object_coords[0] + look_range
-    y2 = floor(object_coords[1] + object_coords[2] + (look_range * 1.25))
-    # make sure it doesn't go out of bounds
-    if x1 < 0:
-        x1 = 0
-    if y1 < 0:
-        y1 = 0
-    if x2 > frag_size[1]:
-        x2 = frag_size[1] - 1
-    if y2 > 450:
-        y2 = 450
+    # Determine bounding box coordinates
+    x1 = max(object_coords[0] - look_range, 0)
+    y1 = max(object_coords[1] - look_range, 0)
+    x2 = min(object_coords[0] + look_range, frag_size[1] - 1)
+    y2 = min(
+        floor(object_coords[1] + object_coords[2] + (look_range * 1.25)),
+        450
+    )
 
+    # Count black and white frames within bounding box
     black_count = 0
     white_count = 0
     for x in prange(x1, x2):
@@ -70,4 +69,5 @@ def find_black_near_ball(
                 black_count += 1
             elif image_fragments[y][x] == 5:
                 white_count += 1
+
     return black_count, white_count, (x1, y1, x2, y2)
