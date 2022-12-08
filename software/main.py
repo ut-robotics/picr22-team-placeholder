@@ -270,14 +270,11 @@ class Robot:
         elif time() > self.thrower_emergency_activation_time:
             if time() > self.thrower_emergency_activation_time + self.thrower_emergency_duration:
                 self.logger.log.info(
-                    f"no thrower activation, time is {time()} but activation time is {self.thrower_emergency_activation_time + self.thrower_emergency_duration}")
+                    f"--Drive2Object-- No thrower activation, time is {time()} but activation time is {self.thrower_emergency_activation_time + self.thrower_emergency_duration}")
                 self.thrower_emergency_activation_time = time() + self.thrower_emergency_interval
             else:
                 thrower_speed = 570
-                self.logger.log.info("throwing!!")
-        else:
-            self.logger.log.info(
-                f"not thrower time yet - {time()} and {self.thrower_emergency_activation_time}")
+                self.logger.log.info("--Drive2Object-- Throwing!!")
         self.robot.move(0, y_speed, rot_speed, thrower_speed)
 
     def get_search_direction(self):
