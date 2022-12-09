@@ -79,3 +79,4 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 05.12.2022 - *Timo:* Code adjustment and fixed orbiting with the help of Akustav. (4h)
 * 06.12.2022 - *Timo:* Variable adjusting, making use of white pixels in line detection. (3h)
 * 07.12.2022 - *Timo:* Calibrated thrower, cleaned the wheels, drilled a hole to attach rear wheel, attempts at improving basket distance detection. (7.5h)
+* 08.12.2022 - *Timo:* Adjusted some screws, code cleanup, won the test competition. (5h)
