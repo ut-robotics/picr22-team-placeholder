@@ -38,6 +38,10 @@ class Referee:
             except ConnectionRefusedError:
                 time.sleep(1)
                 continue
+            except OSError:
+                self.robot_data.log.error("No route to referee server host. Make sure the IP is correct and the server is running. Retrying...")
+                time.sleep(1)
+                continue
             except:
                 self.robot_data.logger.log.exception('')
 

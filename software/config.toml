@@ -42,7 +42,7 @@ drive2ball_deadzone = 35      # deadzone for how close we get to the ball in dri
 timeout = 3 # time in seconds until we start attempting to drive to the opposite basket
 
 [thrower]
-time = 1.2137          # time in seconds how long we stay in throw state
+time = 1.4137          # time in seconds how long we stay in throw state
 min_distance = 340     # minimum distance from ball to start the throw from
 emergency_duration = 2 # time in seconds for how long we activate thrower to throw any stuck balls out
 emergency_interval = 2 # time in seconds for the interval of emergency throw

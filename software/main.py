@@ -13,7 +13,7 @@ from random import choice
 import numpy as np
 
 # some objectives for the near future
-# TODO - prevent the robot from getting stuck in front of a basket. NOTE: ball basket detection currently commented out, so this is not a major issue atm
+# TODO - prevent the robot from getting stuck in front of a basket. NOTE: ball basket detection currently removed, so this is not a major issue atm
 # TODO - has issues when opponent robot is in front of the other basket, doesnt want to cross the halfline of the arena OR calculates distance based on the other robot
 # TODO - rework line detection
 
@@ -408,7 +408,7 @@ class Robot:
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.005
 
-        rot_speed = 3 * (x_delta / self.middle_point)
+        rot_speed = 10 * (x_delta / self.middle_point) # TODO - adjust this further, not sure if too much or too little currently
 
         self.logger.log.info(
             f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
