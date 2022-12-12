@@ -72,8 +72,6 @@ def find_pixels_near_ball(
 
     return black_count, white_count, (x1, y1, x2, y2)
 
-# TODO - Untested, test if this actually works on the robot
-
 def get_average_distance(image_fragments: np.ndarray, depth: np.ndarray, color_id: int) -> float:
     # Convert the image_fragments and depth variables to NumPy arrays
     image_fragments = np.array(image_fragments)

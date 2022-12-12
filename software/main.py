@@ -410,7 +410,7 @@ class Robot:
         y_speed = -1 * y_delta * 0.005
 
         # TODO - adjust this further, not sure if too much or too little currently
-        rot_speed = 10 * (x_delta / self.middle_point)
+        rot_speed = 6 * (x_delta / self.middle_point)
 
         self.logger.log.info(
             f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
