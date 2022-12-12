@@ -74,8 +74,6 @@ def find_pixels_near_ball(
 
 # TODO - Untested, test if this actually works on the robot
 
-
-@njit
 def get_average_distance(image_fragments: np.ndarray, depth: np.ndarray, color_id: int) -> float:
     # Convert the image_fragments and depth variables to NumPy arrays
     image_fragments = np.array(image_fragments)
@@ -90,6 +88,5 @@ def get_average_distance(image_fragments: np.ndarray, depth: np.ndarray, color_i
 
     # Use these indices to get the corresponding depth values for these pixels
     color_depths = depth[color_indices]
-
     # Use NumPy to calculate the average depth of the pixels with the specified color
     return np.mean(color_depths)

@@ -133,8 +133,9 @@ class ImageProcessor():
                 obj_dst = obj_y
             else:
                 try:
-                    obj_dst = np_average_jit(
-                        depth[obj_y-1:obj_y+1, obj_x-1:obj_x+1])  # TODO - verify that this is actually on the object
+                    #obj_dst = np_average_jit(
+                    #    depth[obj_y-1:obj_y+1, obj_x-1:obj_x+1])  # TODO - verify that this is actually on the object
+                    obj_dst = get_average_distance(fragments[obj_y-1:obj_y+1, obj_x-1:obj_x+1], depth[obj_y-1:obj_y+1, obj_x-1:obj_x+1], 1) 
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")
@@ -184,7 +185,8 @@ class ImageProcessor():
                     x2 = min(obj_x + 6, x + w)
                     # obj_dst = np_average_jit(
                     #    depth[y1:y2, x1:x2])
-                    obj_dst = get_average_distance(fragments, depth, color_id) # NOTE - if this works, maybe use it for the ball too
+                    obj_dst = get_average_distance(fragments[y1:y2,x1:x2], depth[y1:y2,x1:x2], color_id) # NOTE - if this works, maybe use it for the ball too
+                    #self.logger.log.info(f"Basket distance {obj_dst}")
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Basket attempted to divide by zero when averaging.")
@@ -223,9 +225,9 @@ class ImageProcessor():
         if self.debug:
             self.debug_frame = np.copy(color_frame)
         basket_b = self.analyze_baskets(
-            self.t_basket_b, depth_frame, self.fragmented, c.Color.BLUE, debug_color=c.Color.BLUE.color.tolist())
+            self.t_basket_b, depth_frame, self.fragmented, 3, debug_color=c.Color.BLUE.color.tolist())
         basket_m = self.analyze_baskets(
-            self.t_basket_m, depth_frame, self.fragmented, c.Color.MAGENTA, debug_color=c.Color.MAGENTA.color.tolist())
+            self.t_basket_m, depth_frame, self.fragmented, 2, debug_color=c.Color.MAGENTA.color.tolist())
         if basket_b.exists and basket_m.exists:
             basket_to_check = basket_b if basket_b.distance > basket_m.distance else basket_m
         elif True in [basket_b.exists, basket_m.exists]:
