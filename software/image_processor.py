@@ -134,7 +134,7 @@ class ImageProcessor():
             else:
                 try:
                     #obj_dst = np_average_jit(
-                    #    depth[obj_y-1:obj_y+1, obj_x-1:obj_x+1])  # TODO - verify that this is actually on the object
+                    #    depth[obj_y-1:obj_y+1, obj_x-1:obj_x+1]) 
                     obj_dst = get_average_distance(fragments[obj_y-1:obj_y+1, obj_x-1:obj_x+1], depth[obj_y-1:obj_y+1, obj_x-1:obj_x+1], 1) 
                 except (ZeroDivisionError):
                     self.logger.log.error(
@@ -177,7 +177,7 @@ class ImageProcessor():
             obj_y = int(y + (h/4))
             if depth is None:
                 obj_dst = obj_y
-            else:  # TODO - implement speed increase if there are too many other pixels. distance in case of obstacle is at least -30
+            else:  
                 try:
                     y1 = max(obj_y - 6, y)
                     y2 = min(obj_y + 6, y + h)
@@ -185,8 +185,7 @@ class ImageProcessor():
                     x2 = min(obj_x + 6, x + w)
                     # obj_dst = np_average_jit(
                     #    depth[y1:y2, x1:x2])
-                    obj_dst = get_average_distance(fragments[y1:y2,x1:x2], depth[y1:y2,x1:x2], color_id) # NOTE - if this works, maybe use it for the ball too
-                    #self.logger.log.info(f"Basket distance {obj_dst}")
+                    obj_dst = get_average_distance(fragments[y1:y2,x1:x2], depth[y1:y2,x1:x2], color_id) 
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Basket attempted to divide by zero when averaging.")
