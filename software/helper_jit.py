@@ -35,7 +35,7 @@ def np_zeros_jit(height: int, width: int) -> List[int]:
 
 @njit(parallel=True, fastmath=True, cache=True)
 def find_pixels_near_ball(
-    image_fragments: np.array,
+    image_fragments: np.ndarray,
     object_coords: Tuple[int, int, int, int],
     frag_size: Tuple[int, int],
     look_range: int
@@ -71,3 +71,25 @@ def find_pixels_near_ball(
                 white_count += 1
 
     return black_count, white_count, (x1, y1, x2, y2)
+
+# TODO - Untested, test if this actually works on the robot
+
+
+@njit
+def get_average_distance(image_fragments: np.ndarray, depth: np.ndarray, color_id: int) -> float:
+    # Convert the image_fragments and depth variables to NumPy arrays
+    image_fragments = np.array(image_fragments)
+    depth = np.array(depth)
+
+    # Flatten the image_fragments and depth arrays to make them 1-dimensional
+    image_fragments = image_fragments.flatten()
+    depth = depth.flatten()
+
+    # Use NumPy to find the indices of all pixels that have the specified color
+    color_indices = np.where(image_fragments == color_id)
+
+    # Use these indices to get the corresponding depth values for these pixels
+    color_depths = depth[color_indices]
+
+    # Use NumPy to calculate the average depth of the pixels with the specified color
+    return np.mean(color_depths)

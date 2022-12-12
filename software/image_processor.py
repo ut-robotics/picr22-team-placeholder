@@ -4,7 +4,7 @@ import _pickle as pickle
 import numpy as np
 import cv2
 import Color as c
-from helper_jit import find_pixels_near_ball, np_zeros_jit, np_average_jit
+from helper_jit import find_pixels_near_ball, np_zeros_jit, np_average_jit, get_average_distance
 from helper import get_colors_pkl_path
 
 
@@ -92,7 +92,7 @@ class ImageProcessor():
 
     def set_segmentation_table(self, table):
         segment.set_table(table)
-        
+
     def start(self):
         self.camera.open()
 
@@ -154,7 +154,7 @@ class ImageProcessor():
 
         return balls
 
-    def analyze_baskets(self, t_basket, depth,  debug_color=(0, 255, 255)) -> list:
+    def analyze_baskets(self, t_basket, depth, fragments, color_id,  debug_color=(0, 255, 255)) -> list:
         t_basket = cv2.morphologyEx(
             t_basket, cv2.MORPH_CLOSE, self.basket_kernel)
         contours, _ = cv2.findContours(
@@ -178,12 +178,13 @@ class ImageProcessor():
                 obj_dst = obj_y
             else:  # TODO - implement speed increase if there are too many other pixels. distance in case of obstacle is at least -30
                 try:
-                    y1 = max(obj_y - 4, y)
-                    y2 = min(obj_y + 4, y + h)
-                    x1 = max(obj_x - 4, x)
-                    x2 = min(obj_x + 4, x + w)
-                    obj_dst = np_average_jit(
-                        depth[y1:y2, x1:x2])
+                    y1 = max(obj_y - 6, y)
+                    y2 = min(obj_y + 6, y + h)
+                    x1 = max(obj_x - 6, x)
+                    x2 = min(obj_x + 6, x + w)
+                    # obj_dst = np_average_jit(
+                    #    depth[y1:y2, x1:x2])
+                    obj_dst = get_average_distance(fragments, depth, color_id) # NOTE - if this works, maybe use it for the ball too
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Basket attempted to divide by zero when averaging.")
@@ -222,9 +223,9 @@ class ImageProcessor():
         if self.debug:
             self.debug_frame = np.copy(color_frame)
         basket_b = self.analyze_baskets(
-            self.t_basket_b, depth_frame, debug_color=c.Color.BLUE.color.tolist())
+            self.t_basket_b, depth_frame, self.fragmented, c.Color.BLUE, debug_color=c.Color.BLUE.color.tolist())
         basket_m = self.analyze_baskets(
-            self.t_basket_m, depth_frame, debug_color=c.Color.MAGENTA.color.tolist())
+            self.t_basket_m, depth_frame, self.fragmented, c.Color.MAGENTA, debug_color=c.Color.MAGENTA.color.tolist())
         if basket_b.exists and basket_m.exists:
             basket_to_check = basket_b if basket_b.distance > basket_m.distance else basket_m
         elif True in [basket_b.exists, basket_m.exists]:

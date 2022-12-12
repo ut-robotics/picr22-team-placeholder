@@ -47,6 +47,7 @@ class Robot:
     basket_max_distance = 0
     enemy_basket_max_distance = 0
     basket_to_drive_to = None
+    basket_distances = list()
     # this can be changed from referee command anyways, this is just a value to default to
     basket_color = Color.BLUE
 
@@ -408,7 +409,8 @@ class Robot:
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.005
 
-        rot_speed = 10 * (x_delta / self.middle_point) # TODO - adjust this further, not sure if too much or too little currently
+        # TODO - adjust this further, not sure if too much or too little currently
+        rot_speed = 10 * (x_delta / self.middle_point)
 
         self.logger.log.info(
             f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
@@ -445,6 +447,7 @@ class Robot:
 
         if self.thrower_substate == ThrowerState.StartThrow:
             if self.baskets[self.basket_color].exists:
+                self.basket_distances = list()
                 # all our data is from slightly away from the ball, so always adjusting the speed is a bad idea
                 self.thrower_speed = calculate_throw_speed(
                     self.baskets[self.basket_color].distance)
@@ -453,22 +456,32 @@ class Robot:
                     f"--BallThrow-- Starting throw, basket distance: {self.baskets[self.basket_color].distance}, speed: {self.thrower_speed}")
                 self.robot.move(0, self.throw_move_speed,
                                 0, self.thrower_speed)
+                self.basket_distances.append(
+                    self.baskets[self.basket_color].distance)
             else:
                 self.logger.log.warning(
                     "--BallThrow-- Trying to start throw, but there is no basket!")
         elif self.thrower_substate == ThrowerState.MidThrow:
+            if len(self.basket_distances) < 5:
+                self.basket_distances.append(
+                    self.baskets[self.basket_color].distance)
+                self.thrower_speed = calculate_throw_speed(
+                    np.mean(self.basket_distances))
             rot_delta = self.middle_point - self.baskets[self.basket_color].x
             rot_speed = -1 * rot_delta * 0.003
             rot_sign = -1 if rot_speed >= 0 else 1
             rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
-            self.logger.log.info(f"--BallThrow-- Throwing, current basket distance {self.baskets[self.basket_color].distance}.")
+            self.logger.log.info(
+                f"--BallThrow-- Throwing, current basket distance {self.baskets[self.basket_color].distance}.")
             self.robot.move(0, self.throw_move_speed,
                             rot_speed, self.thrower_speed)
         elif self.thrower_substate == ThrowerState.EndThrow:
-            self.logger.log.info(f"--BallThrow-- Finishing throw, current basket distance {self.baskets[self.basket_color].distance}.")
+            self.logger.log.info(
+                f"--BallThrow-- Finishing throw, current basket distance {self.baskets[self.basket_color].distance}.")
             self.back_to_search_state()
             self.thrower_substate = ThrowerState.Off
             self.thrower_speed = 0
+            self.basket_distances = list()
 
     def parse_referee_cmd(self):
         """Function for parsing referee commands"""
@@ -503,7 +516,7 @@ class Robot:
             else:
                 self.logger.log.info(
                     f"STARTING ROBOT, basket: {self.basket_color}, no opponent.")
-                
+
         elif cmd["signal"] == "stop":
             self.logger.log.info("STOPPING ROBOT")
             self.current_state = State.Stopped
