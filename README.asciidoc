@@ -81,3 +81,4 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 07.12.2022 - *Timo:* Calibrated thrower, cleaned the wheels, drilled a hole to attach rear wheel, attempts at improving basket distance detection. (7.5h)
 * 08.12.2022 - *Timo:* Adjusted some screws, code cleanup, won the test competition. (5h)
 * 09.12.2022 - *Timo:* Minor code cleanup and experimenting with basket color detection. (1h)
+* 10.12.2022 - *Jens:* CAM design (2h)
