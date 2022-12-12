@@ -64,8 +64,8 @@ all: main-build
 main-build: PiCR_Firmware.elf secondary-outputs
 
 # Tool invocations
-PiCR_Firmware.elf PiCR_Firmware.map: $(OBJS) $(USER_OBJS) C:\Users\artur\OneDrive\ -\ Tartu\ University\Dokumendid\University\3.\ semester\Competitive\ rob\picr22-team-placeholder\firmware\PiCR_Firmware\STM32G441KBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "PiCR_Firmware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\artur\OneDrive - Tartu University\Dokumendid\University\3. semester\Competitive rob\picr22-team-placeholder\firmware\PiCR_Firmware\STM32G441KBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="PiCR_Firmware.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+PiCR_Firmware.elf PiCR_Firmware.map: $(OBJS) $(USER_OBJS) C:\Users\artur\Desktop\picr22-team-placeholder\firmware\PiCR_Firmware\STM32G441KBTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "PiCR_Firmware.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\artur\Desktop\picr22-team-placeholder\firmware\PiCR_Firmware\STM32G441KBTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="PiCR_Firmware.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
