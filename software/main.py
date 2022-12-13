@@ -13,9 +13,8 @@ from random import choice
 import numpy as np
 
 # some objectives for the near future
-# TODO - prevent the robot from getting stuck in front of a basket. NOTE: ball basket detection currently removed, so this is not a major issue atm
-# TODO - has issues when opponent robot is in front of the other basket, doesnt want to cross the halfline of the arena OR calculates distance based on the other robot
 # TODO - rework line detection
+# TODO - make it work with TBD
 
 
 class Robot:
@@ -434,7 +433,9 @@ class Robot:
         # Clamp the x_speed and y_speed values
         x_speed = np.clip(x_speed, -self.max_speed, self.max_speed)
         y_speed = np.clip(y_speed, -self.max_speed, self.max_speed)
-
+        # TODO - clamp rot speed, it goes crazy when it sees multiple balls nearby
+        # max_rot_speed = ???
+        # rot_speed = np.clip(rot_speed, -max_rot_speed, max_rot_speed)
         self.logger.log.info(
             f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")
 
@@ -540,6 +541,7 @@ class Robot:
                 # rotate for 2 seconds, or until opposite basket is found
                 self.escape_state_end_time = time() + 2
             else:
+                # TODO - might need to adjust for new robot
                 self.robot.move(0, -self.max_speed * 0.75, 0)
         elif self.escape_substate == EscapeState.TurningFromBasket:
             self.logger.log.info("--ESCAPE-- Turning from basket")
@@ -565,6 +567,7 @@ class Robot:
                 self.escape_state_end_time = 0
                 self.back_to_search_state()  # go back to searching and hope for the best
             else:
+                # TODO - might need to adjust for new robot
                 self.robot.move(0, self.max_speed*0.75, 0)
 
     def main_loop(self):

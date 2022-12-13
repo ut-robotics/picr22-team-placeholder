@@ -30,7 +30,7 @@ min_white_count = 300 # how many white pixels have to be in the frame for us to 
 analog_deadzone = 400       # deadzone for controller analog sticks
 manual_thrower_speed = 1000 # default for remote control
 
-[movement]
+[movement] # TODO - adjust these for new robot
 min_basket_dist = 700         # minimum distance before turning to escape state
 patrol_min_basket_dist = 1200 # distance to drive to when patrolling
 max_speed = 1                 # max speed of the motors
@@ -47,7 +47,7 @@ min_distance = 340     # minimum distance from ball to start the throw from
 emergency_duration = 2 # time in seconds for how long we activate thrower to throw any stuck balls out
 emergency_interval = 2 # time in seconds for the interval of emergency throw
 
-[motor]
+[motor] # TODO - adjust these for new robot
 motor_order = "CLR"                     # motor order as a string: L - left, C - centre, R - right
 wheel_distance_from_center = 0.11       # in metres
 wheel_radius = 0.035                    # wheel diameter in metres
