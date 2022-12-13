@@ -4,7 +4,7 @@ import _pickle as pickle
 import numpy as np
 import cv2
 import Color as c
-from helper_jit import find_pixels_near_ball, np_zeros_jit, np_average_jit, get_average_distance
+from helper_jit import find_pixels_near_ball, np_zeros_jit, get_average_distance
 from helper import get_colors_pkl_path
 
 
@@ -193,7 +193,7 @@ class ImageProcessor():
             self.basket_distances.append(obj_dst)
             if len(self.basket_distances) > self.avg_history:
                 self.basket_distances.pop(0)  # remove oldest item
-            obj_dst = np_average_jit(self.basket_distances)
+            obj_dst = np.mean(self.basket_distances)
             baskets.append(Object(x=obj_x, y=obj_y, size=size,
                            distance=obj_dst, exists=True))
 

@@ -4,20 +4,6 @@ from numba import njit, prange
 import numpy as np
 from math import floor
 
-
-@njit
-def np_average_jit(array: List[float]) -> float:
-    """Compute the weighted average along the specified axis.
-
-    Args:
-        array (List[float]): List to calculate the average from
-
-    Returns:
-        float: Weighted average
-    """
-    return np.average(array)
-
-
 @njit
 def np_zeros_jit(height: int, width: int) -> List[int]:
     """Return a new array of given shape, filled with zeros.
