@@ -32,7 +32,7 @@ old_lookups = list()
 cap = camera.RealsenseCamera(exposure=100)
 
 processor = image_processor.ImageProcessor(
-    cap, logger=logger, debug=True, config=config)
+    cap, logger=logger, debug=True, config=config, colors_lookup=colors_lookup)
 
 cv2.createTrackbar('brush_size', 'image', 3, 10, nothing)
 cv2.createTrackbar('noise', 'image', 1, 5, nothing)
