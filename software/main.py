@@ -169,7 +169,8 @@ class Robot:
     def get_image_data(self):
         """Main non-state part of the loop"""
         # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
-        if self.current_state in [State.Searching, State.Stopped, State.EscapeFromBasket]: # don't use it when we don't need it, TODO - verify it doesnt break anything
+        # FIXME - fix substates
+        if self.current_state in [State.Stopped, State.EscapeFromBasket]: # don't use it when we don't need it, TODO - fix searching code enough so we wouldnt have to use depth there
             self.processed_data = self.processor.process_frame(aligned_depth=False)
         else:
             self.processed_data = self.processor.process_frame(aligned_depth=True)
