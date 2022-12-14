@@ -216,7 +216,7 @@ class Robot:
         self.baskets[Color.MAGENTA] = self.processed_data.basket_m
         self.baskets[Color.BLUE] = self.processed_data.basket_b
 
-        if self.current_state not in [State.Stopped, State.RemoteControl, State.Debug, State.EscapeFromBasket]:
+        if self.current_state not in [State.Stopped, State.RemoteControl, State.Debug, State.EscapeFromBasket]: #FIXME - search state will have very different basket distance values, figure something out
             if self.search_substate == SearchState.DriveToSearch:
                 return
             for basket in self.baskets:
