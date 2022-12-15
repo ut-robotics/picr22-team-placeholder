@@ -88,3 +88,5 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 10.12.2022 - *Jens:* CAM design (2h)
 * 11.12.2022 - *Artur:* Did firmware, added a hack connection to PCB. (2h)
 * 12.12.2022 - *Timo:*  Improved throwing by implementing better logic for basket distance detection and presenting. (3h)
+* 13.12.2022 - *Timo:*  Minor bug and regression fixes. (1h)
+* 14.12.2022 - *Timo:*  Gathering ideas, assembling some of the robot, helping Kivipallur Jürto by reinstalling the OS on their NUC, minor code adjustments. (10h)
