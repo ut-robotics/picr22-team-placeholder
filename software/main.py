@@ -112,7 +112,10 @@ class Robot:
         self.drive_to_ball_deadzone = self.config["movement"]["drive2ball_deadzone"]
         # this is the distance we use for driving to the ball, it's slightly shorter so the robot wouldn't drive into the ball at full speed most of the time
         self.drive_to_ball_minus_drive_dist = self.drive_to_ball_deadzone * 0.85
-        self.robot = motion.OmniRobot(logger=self.logger, config=self.config)
+        if self.config["debug"]["fake_motion"]:
+            self.robot = motion.FakeMotion(logger=self.logger, config=self.config)
+        else:
+            self.robot = motion.OmniRobot(logger=self.logger, config=self.config)
         self.robot.open()
 
         # -- CAMERA --
@@ -169,8 +172,7 @@ class Robot:
     def get_image_data(self):
         """Main non-state part of the loop"""
         # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
-        # FIXME - fix substates
-        if self.current_state in [State.Stopped, State.EscapeFromBasket]: # don't use it when we don't need it, TODO - fix searching code enough so we wouldnt have to use depth there
+        if (self.current_state in [State.Stopped, State.EscapeFromBasket]) and (self.search_substate != SearchState.DriveToSearch): # don't use it when we don't need it, TODO - fix searching code enough so we wouldnt have to use depth there
             self.processed_data = self.processor.process_frame(aligned_depth=False)
         else:
             self.processed_data = self.processor.process_frame(aligned_depth=True)
@@ -327,10 +329,10 @@ class Robot:
 
         if self.search_substate != SearchState.DriveToSearch:
             if self.baskets[self.basket_color].exists:
-                if self.baskets[self.basket_color].distance > self.enemy_basket_max_distance:
+                if self.baskets[self.basket_color].distance < self.enemy_basket_max_distance:
                     self.basket_max_distance = self.baskets[self.basket_color].distance
             elif self.baskets[self.enemy_basket_color].exists:
-                if self.baskets[self.enemy_basket_color].distance > self.enemy_basket_max_distance:
+                if self.baskets[self.enemy_basket_color].distance < self.enemy_basket_max_distance:
                     self.enemy_basket_max_distance = self.baskets[self.enemy_basket_color].distance
 
         if self.search_substate == SearchState.Left:

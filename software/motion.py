@@ -149,3 +149,13 @@ class OmniRobot():
             thrower (int, optional): Thrower speed. Defaults to 0.
         """
         self.send([speed, speed, speed], thrower)
+
+class FakeMotion(OmniRobot):
+    def open(self):
+        pass
+    
+    def close(self):
+        pass
+
+    def send(self, speeds, thrower_speed, disable_failsafe=0):
+        pass
