@@ -28,7 +28,7 @@ class RobotDS4Backend(Controller):
     rot_speed = 0
     thrower_speed = 0
     thrower_active = False  # for toggling thrower
-    throw_mode = ThrowMode.Manual
+    throw_mode = ThrowMode.Assist
 
     def __init__(self, robot_data, **kwargs):
         """Initializes RobotDS4Backend
