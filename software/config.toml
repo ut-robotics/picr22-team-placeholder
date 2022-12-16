@@ -4,7 +4,7 @@ referee_ip = "ws://192.168.3.69:8222" # referee server IP
 
 [debug]
 debug = false      # whether to show debug camera
-fake_motion = true # whether to disable motion sending to use robot w/o electronics
+fake_motion = false # whether to disable motion sending to use robot w/o electronics
 
 [logging]
 fps_counter = true  # log current framerate
@@ -49,7 +49,7 @@ emergency_duration = 2 # time in seconds for how long we activate thrower to thr
 emergency_interval = 2 # time in seconds for the interval of emergency throw
 
 [motor] # TODO - adjust these for new robot
-motor_order = "CLR"                     # motor order as a string: L - left, C - centre, R - right
+motor_order = "LCR"                     # motor order as a string: L - left, C - centre, R - right
 wheel_distance_from_center = 0.11       # in metres
 wheel_radius = 0.035                    # wheel diameter in metres
 pid_control_frequency = 100             # PID calculation frequency in HZ
