@@ -133,7 +133,7 @@ class ImageProcessor():
                 obj_dst = obj_y
             else:
                 try:
-                    obj_dst = get_average_distance(fragments[obj_y-1:obj_y+1, obj_x-1:obj_x+1], depth[obj_y-1:obj_y+1, obj_x-1:obj_x+1], 1) 
+                    obj_dst = get_average_distance(fragments[obj_y-2:obj_y+2, obj_x-2:obj_x+2], depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2], 1) 
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")
@@ -177,10 +177,10 @@ class ImageProcessor():
                 obj_dst = obj_y
             else:  
                 try:
-                    y1 = max(obj_y - 6, y)
-                    y2 = min(obj_y + 6, y + h)
-                    x1 = max(obj_x - 6, x)
-                    x2 = min(obj_x + 6, x + w)
+                    y1 = max(obj_y - 10, y)
+                    y2 = min(obj_y + 10, y + h)
+                    x1 = max(obj_x - 10, x)
+                    x2 = min(obj_x + 10, x + w)
                     obj_dst = get_average_distance(fragments[y1:y2,x1:x2], depth[y1:y2,x1:x2], color_id) 
                 except (ZeroDivisionError):
                     self.logger.log.error(

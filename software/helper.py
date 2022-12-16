@@ -41,7 +41,8 @@ def calculate_throw_speed(basket_dist: float) -> int:
     """
     # Values calibrated using linear regression
     # TODO - recalibrate for new robot
-    return int(basket_dist * 0.12429200986031244 + 681.6616520569161) + 15 # mix of both wednesday measurements
+    return int(basket_dist * 0.12429200986031244 + 681.6616520569161) #+ 15 # mix of both wednesday measurements
+    #return int(basket_dist * 0.1245271947342165 + 683.521843379285)
 
 def load_config() -> dict:
     """Returns the config data

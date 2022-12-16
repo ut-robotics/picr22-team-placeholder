@@ -1,13 +1,13 @@
 [robot]
-name = "placeholder"                  # the name of our funny bot
-referee_ip = "ws://192.168.3.69:8222" # referee server IP
+name = "placeholder"                   # the name of our funny bot
+referee_ip = "ws://192.168.3.220:8111" # referee server IP
 
 [debug]
-debug = false      # whether to show debug camera
+debug = false       # whether to show debug camera
 fake_motion = false # whether to disable motion sending to use robot w/o electronics
 
 [logging]
-fps_counter = true  # log current framerate
+fps_counter = false  # log current framerate
 ball_count = false   # log ball count
 motor_speeds = false # log motor speeds
 log_level = 10       # log level, default is DEBUG. Levels: CRITICAL = 50, ERROR = 40, WARNING = 30, INFO = 20, DEBUG = 10
@@ -34,7 +34,7 @@ manual_thrower_speed = 1000 # default for remote control
 [movement] # TODO - adjust these for new robot
 min_basket_dist = 700         # minimum distance before turning to escape state
 patrol_min_basket_dist = 1200 # distance to drive to when patrolling
-max_speed = 1.25                 # max speed of the motors
+max_speed = 1.25              # max speed of the motors
 throw_move_speed = 0.375      # speed that we use while throwing the ball
 search_speed = 2              # speed to use while rotating in search mode
 drive2ball_deadzone = 35      # deadzone for how close we get to the ball in drive2ball
