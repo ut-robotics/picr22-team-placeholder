@@ -34,7 +34,7 @@ manual_thrower_speed = 1000 # default for remote control
 [movement] # TODO - adjust these for new robot
 min_basket_dist = 700         # minimum distance before turning to escape state
 patrol_min_basket_dist = 1200 # distance to drive to when patrolling
-max_speed = 1                 # max speed of the motors
+max_speed = 1.25                 # max speed of the motors
 throw_move_speed = 0.375      # speed that we use while throwing the ball
 search_speed = 2              # speed to use while rotating in search mode
 drive2ball_deadzone = 35      # deadzone for how close we get to the ball in drive2ball

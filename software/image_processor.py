@@ -172,10 +172,7 @@ class ImageProcessor():
             x, y, w, h = cv2.boundingRect(contour)
 
             obj_x = int(x + (w/2))
-            if depth is None:
-                obj_y = int(y + (h/2))  
-            else:
-                obj_y = int(y + (h/4))
+            obj_y = int(y + (h/4))
             if depth is None:
                 obj_dst = obj_y
             else:  
@@ -184,17 +181,18 @@ class ImageProcessor():
                     y2 = min(obj_y + 6, y + h)
                     x1 = max(obj_x - 6, x)
                     x2 = min(obj_x + 6, x + w)
-                    obj_dst = get_average_distance(fragments[y1:y2,x1:x2], depth[y1:y2,x1:x2], color_id)
-                    self.basket_distances.append(obj_dst)
-                    if len(self.basket_distances) > self.avg_history:
-                        self.basket_distances.pop(0)  # remove oldest item
-                    obj_dst = np.mean(self.basket_distances) 
+                    obj_dst = get_average_distance(fragments[y1:y2,x1:x2], depth[y1:y2,x1:x2], color_id) 
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Basket attempted to divide by zero when averaging.")
                     continue
+            self.basket_distances.append(obj_dst)
+            if len(self.basket_distances) > self.avg_history:
+                self.basket_distances.pop(0)  # remove oldest item
+            obj_dst = np.mean(self.basket_distances)
             baskets.append(Object(x=obj_x, y=obj_y, size=size,
                            distance=obj_dst, exists=True))
+
         baskets.sort(key=lambda x: x.size)
 
         basket = next(iter(baskets), Object(exists=False))
@@ -218,9 +216,7 @@ class ImageProcessor():
 
         segment.segment(color_frame, self.fragmented,
                         self.t_balls, self.t_basket_m, self.t_basket_b)
-        if not aligned_depth:
-            depth_frame = None
-            
+
         if self.debug:
             self.debug_frame = np.copy(color_frame)
         basket_b = self.analyze_baskets(

@@ -13,8 +13,9 @@ from random import choice
 import numpy as np
 
 # some objectives for the near future
+# TODO - prevent the robot from getting stuck in front of a basket. NOTE: ball basket detection currently removed, so this is not a major issue atm
+# TODO - has issues when opponent robot is in front of the other basket, doesnt want to cross the halfline of the arena OR calculates distance based on the other robot
 # TODO - rework line detection
-# TODO - make it work with TBD
 
 
 class Robot:
@@ -46,7 +47,6 @@ class Robot:
     basket_max_distance = 0
     enemy_basket_max_distance = 0
     basket_to_drive_to = None
-    basket_distances = list()
     # this can be changed from referee command anyways, this is just a value to default to
     basket_color = Color.BLUE
 
@@ -112,10 +112,7 @@ class Robot:
         self.drive_to_ball_deadzone = self.config["movement"]["drive2ball_deadzone"]
         # this is the distance we use for driving to the ball, it's slightly shorter so the robot wouldn't drive into the ball at full speed most of the time
         self.drive_to_ball_minus_drive_dist = self.drive_to_ball_deadzone * 0.85
-        if self.config["debug"]["fake_motion"]:
-            self.robot = motion.FakeMotion(logger=self.logger, config=self.config)
-        else:
-            self.robot = motion.OmniRobot(logger=self.logger, config=self.config)
+        self.robot = motion.OmniRobot(logger=self.logger, config=self.config)
         self.robot.open()
 
         # -- CAMERA --
@@ -172,10 +169,7 @@ class Robot:
     def get_image_data(self):
         """Main non-state part of the loop"""
         # has argument aligned_depth that enables depth frame to color frame alignment. Costs performance
-        if (self.current_state in [State.Stopped, State.EscapeFromBasket]) and (self.search_substate != SearchState.DriveToSearch): # don't use it when we don't need it, TODO - fix searching code enough so we wouldnt have to use depth there
-            self.processed_data = self.processor.process_frame(aligned_depth=False)
-        else:
-            self.processed_data = self.processor.process_frame(aligned_depth=True)
+        self.processed_data = self.processor.process_frame(aligned_depth=True)
 
         # -- BOILERPLATE CAMERA CODE, DO NOT TOUCH UNLESS REALLY NECESSARY --
         # FPS counter
@@ -220,7 +214,7 @@ class Robot:
         self.baskets[Color.BLUE] = self.processed_data.basket_b
 
         if self.current_state not in [State.Stopped, State.RemoteControl, State.Debug, State.EscapeFromBasket]:
-            if self.search_substate in [SearchState.Left, SearchState.Right, SearchState.DriveToSearch]: # TODO - making it work from searching would be ideal, but no clue if doable with the time we have
+            if self.search_substate == SearchState.DriveToSearch:
                 return
             for basket in self.baskets:
                 if self.baskets[basket].exists:
@@ -329,10 +323,10 @@ class Robot:
 
         if self.search_substate != SearchState.DriveToSearch:
             if self.baskets[self.basket_color].exists:
-                if self.baskets[self.basket_color].distance < self.enemy_basket_max_distance:
+                if self.baskets[self.basket_color].distance > self.enemy_basket_max_distance:
                     self.basket_max_distance = self.baskets[self.basket_color].distance
             elif self.baskets[self.enemy_basket_color].exists:
-                if self.baskets[self.enemy_basket_color].distance < self.enemy_basket_max_distance:
+                if self.baskets[self.enemy_basket_color].distance > self.enemy_basket_max_distance:
                     self.enemy_basket_max_distance = self.baskets[self.enemy_basket_color].distance
 
         if self.search_substate == SearchState.Left:
@@ -414,11 +408,10 @@ class Robot:
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.005
 
-        # TODO - adjust this further, not sure if too much or too little currently
-        rot_speed = 6 * (x_delta / self.middle_point)
+        rot_speed = 4 * (x_delta / self.middle_point) # TODO - adjust this further, not sure if too much or too little currently
 
         self.logger.log.info(
-            f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}")
+            f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}, rot speed {rot_speed}")
 
         if self.baskets[self.basket_color].exists:
             x_speed = -1 * x_delta * 0.0018
@@ -439,9 +432,7 @@ class Robot:
         # Clamp the x_speed and y_speed values
         x_speed = np.clip(x_speed, -self.max_speed, self.max_speed)
         y_speed = np.clip(y_speed, -self.max_speed, self.max_speed)
-        # TODO - clamp rot speed, it goes crazy when it sees multiple balls nearby
-        # max_rot_speed = ???
-        # rot_speed = np.clip(rot_speed, -max_rot_speed, max_rot_speed)
+
         self.logger.log.info(
             f"--Orbiting-- MoveX {x_speed} MoveY {y_speed} rot {rot_speed}")
 
@@ -454,7 +445,6 @@ class Robot:
 
         if self.thrower_substate == ThrowerState.StartThrow:
             if self.baskets[self.basket_color].exists:
-                self.basket_distances = list()
                 # all our data is from slightly away from the ball, so always adjusting the speed is a bad idea
                 self.thrower_speed = calculate_throw_speed(
                     self.baskets[self.basket_color].distance)
@@ -463,32 +453,22 @@ class Robot:
                     f"--BallThrow-- Starting throw, basket distance: {self.baskets[self.basket_color].distance}, speed: {self.thrower_speed}")
                 self.robot.move(0, self.throw_move_speed,
                                 0, self.thrower_speed)
-                self.basket_distances.append(
-                    self.baskets[self.basket_color].distance)
             else:
                 self.logger.log.warning(
                     "--BallThrow-- Trying to start throw, but there is no basket!")
         elif self.thrower_substate == ThrowerState.MidThrow:
-            if len(self.basket_distances) < 5:
-                self.basket_distances.append(
-                    self.baskets[self.basket_color].distance)
-                self.thrower_speed = calculate_throw_speed(
-                    np.mean(self.basket_distances))
             rot_delta = self.middle_point - self.baskets[self.basket_color].x
             rot_speed = -1 * rot_delta * 0.003
             rot_sign = -1 if rot_speed >= 0 else 1
             rot_speed = min(abs(rot_speed), self.max_speed) * rot_sign
-            self.logger.log.info(
-                f"--BallThrow-- Throwing, current basket distance {self.baskets[self.basket_color].distance}.")
+            self.logger.log.info(f"--BallThrow-- Throwing, current basket distance {self.baskets[self.basket_color].distance}.")
             self.robot.move(0, self.throw_move_speed,
                             rot_speed, self.thrower_speed)
         elif self.thrower_substate == ThrowerState.EndThrow:
-            self.logger.log.info(
-                f"--BallThrow-- Finishing throw, current basket distance {self.baskets[self.basket_color].distance}.")
+            self.logger.log.info(f"--BallThrow-- Finishing throw, current basket distance {self.baskets[self.basket_color].distance}.")
             self.back_to_search_state()
             self.thrower_substate = ThrowerState.Off
             self.thrower_speed = 0
-            self.basket_distances = list()
 
     def parse_referee_cmd(self):
         """Function for parsing referee commands"""
@@ -523,7 +503,7 @@ class Robot:
             else:
                 self.logger.log.info(
                     f"STARTING ROBOT, basket: {self.basket_color}, no opponent.")
-
+                
         elif cmd["signal"] == "stop":
             self.logger.log.info("STOPPING ROBOT")
             self.current_state = State.Stopped
@@ -547,7 +527,6 @@ class Robot:
                 # rotate for 2 seconds, or until opposite basket is found
                 self.escape_state_end_time = time() + 2
             else:
-                # TODO - might need to adjust for new robot
                 self.robot.move(0, -self.max_speed * 0.75, 0)
         elif self.escape_substate == EscapeState.TurningFromBasket:
             self.logger.log.info("--ESCAPE-- Turning from basket")
@@ -573,7 +552,6 @@ class Robot:
                 self.escape_state_end_time = 0
                 self.back_to_search_state()  # go back to searching and hope for the best
             else:
-                # TODO - might need to adjust for new robot
                 self.robot.move(0, self.max_speed*0.75, 0)
 
     def main_loop(self):
