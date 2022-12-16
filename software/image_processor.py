@@ -133,7 +133,7 @@ class ImageProcessor():
                 obj_dst = obj_y
             else:
                 try:
-                    obj_dst = get_average_distance(fragments[obj_y-2:obj_y+2, obj_x-2:obj_x+2], depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2], 1) 
+                    obj_dst = np.mean(depth[obj_y-1:obj_y+1, obj_x-1:obj_x+1])
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")

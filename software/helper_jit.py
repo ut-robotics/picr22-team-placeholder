@@ -43,7 +43,7 @@ def find_pixels_near_ball(
     x2 = min(object_coords[0] + look_range, frag_size[1] - 1)
     y2 = min(
         floor(object_coords[1] + object_coords[2] + (look_range * 1.25)),
-        440
+        420
     )
 
     # Count black and white frames within bounding box
