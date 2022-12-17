@@ -88,10 +88,8 @@ class OmniRobot():
             thrower_speed (int): Speed to use for the thrower
             disable_failsafe (int, optional): Enables continuous movement. Defaults to 0.
         """
-        #sent_data = struct.pack(
-        #    '<hhhHBH', speeds[0], speeds[1], speeds[2], thrower_speed, disable_failsafe, 0xAAAA) # for old electronics
         sent_data = struct.pack(
-            '<hhhHH', speeds[0], speeds[1], speeds[2], thrower_speed, 0xAAAA) # for new electronics
+            '<hhhHBH', speeds[0], speeds[1], speeds[2], thrower_speed, disable_failsafe, 0xAAAA) # for old electronics
         self.ser.write(sent_data)
         received_data = self.ser.read(8)
         if self.config["logging"]["motor_speeds"]:
