@@ -91,3 +91,4 @@ Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
 * 13.12.2022 - *Timo:*  Minor bug and regression fixes. (1h)
 * 14.12.2022 - *Timo:*  Gathering ideas, assembling some of the robot, helping Kivipallur Jürto by reinstalling the OS on their NUC, minor code adjustments. (10h)
 * 15.12.2022 - 16.12.2022 - *Timo:*  Switching to old electronics, made code work with the new robot, assembled robot and customized the look of it and got 3rd place in Delta X. (24h)
+* 17.12.2022 - *Timo:* Attempt to switch electronics, try to somehow salvage the code enough to not lose right away, qualified and got some place at "we have Delta X at home" competition. (11h)
