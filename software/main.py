@@ -403,18 +403,17 @@ class Robot:
             return
 
         # NOTE - adjust these values to improve orbiting
-        x_delta = self.middle_point - self.ball.x
         x_speed = self.orbit_direction * 0.45
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.005
-
-        rot_speed = 4 * (x_delta / self.middle_point) # TODO - adjust this further, not sure if too much or too little currently
+        ball_delta = self.middle_point - self.ball.x
+        rot_speed = 4 * (ball_delta / self.middle_point) # TODO - adjust this further, not sure if too much or too little currently
 
         self.logger.log.info(
-            f"--Orbiting-- Ball X {self.ball.x} Ball X delta {x_delta}, rot speed {rot_speed}")
+            f"--Orbiting-- Ball X {self.ball.x} Ball X delta {ball_delta}, rot speed {rot_speed}")
 
         if self.baskets[self.basket_color].exists:
-            x_speed = -1 * x_delta * 0.0018
+            x_speed = -1 * ball_delta * 0.0018
             basket_delta = self.baskets[self.basket_color].x - \
                 self.middle_point
 
@@ -422,7 +421,7 @@ class Robot:
 
             rot_speed = -1 * basket_delta * 0.009
 
-            if abs(x_delta) <= 12 and abs(basket_delta) <= 15:
+            if abs(ball_delta) <= 12 and abs(basket_delta) <= 15:
                 self.robot.stop()
                 self.current_state = State.BallThrow
                 self.thrower_substate = ThrowerState.StartThrow
