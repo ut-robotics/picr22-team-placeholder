@@ -4,7 +4,7 @@ import _pickle as pickle
 import numpy as np
 import cv2
 import Color as c
-from helper_jit import find_black_near_ball, np_zeros_jit, np_average_jit
+from helper_jit import find_pixels_near_ball, np_zeros_jit, get_average_distance
 from helper import get_colors_pkl_path
 
 
@@ -48,27 +48,45 @@ class ProcessedResults():
 
 # Main processor class. processes segmented information
 class ImageProcessor():
-    def __init__(self, camera, logger, min_basket_distance, color_config=get_colors_pkl_path(), debug=False):
+    def __init__(self, camera, logger, config, color_config=get_colors_pkl_path(), debug=False, colors_lookup=None):
         self.camera = camera
+        self.logger = logger
+        self.debug = debug
+        self.config = config
+        # distance to stop ignoring balls from
+        self.min_basket_distance = self.config["camera"]["min_basket_dist"]
 
+        # -- COLOUR CONFIG --
         self.color_config = color_config
-        with open(self.color_config, 'rb') as conf:
-            self.colors_lookup = pickle.load(conf)
-            self.set_segmentation_table(self.colors_lookup)
+        if colors_lookup is None:
+            with open(self.color_config, 'rb') as conf:
+                self.colors_lookup = pickle.load(conf)
+        else:
+            self.colors_lookup = colors_lookup
+        self.set_segmentation_table(self.colors_lookup)
+
+        # -- FRAGMENTED --
         self.fragmented = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
 
+        # -- OBJECTS --
         self.t_balls = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
+        self.max_black_count = self.config["camera"]["max_black_count"]
+        self.min_white_count = self.config["camera"]["min_white_count"]
         self.t_basket_b = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
         self.t_basket_m = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
-        self.logger = logger
-        self.debug = debug
-        self.min_basket_distance = min_basket_distance
+        # moving average for baskets
+        self.avg_history = self.config["camera"]["avg_history"]
+
+        # -- DEBUG FRAME --
         self.debug_frame = np_zeros_jit(
             self.camera.rgb_height, self.camera.rgb_width)
+        self.basket_distances = list()
+
+        # -- KERNELS --
         self.ball_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
         self.basket_kernel = np.ones((3, 3), np.uint8)
 
@@ -82,9 +100,8 @@ class ImageProcessor():
         self.camera.close()
 
     def analyze_balls(self, t_balls, depth, fragments, basket) -> list:
-        t_balls = cv2.dilate(t_balls, self.ball_kernel)
-        t_balls = cv2.erode(t_balls, self.ball_kernel)
-        contours, hierarchy = cv2.findContours(
+        t_balls = cv2.morphologyEx(t_balls, cv2.MORPH_OPEN, self.ball_kernel)
+        contours, _ = cv2.findContours(
             t_balls, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         balls = []
         frag_x, frag_y = np.shape(fragments)
@@ -99,10 +116,11 @@ class ImageProcessor():
                 continue
 
             x, y, w, h = cv2.boundingRect(contour)
-            black_count = find_black_near_ball(
+            black_count, white_count, dimensions = find_pixels_near_ball(
                 fragments, (x, y, w, h), (frag_x, frag_y), 50)
-            if black_count > 180:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
-                continue
+            if black_count > self.max_black_count:  # skip the ball if its on the black part of the arena. this is not as good as line detection but good enough for now
+                if white_count < self.min_white_count:
+                    continue
 
             ys = np.array(
                 np.arange(y + h, self.camera.rgb_height), dtype=np.uint16)
@@ -115,24 +133,18 @@ class ImageProcessor():
                 obj_dst = obj_y
             else:
                 try:
-                    obj_dst = np_average_jit(
-                        depth[obj_y-2:obj_y+2, obj_x-2:obj_x+2])
+                    obj_dst = np.mean(depth[obj_y-1:obj_y+1, obj_x-1:obj_x+1])
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Ball attempted to divide by zero when averaging.")
                     continue
-            if obj_dst == 0:
-                continue
-            # don't add if ball is further than the basket or too close to it
-            if basket != None:
-                if 0.2 * self.camera.rgb_width < basket.x < self.camera.rgb_width * 0.7:
-                    if basket.distance - self.min_basket_distance <= obj_dst:
-                        continue
 
             if self.debug:
                 self.debug_frame[ys, xs] = [0, 0, 0]
                 cv2.circle(self.debug_frame, (obj_x, obj_y),
                            10, (0, 255, 0), 2)
+                cv2.rectangle(self.debug_frame, (dimensions[0], dimensions[1]), (
+                    dimensions[2], dimensions[3]), (0, 255, 0), 3)
 
             balls.append(Object(x=obj_x, y=obj_y, size=size,
                          distance=obj_dst, exists=True))
@@ -141,10 +153,10 @@ class ImageProcessor():
 
         return balls
 
-    def analyze_baskets(self, t_basket, depth,  debug_color=(0, 255, 255)) -> list:
+    def analyze_baskets(self, t_basket, depth, fragments, color_id,  debug_color=(0, 255, 255)) -> list:
         t_basket = cv2.morphologyEx(
             t_basket, cv2.MORPH_CLOSE, self.basket_kernel)
-        contours, hierarchy = cv2.findContours(
+        contours, _ = cv2.findContours(
             t_basket, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         baskets = []
 
@@ -160,18 +172,24 @@ class ImageProcessor():
             x, y, w, h = cv2.boundingRect(contour)
 
             obj_x = int(x + (w/2))
-            obj_y = int(y + (h/2))
+            obj_y = int(y + (h/4))
             if depth is None:
                 obj_dst = obj_y
-            else:
+            else:  
                 try:
-                    obj_dst = np_average_jit(
-                        depth[obj_y-5:obj_y+5, obj_x-5:obj_x+5])
+                    y1 = max(obj_y - 10, y)
+                    y2 = min(obj_y + 10, y + h)
+                    x1 = max(obj_x - 10, x)
+                    x2 = min(obj_x + 10, x + w)
+                    obj_dst = get_average_distance(fragments[y1:y2,x1:x2], depth[y1:y2,x1:x2], color_id) 
                 except (ZeroDivisionError):
                     self.logger.log.error(
                         "Basket attempted to divide by zero when averaging.")
                     continue
-
+            self.basket_distances.append(obj_dst)
+            if len(self.basket_distances) > self.avg_history:
+                self.basket_distances.pop(0)  # remove oldest item
+            obj_dst = np.mean(self.basket_distances)
             baskets.append(Object(x=obj_x, y=obj_y, size=size,
                            distance=obj_dst, exists=True))
 
@@ -182,7 +200,7 @@ class ImageProcessor():
         if self.debug:
             if basket.exists:
                 cv2.circle(self.debug_frame, (basket.x, basket.y),
-                           20, debug_color, -1)
+                           5, debug_color, -1)
 
         return basket
 
@@ -202,9 +220,9 @@ class ImageProcessor():
         if self.debug:
             self.debug_frame = np.copy(color_frame)
         basket_b = self.analyze_baskets(
-            self.t_basket_b, depth_frame, debug_color=c.Color.BLUE.color.tolist())
+            self.t_basket_b, depth_frame, self.fragmented, 3, debug_color=c.Color.BLUE.color.tolist())
         basket_m = self.analyze_baskets(
-            self.t_basket_m, depth_frame, debug_color=c.Color.MAGENTA.color.tolist())
+            self.t_basket_m, depth_frame, self.fragmented, 2, debug_color=c.Color.MAGENTA.color.tolist())
         if basket_b.exists and basket_m.exists:
             basket_to_check = basket_b if basket_b.distance > basket_m.distance else basket_m
         elif True in [basket_b.exists, basket_m.exists]:

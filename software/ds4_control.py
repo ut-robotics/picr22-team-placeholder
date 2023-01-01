@@ -28,7 +28,7 @@ class RobotDS4Backend(Controller):
     rot_speed = 0
     thrower_speed = 0
     thrower_active = False  # for toggling thrower
-    throw_mode = ThrowMode.Manual
+    throw_mode = ThrowMode.Assist
 
     def __init__(self, robot_data, **kwargs):
         """Initializes RobotDS4Backend
@@ -41,19 +41,18 @@ class RobotDS4Backend(Controller):
         self.robot_data.logger.log.info("Controller added.")
 
         # debug function for thrower data collection
-        if self.robot_data.debug_data_collection:
-            self.last_throw_data = str()
-            self.data_file = Path("data", "measurements.csv")
-            self.data_file.parent.mkdir(parents=True, exist_ok=True)
-            if not self.data_file.exists():
-                with open(self.data_file, 'w') as f:
-                    f.write("x speed,thrower speed,basket distance,ball distance\n")
+        self.last_throw_data = str()
+        self.data_file = Path("data", "measurements.csv")
+        self.data_file.parent.mkdir(parents=True, exist_ok=True)
+        if not self.data_file.exists():
+            with open(self.data_file, 'w') as f:
+                f.write("x speed,thrower speed,basket distance,ball distance\n")
 
     def send_movement(self):
         """Sends movement to the robot based on current speed values"""
         if self.robot_data.current_state == State.RemoteControl:
             self.robot_data.robot.move(self.x_speed, self.y_speed, self.rot_speed,
-                                       self.thrower_speed, disableFailsafe=True)
+                                       self.thrower_speed, disable_failsafe=True)
 
     def axis_stop(self, axis):
         """Stops a specified axis
@@ -77,7 +76,7 @@ class RobotDS4Backend(Controller):
     # Thrower
     def on_up_arrow_press(self):
         """Increasing thrower speed"""
-        if self.robot_data.manual_thrower_speed >= 2000:
+        if self.robot_data.manual_thrower_speed >= 2047:
             self.robot_data.logger.log.warning("Already at max speed!")
         else:
             self.robot_data.manual_thrower_speed += 10
@@ -186,8 +185,6 @@ class RobotDS4Backend(Controller):
     # DEBUG DATA COLLECTION
     def on_square_press(self):
         if self.robot_data.current_state == State.RemoteControl:
-            if not self.robot_data.debug_data_collection:
-                return
             """Save previous throw data."""
             if len(self.last_throw_data) > 0:
                 with open(self.data_file, "a") as f:
@@ -200,29 +197,32 @@ class RobotDS4Backend(Controller):
     def on_circle_press(self):
         """Attempt to throw the ball"""
         if self.robot_data.current_state == State.RemoteControl:
-            if self.robot_data.debug_data_collection:
-                # we can't get ball data if there's no ball and no point if robot can't find basket
-                if (self.robot_data.ball == None) or (self.robot_data.baskets[self.robot_data.basket_color].distance == -1):
-                    return
-                self.robot_data.logger.log.info("Saved speeds")
-                self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.baskets[self.robot_data.basket_color].distance},{self.robot_data.ball.distance}\n"
-                self.robot_data.throw_end_time = time() + self.robot_data.throw_time
-                while time() < self.robot_data.throw_end_time:
-                    self.robot_data.logger.log.info(
-                        f"--BallThrowRemote-- Throwing ball, basket distance: {self.robot_data.baskets[self.robot_data.basket_color].distance}")
-                    if self.throw_mode == ThrowMode.Manual:
-                        self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
-                                                   0, self.robot_data.manual_thrower_speed)
-                        sleep(0.1)
-                    elif self.throw_mode == ThrowMode.Assist:
-                        rot_delta = self.robot_data.middle_point - \
-                            self.robot_data.baskets[self.robot_data.basket_color].x
-                        rot_speed = -1 * rot_delta * 0.003
-                        rot_sign = -1 if rot_speed >= 0 else 1
-                        rot_speed = min(
-                            abs(rot_speed), self.robot_data.max_speed) * rot_sign
-                        self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
-                                                   rot_speed, self.robot_data.manual_thrower_speed)
+            # we can't get ball data if there's no ball and no point if robot can't find basket
+            if self.robot_data.ball == None:
+                self.robot_data.logger.log.warning("No ball found!")
+                return
+            elif self.robot_data.baskets[self.robot_data.basket_color].distance == -1:
+                self.robot_data.logger.log.warning("No basket found!")
+                return
+            self.robot_data.logger.log.info("Saved speeds")
+            self.last_throw_data = f"{self.robot_data.throw_move_speed},{self.robot_data.manual_thrower_speed},{self.robot_data.baskets[self.robot_data.basket_color].distance},{self.robot_data.ball.distance}\n"
+            self.robot_data.throw_end_time = time() + self.robot_data.throw_time
+            while time() < self.robot_data.throw_end_time:
+                self.robot_data.logger.log.info(
+                    f"--BallThrowRemote-- Throwing ball, basket distance: {self.robot_data.baskets[self.robot_data.basket_color].distance}")
+                if self.throw_mode == ThrowMode.Manual:
+                    self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
+                                               0, self.robot_data.manual_thrower_speed)
+                    sleep(0.1)
+                elif self.throw_mode == ThrowMode.Assist:
+                    rot_delta = self.robot_data.middle_point - \
+                        self.robot_data.baskets[self.robot_data.basket_color].x
+                    rot_speed = -1 * rot_delta * 0.003
+                    rot_sign = -1 if rot_speed >= 0 else 1
+                    rot_speed = min(
+                        abs(rot_speed), self.robot_data.max_speed) * rot_sign
+                    self.robot_data.robot.move(0, self.robot_data.throw_move_speed,
+                                               rot_speed, self.robot_data.manual_thrower_speed)
 
     def on_R1_press(self):
         """Adjust thrower speed based on basket distance"""

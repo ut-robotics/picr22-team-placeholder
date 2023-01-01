@@ -1,0 +1,57 @@
+[robot]
+name = "placeholder"                   # the name of our funny bot
+referee_ip = "ws://192.168.3.220:8111" # referee server IP
+
+[debug]
+debug = false       # whether to show debug camera
+fake_motion = false # whether to disable motion sending to use robot w/o electronics
+
+[logging]
+fps_counter = false  # log current framerate
+ball_count = false   # log ball count
+motor_speeds = false # log motor speeds
+log_level = 10       # log level, default is DEBUG. Levels: CRITICAL = 50, ERROR = 40, WARNING = 30, INFO = 20, DEBUG = 10
+
+[orbit]
+max_orbit_time = 10  # max orbit time in seconds before timeout
+dir_timeout_time = 6 # time in seconds until we randomize the direction (unless we are currently orbiting)
+
+[camera]
+middle_offset = 0     # how much the camera's middle point is offset
+deadzone = 5          # how many pixels to ignore in the middle
+min_basket_dist = 850 # the minimum distance to start detecting balls from. TODO - wouldnt this conflict with escape state?
+max_frames = 10       # for values that are tied to FPS in some way
+max_ball_miss = 5     # how many times we can miss the ball before starting to look for a new one
+undo_count = 10       # how many times we can undo in config_colors
+avg_history = 5       # how many times to save old basket values for averaging
+max_black_count = 600 # how many black pixels have to be in the frame for us to ignore the ball
+min_white_count = 300 # how many white pixels have to be in the frame for us to use the ball despite of the black pixels
+
+[controller]
+analog_deadzone = 400       # deadzone for controller analog sticks
+manual_thrower_speed = 1000 # default for remote control
+
+[movement] # TODO - adjust these for new robot
+min_basket_dist = 700         # minimum distance before turning to escape state
+patrol_min_basket_dist = 1200 # distance to drive to when patrolling
+max_speed = 1.25              # max speed of the motors
+throw_move_speed = 0.375      # speed that we use while throwing the ball
+search_speed = 2              # speed to use while rotating in search mode
+drive2ball_deadzone = 35      # deadzone for how close we get to the ball in drive2ball
+
+[search]
+timeout = 3 # time in seconds until we start attempting to drive to the opposite basket
+
+[thrower]
+time = 1.4137          # time in seconds how long we stay in throw state
+min_distance = 340     # minimum distance from ball to start the throw from
+emergency_duration = 2 # time in seconds for how long we activate thrower to throw any stuck balls out
+emergency_interval = 2 # time in seconds for the interval of emergency throw
+
+[motor] # TODO - adjust these for new robot
+motor_order = "LCR"                     # motor order as a string: L - left, C - centre, R - right
+wheel_distance_from_center = 0.11       # in metres
+wheel_radius = 0.035                    # wheel diameter in metres
+pid_control_frequency = 100             # PID calculation frequency in HZ
+encoder_edges_per_motor_revolution = 64
+gearbox_reduction_ratio = 18.75
