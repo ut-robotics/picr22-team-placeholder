@@ -1,12 +1,143 @@
-= %placeholder% blog
+= %placeholder% 
 
 This is where we're going to write down what we've done so far.
 
 Mechanics link: https://a360.co/3SYDOoi
 
-Our team members: Timo Jairus, Artur Salumäe, Jens Olaf Kukk
+== Members
+* Timo Jairus - programming
+* Artur Salumäe - electronics
+* Jens Olaf Kukk - mechanics
 
-== Entries
+== Repositories
+* Mechanics: https://a360.co/3SYDOoi
+
+== Programming
+
+> What libraries did you use (and for what purposes)?
+
+* numba - used JIT to speed up our line detection
+* numpy - arrays, operations related to image processor
+* opencv_python - used for the camera
+* pyrealsense2 - used for the camera
+* pyPS4Controller - using a DualShock 4 controller for remote control purposes
+* pyserial - used for serial connection with the mainboard
+* tomli - used for .toml configuration files to easily access and modify configurable variables
+* websocket_client - using websockets for getting referee commands
+* random - randomize some choices to make the game more interesting
+* time - get the current time in order to compare it to a previous time, mainly used for timeouts. Uses sleep in remote control for waiting.
+* math - used for PI and trigonometric functions in movement calculation code
+* struct - used to encode the movement speeds to send them to the mainboard
+* enum - used for enums to make the code cleaner and less error-prone
+* json - used for converting the referee command data into an easily parseable format
+* multiprocessing - used to run the referee command at the same time as the rest of the code
+* queue - to check whether the multiprocessing queue is empty
+* logging - used to print pretty logs to terminal and save them to a file
+* datetime - get the current time in a pretty format, used for log file names
+* os - checking whether directories exist and making them
+* pathlib - checking if a file exists and if not, then making it. This could've been done with "os" too, but I used pathlib for some reason.
+* typing - prettier function declarations for lists/tuples, shows what type it wants
+* threading - used to run the remote control code at the same time as the rest of the code
+* _pickle - serializing python objects
+* segment - C library from the example code, used for fast colour thresholding
+
+
+> A brief description of your game logic and overall code structure.
+
+> A block diagram of your game logic.
+
+> A short analysis of what was good and bad in your code and how to improve.
+
+
+
+== Electronics
+TODO
+
+== Mechanics
+TODO
+
+== Personal comments
+
+=== Timo
+> On which parts of the robot did you work on?
+
+I mainly worked on the software side of things - programming. My job was to get the robot moving and actually compete with others. I also had to sometimes deal with mechanics ane electronics related things. I think I've disassembled the robot more times than the mechanic and electronic combined.
+
+> What did you learn?
+
+I learned more about state machines, Python features that I hadn't used before, such as enums and overall tips on how to keep my code somewhat readable and functional. I also learned how to actually make a three wheeled robot move. I had some experience with image detection before, but I definitely gained some new knowledge on that. I had never used a depth camera before, so that was also a learning experience.
+
+> What would you do differently next time?
+
+I would pester the mechanic and electronic more, so we could actually get a robot finished in time. We somehow qualified for the first test competition, even though we got a thrower 3 days before the competition, and got it attached to the robot properly only a day before the competition. We barely had any time to test how well it actually works. The same thing happened with Delta X - we got our robot assembled with old electronics only hours before the competition, which meant that I had no time to test and find any low hanging issues, such as the robot sending speeds that are too small. They were things that could've come out during testing, but I didn't have any time for that.
+
+> What did you like/did not like about the course/building a robot?
+
+I liked when I wrote code that actually made the robot behave in the way I intended. It was fun making something that could actually compete with other groups robots, even though we only had 3 members. I did not like having mechanical issues - wheels falling off, the thrower falling off etc. I was a programmer, yet I had to deal with reattaching wheels countless times. At least for Delta X we finally got a robot that seemed to stay in one piece. 
+
+About the course itself, I feel like some planning could've been better. The date for Delta X shouldn't have had to be changed later on. There were also times when we got conflicting information from instructors and related parties regarding the event. There definitely were some communication issues somewhere.
+
+> Suggestions for next year students.
+
+Try to get mechanics and electronics complete as soon as possible. Having new mechanics can change a lot how the robot behaves, so code needs to be adapted for that. Having new electronics would change it even more, most likely requiring rewrites in the code. We never got that far, though.
+
+> Suggestions for instructors.
+
+The course was fine, the instructors were helpful.
+
+=== Artur
+
+> On which parts of the robot did you work on?
+
+TODO
+
+> What did you learn?
+
+TODO
+
+> What would you do differently next time?
+
+TODO
+
+> What did you like/did not like about the course/building a robot?
+
+TODO
+
+> Suggestions for next year students.
+
+TODO
+
+> Suggestions for instructors.
+
+TODO
+
+=== Jens
+
+> On which parts of the robot did you work on?
+
+TODO
+
+> What did you learn?
+
+TODO
+
+> What would you do differently next time?
+
+TODO
+
+> What did you like/did not like about the course/building a robot?
+
+TODO
+
+> Suggestions for next year students.
+
+TODO
+
+> Suggestions for instructors.
+
+TODO
+
+== Blog
 
 * 8.09.2022 - *Timo:* Creating the blog file, writing code to read response from mainboard and adding `robot.py` to GitHub. (2h)
 * 11.09.2022 - *Artur:* Assembling the test robot mechanics. (4h)
