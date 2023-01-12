@@ -62,7 +62,7 @@ The referee component listens for any valid referee commands and adds them to th
 
 The main state machine is where the magic happens. It gets the camera data from image processor and listens for any commands from referee server before entering a state. If the robot is not being remote controlled, it will enter into one of these states:
 
-* Stopped - the robot is stopped, it is not doing anything
+* Stopped - the robot is stopped, it is not doing anything other than listening for commands.
 * Searching - the robot searches for a ball until it finds one, then it enters DriveToBall state
 * DriveToBall - the robot drives close enough to the ball until it is in Orbiting range
 * Orbiting - the robot starts to orbit around the ball to line it up with the basket. When the ball and basket are aligned, the robot will enter BallThrow state
@@ -72,7 +72,7 @@ The main state machine is where the magic happens. It gets the camera data from 
 
 > A block diagram of your game logic.
 
-TODO
+image::/diagram.png[Diagram]
 
 > A short analysis of what was good and bad in your code and how to improve.
 
