@@ -1,6 +1,10 @@
-Designed to use Python 3.9. Dependencies: numpy, openCV, pyrealsense2, numba, tomli, websocket_client, pyserial, pyPS4Controller
+:1: https://github.com/ut-robotics/picr22-boot-camp-programming
 
-This code is built on top of [PICR22 Boot camp code](https://github.com/ut-robotics/picr22-boot-camp-programming)
+Designed to use Python 3.9 and Linux. Not all libraries are compatible with Windows (such as pyPS4Controller). 
+
+Dependencies: numpy, openCV, pyrealsense2, numba, tomli, websocket_client, pyserial, pyPS4Controller
+
+This code is built on top of {1}[PICR22 Boot Camp code].
 
 ## Modules in the code
 
@@ -53,7 +57,9 @@ pip3.9 install .
 ```
 
 Installing required libraries:
-```pip install -r requirements.txt```
+```
+pip install -r requirements.txt
+```
 
 Running color configurator:
 ```
@@ -62,8 +68,8 @@ touch colors/colors.pkl
 python3.9 config_colors.py
 ```
 
-Verify that the referee server IP in config.toml is correct, the robot will not work otherwise.
 
+Before running the main code, verify that the referee server IP in config.toml is correct, the robot will not work otherwise.
 Running the main code:
 ```
 python3.9 main.py
