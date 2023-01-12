@@ -1,0 +1,71 @@
+Designed to use Python 3.9. Dependencies: numpy, openCV, pyrealsense2, numba, tomli, websocket_client, pyserial, pyPS4Controller
+
+This code is built on top of [PICR22 Boot camp code](https://github.com/ut-robotics/picr22-boot-camp-programming)
+
+## Modules in the code
+
+### Color.py
+Contains data of the colors that are detected. Also contains data used to display the colors in the debug view.
+
+### camera.py
+Contains a ICamera interface that describes methods required by the image processing module. Also contains an example implementation for Intel RealSense cameras (RealsenseCamera) and OpenCV web cameras (OpenCVCamera).
+
+### image_processor.py 
+Main module for image processing. Is responsible for image color and feature segmentation. 
+
+### motion.py
+Contains  OmniRobot class for moving the motors.
+
+### main.py
+Main file, where all the magic happens.
+
+### config_colors.py
+Utility to configure colors. Check log for detailed instructions.
+
+### helper.py
+Contains helper functions that are frequently used across modules.
+
+### helper_jit.py
+Contains JIT helper functions that are frequently used across modules.
+
+### logger.py
+Contains the logger we use to print fancy text to terminal and files to disk.
+
+### referee.py
+Module for interacting with the referee command server. Used to save commands to a queue.
+
+### robot_test.py
+Utility for easily testing whether all 3 wheels of the robot move as intended.
+
+### states.py
+Contains enums of all possible states. Used in multiple modules, which is why it's split here instead of being in main.
+
+### ds4_control.py
+Contains RobotDS4 class, which lets us use a DualShock 4 controller to control the robot.
+
+
+## How to use
+
+Segmentation module installation:
+```
+cd segment_module
+pip3.9 install .
+```
+
+Installing required libraries:
+```pip install -r requirements.txt```
+
+Running color configurator:
+```
+mkdir colors
+touch colors/colors.pkl
+python3.9 config_colors.py
+```
+
+Verify that the referee server IP in config.toml is correct, the robot will not work otherwise.
+
+Running the main code:
+```
+python3.9 main.py
+```
+
