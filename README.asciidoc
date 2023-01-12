@@ -44,11 +44,45 @@ Mechanics link: https://a360.co/3SYDOoi
 
 > A brief description of your game logic and overall code structure.
 
+The main components of the code are:
+
+* image processor
+* motion calculation
+* remote control
+* referee component
+* main state machine
+
+The image processor makes use of the camera to find baskets and balls in the current frame, giving us data that we can use to make decisions on where to go.
+
+Motion calculation part gets the speeds in metres, then converts them to mainboard units and sends them to the mainboard. 
+
+Remote control lets us use a DualShock 4 controller to shut down the robot at any time or to remote control it whenever we want to. The code makes use of threading to run at the same time as the main state machine, in case we need to quickly shut down the robot in an emergency.
+
+The referee component listens for any valid referee commands and adds them to the queue for the main state machine to check whenever necessary.
+
+The main state machine is where the magic happens. It gets the camera data from image processor and listens for any commands from referee server before entering a state. If the robot is not being remote controlled, it will enter into one of these states:
+
+* Stopped - the robot is stopped, it is not doing anything
+* Searching - the robot searches for a ball until it finds one, then it enters DriveToBall state
+* DriveToBall - the robot drives close enough to the ball until it is in Orbiting range
+* Orbiting - the robot starts to orbit around the ball to line it up with the basket. When the ball and basket are aligned, the robot will enter BallThrow state
+* BallThrow - the robot activates the thrower based on the current basket distance, keeps slightly adjusting the thrower speed for the first frames of a throw and then drives into the ball, hopefully throwing it into the basket. Afterwards, the robot enters Searching state again.
+* EscapeFromBasket - in case the robot gets too close to the basket, it will reverse and try to get away from the basket. Afterwards, it'll continue searching.
+* RemoteControl - this is the state when the robot is being remote controlled, it will not do anything else.
+
 > A block diagram of your game logic.
+
+TODO
 
 > A short analysis of what was good and bad in your code and how to improve.
 
+The performance could've been better - we always made use of aligning depth, even when we could've gotten away by using the Y coordinate instead. This was a major performance hit.
 
+Our line detection also wasn't perfect - it just checked how many black and white pixels there are around a ball. It did work well enough, but actual line detection would have been less error-prone. The current system also ignored balls close to opponents sometimes.
+
+There were issues with calculating the distance to the opposite basket when another robot was blocking the way. I did try to remedy it by getting the distance from higher up and checking only the correct colour pixels, but it still had issues sometimes.
+
+I did like how our code was structured - we use a class, so variables are easily available. We also can't confuse local and global variables, which is a good thing. Whenever a variable is missing, it'll complain instead of letting it go through. I also implemented logging, which was actually very helpful in debugging certain issues. While printing lines to the terminal window works, there's just so much data that you won't be able to read it all. Saving it to a log let's you look back and see what was wrong. It didn't even take much time to implement.
 
 == Electronics
 TODO
@@ -80,6 +114,8 @@ About the course itself, I feel like some planning could've been better. The dat
 > Suggestions for next year students.
 
 Try to get mechanics and electronics complete as soon as possible. Having new mechanics can change a lot how the robot behaves, so code needs to be adapted for that. Having new electronics would change it even more, most likely requiring rewrites in the code. We never got that far, though.
+
+Also, remember that "try: except(specific error): finally:" will eat any errors other than "specific error". Make sure you also turn off the motors when stopping the code (whenever possible), because you don't want your robot driving away in a random direction after it's been shut down. 
 
 > Suggestions for instructors.
 
