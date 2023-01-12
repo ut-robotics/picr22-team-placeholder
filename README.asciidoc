@@ -72,7 +72,7 @@ The main state machine is where the magic happens. It gets the camera data from 
 
 > A block diagram of your game logic.
 
-image::/diagram.png[Diagram]
+image::/media/diagram.png[Diagram]
 
 > A short analysis of what was good and bad in your code and how to improve.
 
