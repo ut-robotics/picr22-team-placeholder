@@ -21,7 +21,7 @@ This code is built on top of {1}[PICR22 Boot Camp code].
 [horizontal]
 main.py:: Main file, where all the magic happens. Contains states and all the required game logic to bring it all together.
 robot_test.py:: Utility for easily testing whether all 3 wheels of the robot move as intended.
-config_colors.py:: Utility to configure colors. Check log for detailed instructions.
+config_colors.py:: Utility to configure colors. Check the log for detailed instructions.
       
 == Submodules
 
@@ -30,7 +30,7 @@ Color.py:: Contains data of the colors that are detected. Also contains data use
 
 camera.py:: Contains a ICamera interface that describes methods required by the image processing module and a RealsenseCamera implementation. 
 
-image_processor.py:: Main module for image processing. Is responsible for image color and feature segmentation. 
+image_processor.py:: Main module for image processing. Responsible for image color and feature segmentation. 
 
 motion.py:: Contains  OmniRobot class for moving the motors.
 
@@ -54,7 +54,7 @@ ds4_control.py:: Contains RobotDS4 class, which lets us use a DualShock 4 contro
 IMPORTANT: Building the Segmentation module requires *python3.9-distutils*.
 
 ```
-cd segment_module
+cd modules/segment_module
 pip3.9 install .
 ```
 
