@@ -61,12 +61,27 @@ pip3.9 install .
 pip install -r requirements.txt
 ```
 
+== Configuration
+
 ==== Running the color configurator:
 ```
 python3.9 config_colors.py
 ```
 
-==== Running the main code:
+Follow the instructions in the log to calibrate all of the colours.
+
+==== Other configuration
+
+There are various variables exposed in the config.toml file that can be edited to adjust the robot's behaviour.
+
+The most important to change would be the robot's name, referee_ip, motor order, wheeel_radius and wheel_distance_from_center. It's also recommended to enable debug when testing for the first time, so you can actually see the camera view.
+
+NOTE: Having the debug camera turned on is a major performance hit.
+
+
+== Running the main code
+
+If the colours have been configured using config_colors.py and all desired changes have been done to config.toml, you can now run the main code.
 
 IMPORTANT: Hosting a referee server is required to run this, see {2}[here] for more info.
 
@@ -76,6 +91,27 @@ python3.9 main.py
 
 TIP: If the program cannot connect to the server, verify that the {1}[referee server] IP in config.toml is correct - the robot will not work otherwise.
 
-== Configuration
+After the robot has started, it should've connected to the referee server. 
 
-There are various variables exposed in the config.toml file that can be edited to adjust the robot's behaviour.
+You can start it from there by sending it a start signal and it should move, as long as everything's been configured correctly.
+
+== Remote Control
+
+If you have a DUALSHOCK™4 wireless controller, you can use it to control the robot remotely by just connecting the controller to the robot using Bluetooth®.
+
+==== Controls
+
+[horizontal]
+SHARE button:: Toggle Remote Control
+PS Button:: Force Shutdown
+R1:: Adjust thrower speed based on currently selected basket distance
+L1:: Toggle basket throw mode (No Assist/Slight Assist)
+R2:: Reverse
+L2:: Accelerate
+R3:: Move on the X-axis
+L3:: Rotation
+Circle:: Semi-autonomous throw
+Square:: Debug throw data collection
+Triangle:: Toggle thrower
+Up DPAD:: Increase thrower speed by 10
+Down DPAD:: Decrease thrower speed by 10
