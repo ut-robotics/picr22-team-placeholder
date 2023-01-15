@@ -30,6 +30,7 @@ def get_colors_pkl_path() -> str:
         pkl_path = os.path.join("software", pkl_path)
     return pkl_path
 
+
 def calculate_throw_speed(basket_dist: float) -> int:
     """Calculates throw speed based on basket distance 
 
@@ -39,10 +40,8 @@ def calculate_throw_speed(basket_dist: float) -> int:
     Returns:
         int: ThrowerSpeed
     """
-    # Values calibrated using linear regression
-    # TODO - recalibrate for new robot
     return int(basket_dist * 0.11832052069416418 + 678.7258431448503) + 7
-    # return int(basket_dist * 0.12429200986031244 + 681.6616520569161) - 17 # mix of both wednesday measurements
+
 
 def load_config() -> dict:
     """Returns the config data

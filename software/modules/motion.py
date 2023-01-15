@@ -89,7 +89,7 @@ class OmniRobot():
             disable_failsafe (int, optional): Enables continuous movement. Defaults to 0.
         """
         sent_data = struct.pack(
-            '<hhhHBH', speeds[0], speeds[1], speeds[2], thrower_speed, disable_failsafe, 0xAAAA) # for old electronics
+            '<hhhHBH', speeds[0], speeds[1], speeds[2], thrower_speed, disable_failsafe, 0xAAAA)  # for old electronics
         self.ser.write(sent_data)
         received_data = self.ser.read(8)
         if self.config["logging"]["motor_speeds"]:
@@ -150,12 +150,24 @@ class OmniRobot():
         """
         self.send([speed, speed, speed], thrower)
 
+
 class FakeMotion(OmniRobot):
+    """This exists for the purpose of being able to run the code without a functional robot."""
+
     def open(self):
+        """FakeMotion - Opens the serial connection with the mainboard."""
         pass
-    
+
     def close(self):
+        """FakeMotion - Closes the serial connection with the mainboard."""
         pass
 
     def send(self, speeds, thrower_speed, disable_failsafe=0):
+        """This function sends speeds to the mainboard, or it would, if this weren't FakeMotion.
+
+        Args:
+            speeds (list of ints): List of speeds to send (X, Y and rotational)
+            thrower_speed (int): Speed to use for the thrower
+            disable_failsafe (int, optional): Enables continuous movement. Defaults to 0.
+        """
         pass

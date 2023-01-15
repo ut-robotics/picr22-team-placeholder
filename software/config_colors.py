@@ -1,11 +1,26 @@
-import cv2
-import numpy as np
+from pathlib import Path
 import _pickle as pickle
-import camera
-import image_processor
-from helper import get_colors_pkl_path, load_config
-from Color import *
-from logger import Logger
+import numpy as np
+import cv2
+from modules.camera import RealsenseCamera
+from modules.image_processor import ImageProcessor
+from modules.helper import get_colors_pkl_path, load_config
+from modules.Color import *
+from modules.logger import Logger
+"""
+   _____ _____ _____ _____ 
+  |     |     |     |     |
+  | %   | p   | l   | a   |
+  |_____|_____|_____|_____|
+  |     |     |     |     |
+  | h   | o   | l   | d   |
+  |_____|_____|_____|_____|
+  |     |     |     |     |
+  | e   | r   | c   | e   |
+  |_____|_____|_____|_____|
+  '); DROP TABLE BOT
+
+"""
 
 
 def nothing(x):
@@ -27,11 +42,13 @@ try:
     with open(pkl_path, 'rb') as fh:
         colors_lookup = pickle.load(fh)
 except:
+    # make the folder in case it does not exist
+    Path(pkl_path).parents[0].mkdir(parents=True, exist_ok=True)
     colors_lookup = np.zeros(0x1000000, dtype=np.uint8)
 old_lookups = list()
-cap = camera.RealsenseCamera(exposure=100)
+cap = RealsenseCamera(exposure=100)
 
-processor = image_processor.ImageProcessor(
+processor = ImageProcessor(
     cap, logger=logger, debug=True, config=config, colors_lookup=colors_lookup)
 
 cv2.createTrackbar('brush_size', 'image', 3, 10, nothing)

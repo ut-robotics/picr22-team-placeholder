@@ -1,8 +1,9 @@
 # File for helper functions utilizing jit
 from typing import List, Tuple
+from math import floor
 from numba import njit, prange
 import numpy as np
-from math import floor
+
 
 @njit
 def np_zeros_jit(height: int, width: int) -> List[int]:
@@ -57,6 +58,7 @@ def find_pixels_near_ball(
                 white_count += 1
 
     return black_count, white_count, (x1, y1, x2, y2)
+
 
 def get_average_distance(image_fragments: np.ndarray, depth: np.ndarray, color_id: int) -> float:
     # Convert the image_fragments and depth variables to NumPy arrays

@@ -39,7 +39,8 @@ class Referee:
                 time.sleep(1)
                 continue
             except OSError:
-                self.robot_data.log.error("No route to referee server host. Make sure the IP is correct and the server is running. Retrying...")
+                self.robot_data.log.error(
+                    "No route to referee server host. Make sure the IP is correct and the server is running. Retrying...")
                 time.sleep(1)
                 continue
             except:
@@ -56,21 +57,24 @@ class Referee:
                     if self.robot_data.name in msg["targets"]:
                         self.queue.put(msg)
                 except json.JSONDecodeError:
-                    self.robot_data.logger.log.error("--REFEREE-- Received non-json message!")
+                    self.robot_data.logger.log.error(
+                        "--REFEREE-- Received non-json message!")
                     continue
             except wsc.WebSocketConnectionClosedException:
-                self.robot_data.logger.log.warning("--REFEREE-- Connection lost, reconnecting...")
+                self.robot_data.logger.log.warning(
+                    "--REFEREE-- Connection lost, reconnecting...")
                 if self.connect():
                     self.robot_data.logger.log.info("--REFEREE-- Reconnected.")
                     continue
                 else:
-                    self.robot_data.logger.log.error("--REFEREE-- Failed to reconnect.")
+                    self.robot_data.logger.log.error(
+                        "--REFEREE-- Failed to reconnect.")
                     self.close()
             except KeyboardInterrupt:
                 self.robot_data.logger.log.info("--REFEREE-- Closing...")
                 break
             except:
-                self.robot_data.logger.log.exception('')   
+                self.robot_data.logger.log.exception('')
 
     def get_cmd(self):
         """Attempt to get a command from queue"""

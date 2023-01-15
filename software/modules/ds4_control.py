@@ -1,10 +1,10 @@
 from threading import Thread
-from helper import map_range, calculate_throw_speed
-from pyPS4Controller.controller import Controller
 from enum import Enum
-from states import State
 from pathlib import Path
 from time import time, sleep
+from pyPS4Controller.controller import Controller
+from ..modules.helper import map_range, calculate_throw_speed
+from ..modules.states import State
 
 
 class Axis(Enum):
