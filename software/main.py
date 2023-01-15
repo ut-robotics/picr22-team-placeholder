@@ -31,7 +31,7 @@ from modules.logger import Logger
 # TODO - has issues when opponent robot is in front of the other basket, doesnt want to cross the halfline of the arena OR calculates distance based on the other robot
 # TODO - rework line detection
 # TODO - there were some issues with the robot trying to send super slow speeds, not sure if I ever managed to fix that
-
+# TODO - optimize by not always aligning depth frame, this is pretty expensive
 
 class Robot:
     """The main class for %placeholder%"""

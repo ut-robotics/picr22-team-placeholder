@@ -75,3 +75,7 @@ python3.9 main.py
 ```
 
 TIP: If the program cannot connect to the server, verify that the {1}[referee server] IP in config.toml is correct - the robot will not work otherwise.
+
+== Configuration
+
+There are various variables exposed in the config.toml file that can be edited to adjust the robot's behaviour.
