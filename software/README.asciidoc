@@ -1,5 +1,7 @@
 :1: https://github.com/ut-robotics/picr22-boot-camp-programming
 :2: https://github.com/ut-robotics/robot-basketball-manager
+:fn-att: footnote:[After each semi-autonomous throw, the robot keeps the last throw data in memory (basket distance, robot speed and thrower speed) and saves them to a CSV file. This is to help speed up data gathering for thrower calibration.]
+
    _____ _____ _____ _____ 
   |     |     |     |     |      Team %placeholder% software,
   | %   | p   | l   | a   |        made for our funny basketball robot.
@@ -113,7 +115,7 @@ L2:: Accelerate
 R3:: Move on the X-axis
 L3:: Rotate
 Circle:: Semi-autonomous throw
-Square:: Debug throw data collection
+Square:: Debug throw data collection{fn-att}
 Triangle:: Toggle thrower
 Up DPAD:: Increase thrower speed by 10
 Down DPAD:: Decrease thrower speed by 10
