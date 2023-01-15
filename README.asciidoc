@@ -5,9 +5,9 @@ This is where we're going to write down what we've done so far.
 Mechanics link: https://a360.co/3SYDOoi
 
 == Members
-* Timo Jairus - programming
-* Artur Salumäe - electronics
-* Jens Olaf Kukk - mechanics
+Timo Jairus:: programming
+Artur Salumäe:: electronics
+Jens Olaf Kukk:: mechanics
 
 == Repositories
 * Mechanics: https://a360.co/3SYDOoi
@@ -16,30 +16,30 @@ Mechanics link: https://a360.co/3SYDOoi
 
 > What libraries did you use (and for what purposes)?
 
-* numba - used JIT to speed up our line detection
-* numpy - arrays, operations related to image processor
-* opencv_python - used for the camera
-* pyrealsense2 - used for the camera
-* pyPS4Controller - using a DualShock 4 controller for remote control purposes
-* pyserial - used for serial connection with the mainboard
-* tomli - used for .toml configuration files to easily access and modify configurable variables
-* websocket_client - using websockets for getting referee commands
-* random - randomize some choices to make the game more interesting
-* time - get the current time in order to compare it to a previous time, mainly used for timeouts. Uses sleep in remote control for waiting.
-* math - used for PI and trigonometric functions in movement calculation code
-* struct - used to encode the movement speeds to send them to the mainboard
-* enum - used for enums to make the code cleaner and less error-prone
-* json - used for converting the referee command data into an easily parseable format
-* multiprocessing - used to run the referee command at the same time as the rest of the code
-* queue - to check whether the multiprocessing queue is empty
-* logging - used to print pretty logs to terminal and save them to a file
-* datetime - get the current time in a pretty format, used for log file names
-* os - checking whether directories exist and making them
-* pathlib - checking if a file exists and if not, then making it. This could've been done with "os" too, but I used pathlib for some reason.
-* typing - prettier function declarations for lists/tuples, shows what type it wants
-* threading - used to run the remote control code at the same time as the rest of the code
-* _pickle - serializing python objects
-* segment - C library from the example code, used for fast colour thresholding
+numba:: used JIT to speed up our line detection
+numpy:: arrays, operations related to image processor
+opencv_python:: used for the camera
+pyrealsense2:: used for the camera
+pyPS4Controller:: using a DualShock 4 controller for remote control purposes
+pyserial:: used for serial connection with the mainboard
+tomli:: used for .toml configuration files to easily access and modify configurable variables
+websocket_client:: using websockets for getting referee commands
+random:: randomize some choices to make the game more interesting
+time:: get the current time in order to compare it to a previous time, mainly used for timeouts. Uses sleep in remote control for waiting.
+math:: used for PI and trigonometric functions in movement calculation code
+struct:: used to encode the movement speeds to send them to the mainboard
+enum:: used for enums to make the code cleaner and less error-prone
+json:: used for converting the referee command data into an easily parseable format
+multiprocessing:: used to run the referee command at the same time as the rest of the code
+queue:: to check whether the multiprocessing queue is empty
+logging:: used to print pretty logs to terminal and save them to a file
+datetime:: get the current time in a pretty format, used for log file names
+os:: checking whether directories exist and making them
+pathlib:: checking if a file exists and if not, then making it. This could've been done with "os" too, but I used pathlib for some reason.
+typing:: prettier function declarations for lists/tuples, shows what type it wants
+threading:: used to run the remote control code at the same time as the rest of the code
+_pickle:: serializing python objects
+segment:: C library from the example code, used for fast colour thresholding
 
 
 > A brief description of your game logic and overall code structure.
@@ -62,13 +62,13 @@ The referee component listens for any valid referee commands and adds them to th
 
 The main state machine is where the magic happens. It gets the camera data from image processor and listens for any commands from referee server before entering a state. If the robot is not being remote controlled, it will enter into one of these states:
 
-* Stopped - the robot is stopped, it is not doing anything other than listening for commands.
-* Searching - the robot searches for a ball until it finds one, then it enters DriveToBall state
-* DriveToBall - the robot drives close enough to the ball until it is in Orbiting range
-* Orbiting - the robot starts to orbit around the ball to line it up with the basket. When the ball and basket are aligned, the robot will enter BallThrow state
-* BallThrow - the robot activates the thrower based on the current basket distance, keeps slightly adjusting the thrower speed for the first frames of a throw and then drives into the ball, hopefully throwing it into the basket. Afterwards, the robot enters Searching state again.
-* EscapeFromBasket - in case the robot gets too close to the basket, it will reverse and try to get away from the basket. Afterwards, it'll continue searching.
-* RemoteControl - this is the state when the robot is being remote controlled, it will not do anything else.
+Stopped:: the robot is stopped, it is not doing anything other than listening for commands.
+Searching:: the robot searches for a ball until it finds one, then it enters DriveToBall state
+DriveToBall:: the robot drives close enough to the ball until it is in Orbiting range
+Orbiting:: the robot starts to orbit around the ball to line it up with the basket. When the ball and basket are aligned, the robot will enter BallThrow state
+BallThrow:: the robot activates the thrower based on the current basket distance, keeps slightly adjusting the thrower speed for the first frames of a throw and then drives into the ball, hopefully throwing it into the basket. Afterwards, the robot enters Searching state again.
+EscapeFromBasket:: in case the robot gets too close to the basket, it will reverse and try to get away from the basket. Afterwards, it'll continue searching.
+RemoteControl:: this is the state when the robot is being remote controlled, it will not do anything else.
 
 > A block diagram of your game logic.
 
