@@ -14,75 +14,64 @@
 
 This code is built on top of {1}[PICR22 Boot Camp code].
 
-Hosting a referee server is required to run this, see {2}[here] for more info.
+== Main modules
 
-## Main modules that you can just run
+[horizontal]
+main.py:: Main file, where all the magic happens. Contains states and all the required game logic to bring it all together.
+robot_test.py:: Utility for easily testing whether all 3 wheels of the robot move as intended.
+config_colors.py:: Utility to configure colors. Check log for detailed instructions.
+      
+== Submodules
 
-### main.py
-Main file, where all the magic happens. Contains states and all the required game logic to bring it all together.
+[horizontal]
+Color.py:: Contains data of the colors that are detected. Also contains data used to display the colors in the debug view.
 
-### robot_test.py
-Utility for easily testing whether all 3 wheels of the robot move as intended.
+camera.py:: Contains a ICamera interface that describes methods required by the image processing module and a RealsenseCamera implementation. 
 
-### config_colors.py
-Utility to configure colors. Check log for detailed instructions.
+image_processor.py:: Main module for image processing. Is responsible for image color and feature segmentation. 
 
-## Submodules
+motion.py:: Contains  OmniRobot class for moving the motors.
 
-### Color.py
-Contains data of the colors that are detected. Also contains data used to display the colors in the debug view.
+helper.py:: Contains helper functions that are frequently used across modules.
 
-### camera.py
-Contains a ICamera interface that describes methods required by the image processing module. Also contains an example implementation for Intel RealSense cameras (RealsenseCamera) and OpenCV web cameras (OpenCVCamera).
+helper_jit.py:: Contains JIT helper functions that are frequently used across modules.
 
-### image_processor.py 
-Main module for image processing. Is responsible for image color and feature segmentation. 
+logger.py:: Contains the logger we use to print fancy text to terminal and files to disk.
 
-### motion.py
-Contains  OmniRobot class for moving the motors.
+referee.py:: Module for interacting with the referee command server. Used to save commands to a queue.
 
-### helper.py
-Contains helper functions that are frequently used across modules.
+states.py:: Contains enums of all possible states. Used in multiple modules, which is why it's split here instead of being in main.
 
-### helper_jit.py
-Contains JIT helper functions that are frequently used across modules.
-
-### logger.py
-Contains the logger we use to print fancy text to terminal and files to disk.
-
-### referee.py
-Module for interacting with the referee command server. Used to save commands to a queue.
-
-### states.py
-Contains enums of all possible states. Used in multiple modules, which is why it's split here instead of being in main.
-
-### ds4_control.py
-Contains RobotDS4 class, which lets us use a DualShock 4 controller to control the robot.
+ds4_control.py:: Contains RobotDS4 class, which lets us use a DualShock 4 controller to control the robot.
 
 
-## How to use
+== Setup
 
-* Segmentation module installation:
+==== Segmentation module installation:
+
+IMPORTANT: Building the Segmentation module requires *python3.9-distutils*.
+
 ```
 cd segment_module
 pip3.9 install .
 ```
 
-* Installing required libraries:
+==== Installing required libraries:
 ```
 pip install -r requirements.txt
 ```
 
-* Running color configurator:
+==== Running the color configurator:
 ```
 python3.9 config_colors.py
 ```
 
-* Running the main code:
+==== Running the main code:
+
+IMPORTANT: Hosting a referee server is required to run this, see {2}[here] for more info.
+
 ```
 python3.9 main.py
 ```
 
-* If the program cannot connect to a server, verify that the {1}[referee server] IP in config.toml is correct - the robot will not work otherwise.
-
-* You can change different settings in config.toml if needed.
+TIP: If the program cannot connect to the server, verify that the {1}[referee server] IP in config.toml is correct - the robot will not work otherwise.
