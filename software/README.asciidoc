@@ -117,5 +117,5 @@ L3:: Rotate
 O Circle:: Semi-autonomous throw
 ▢ Square:: Debug throw data collection{fn-att}
 △ Triangle:: Toggle thrower
-Up DPAD:: Increase thrower speed by 10
-Down DPAD:: Decrease thrower speed by 10
+DPAD Up:: Increase thrower speed by 10
+DPAD Down:: Decrease thrower speed by 10
