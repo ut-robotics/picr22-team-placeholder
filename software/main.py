@@ -428,8 +428,6 @@ class Robot:
         x_speed = self.orbit_direction * 0.45
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.002
-
-        # TODO - adjust this further, not sure if too much or too little currently
         rot_speed = 4 * (x_delta / self.middle_point)
 
         self.logger.log.info(

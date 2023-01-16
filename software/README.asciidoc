@@ -49,7 +49,7 @@ ds4_control.py:: Contains RobotDS4 class, which lets us use a DualShock 4 contro
 
 == Setup
 
-==== Segmentation module installation:
+=== Segmentation module installation:
 
 IMPORTANT: Building the Segmentation module requires *python3.9-distutils*.
 
@@ -58,27 +58,27 @@ cd modules/segment_module
 pip3.9 install .
 ```
 
-==== Installing required libraries:
+=== Installing the required libraries:
 ```
-pip install -r requirements.txt
+pip3.9 install -r requirements.txt
 ```
 
 == Configuration
 
-==== Running the color configurator:
+=== Running the color configurator:
 ```
 python3.9 config_colors.py
 ```
 
 Follow the instructions in the log to calibrate all of the colours.
 
-==== Other configuration
+=== Other configuration
 
 There are various variables exposed in the `config.toml` file that can be edited to adjust the robot's behaviour.
 
 The most important to change would be the robot's `name`, `referee_ip`, `motor_order`, `wheel_radius` and `wheel_distance_from_center`. It's also recommended to enable `debug` when testing for the first time, so you can actually see the camera view.
 
-CAUTION: Having the debug camera turned on is a major performance hit.
+CAUTION: Having the debug camera turned on is a major performance hit. Only use it when necessary.
 
 
 == Running the main code
@@ -91,19 +91,19 @@ IMPORTANT: Hosting a referee server is required to run this, see {2}[here] for m
 python3.9 main.py
 ```
 
-TIP: If the program cannot connect to the server, verify that the {1}[referee server] IP in config.toml is correct - the robot will not work otherwise.
-
 After the robot has started, it should've connected to the referee server. 
+
+TIP: If the program cannot connect to the server, verify that the {1}[referee server IP] in config.toml is correct - the robot will not work otherwise.
 
 You can start it from there by sending it a start signal and it should move, as long as everything's been configured correctly.
 
 TIP: If the robot did connect to the referee server, but is not starting, make sure the robot name in the referee software is the same as the one in `config.toml`.
 
-== Remote Control
+=== Remote Control
 
-If you have a DUALSHOCK™4 wireless controller, you can use it to control the robot remotely by just connecting the controller to the robot using Bluetooth®.
+If you have a DUALSHOCK™4 wireless controller, you can use it to control the robot remotely by connecting the controller to the robot's PC via Bluetooth®.
 
-=== Controls
+==== Controls
 
 [horizontal]
 SHARE button:: Toggle Remote Control
@@ -114,8 +114,8 @@ R2:: Reverse
 L2:: Accelerate
 R3:: Move on the X-axis
 L3:: Rotate
-Circle:: Semi-autonomous throw
-Square:: Debug throw data collection{fn-att}
-Triangle:: Toggle thrower
+O Circle:: Semi-autonomous throw
+▢ Square:: Debug throw data collection{fn-att}
+△ Triangle:: Toggle thrower
 Up DPAD:: Increase thrower speed by 10
 Down DPAD:: Decrease thrower speed by 10

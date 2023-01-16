@@ -38,7 +38,7 @@ def find_pixels_near_ball(
     Returns:
         tuple: black_frame_count, white_frame_count, (x1, y1, x2, y2)
     """
-    # Determine bounding box coordinates, TODO - adjust these for new robot, the camera angle will probably be different
+    # Determine bounding box coordinates
     x1 = max(object_coords[0] - look_range, 0)
     y1 = max(object_coords[1] - look_range, 0)
     x2 = min(object_coords[0] + look_range, frag_size[1] - 1)

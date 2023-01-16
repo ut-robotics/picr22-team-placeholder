@@ -105,10 +105,6 @@ class ImageProcessor():
         balls = []
         frag_x, frag_y = np.shape(fragments)
         for contour in contours:
-
-            # ball filtering logic goes here. Example includes filtering by size and an example how to get pixels from
-            # the bottom center of the frame to the ball
-
             size = cv2.contourArea(contour)
 
             if size < 15:
@@ -160,9 +156,6 @@ class ImageProcessor():
         baskets = []
 
         for contour in contours:
-
-            # basket filtering logic goes here. Example includes size filtering of the basket
-
             size = cv2.contourArea(contour)
 
             if size < 100:
