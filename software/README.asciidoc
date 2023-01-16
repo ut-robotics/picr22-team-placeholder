@@ -108,7 +108,7 @@ If you have a DUALSHOCK™4 wireless controller, you can use it to control the r
 [horizontal]
 SHARE button:: Toggle Remote Control
 PS Button:: Force Shutdown
-R1:: Adjust thrower speed based on currently selected basket's distance
+R1:: Adjust thrower speed based on the currently selected basket's distance
 L1:: Toggle basket throw mode (No Assist/Slight Assist)
 R2:: Reverse
 L2:: Accelerate
