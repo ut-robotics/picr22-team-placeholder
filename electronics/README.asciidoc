@@ -30,3 +30,5 @@
 - Motor drivers has SR for slew rate control and DIAG for debug, both of which are connected to MGND through 0R
 
 - Motor driver can be limited by connecting resistors from ITRIP and PROP to MGND. Our maximum motor current is a bit above 2A selected by 47K resistor for ITRIP and 3K3 resistor for PROP
+
+image::Board_connectors.jpg[]
