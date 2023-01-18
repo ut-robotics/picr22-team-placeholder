@@ -175,27 +175,27 @@ The course was fine, the instructors were helpful.
 ''''
 ==== On which parts of the robot did you work on?
 
-TODO
+I worked on the electronics and firmware. I also helped out a bit with the software.
 
 ==== What did you learn?
 
-TODO
+I learned a lot about PCB design and electronics in general. This was the second PCB I had ever designed, so there was a lot to learn. I also learned a lot about firmware development on the STM32 platform.
 
 ==== What would you do differently next time?
 
-TODO
+I would start working hard on the electronics at the very beggining to have more time to work on firmware and to debug multitudes of electronics issues.
 
 ==== What did you like/did not like about the course/building a robot?
 
-TODO
+The course gave a lot of freedom to do fun stuff building and programming a robot almost from scratch and I learned a ton from this course. Negative was that I started putting a lot of time into doing the electronics and firmware way too late into the course, so the last two weeks were a massive crunch.
 
 ==== Suggestions for next year students.
 
-TODO
+Start doing stuff way way earlier. There is a lot more work to be done than it may seem at first glance.
 
 ==== Suggestions for instructors.
 
-TODO
+Communication with instructors could be better. At some points of time it took a lot of time to get a reply from them. Also there was some confusion in regards to how the competitions are organized.
 
 === Jens
 ''''
