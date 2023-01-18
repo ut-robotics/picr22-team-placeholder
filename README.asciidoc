@@ -99,8 +99,8 @@ The initial thrower had to fit the test robot chassis, which was the main constr
 
 === Photos of your robot.
 
-todo
-
+image::/media/sketch.png[Fusion screenshot]
+image::/media/IMG_20221216_061926.jpg[Robot]
 
 === A short analysis of what was good and bad in your mechanics and how to improve.
 
