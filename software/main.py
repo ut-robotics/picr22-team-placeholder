@@ -1,22 +1,37 @@
-import image_processor
-import camera
-import motion
-import cv2
-from time import time
-from ds4_control import RobotDS4
-from Color import Color
-from states import State, ThrowerState, SearchState, EscapeState, OrbitDirection
-from helper import calculate_throw_speed, load_config
-from referee import Referee
-from logger import Logger
 from random import choice
+from time import time
 import numpy as np
+import cv2
+from modules.motion import OmniRobot, FakeMotion
+from modules.image_processor import ImageProcessor
+from modules.camera import RealsenseCamera
+from modules.ds4_control import RobotDS4
+from modules.Color import Color
+from modules.states import State, ThrowerState, SearchState, EscapeState, OrbitDirection
+from modules.helper import calculate_throw_speed, load_config
+from modules.referee import Referee
+from modules.logger import Logger
 
-# some objectives for the near future
-# TODO - prevent the robot from getting stuck in front of a basket. NOTE: ball basket detection currently removed, so this is not a major issue atm
+"""
+   _____ _____ _____ _____ 
+  |     |     |     |     |
+  | %   | p   | l   | a   |
+  |_____|_____|_____|_____|
+  |     |     |     |     |
+  | h   | o   | l   | d   |
+  |_____|_____|_____|_____|
+  |     |     |     |     |
+  | e   | r   | c   | e   |
+  |_____|_____|_____|_____|
+  '); DROP TABLE BOT
+
+"""
+# to whoever reads this code in the future, here's some of its shortcomings. feel free to get inspiration from this, this was good enough to get 3rd place on Delta X.
+# TODO - prevent the robot from getting stuck in front of a basket. NOTE: ball basket detection currently removed, so this is not a major issue in its current state
 # TODO - has issues when opponent robot is in front of the other basket, doesnt want to cross the halfline of the arena OR calculates distance based on the other robot
 # TODO - rework line detection
-
+# TODO - there were some issues with the robot trying to send super slow speeds, not sure if I ever managed to fix that
+# TODO - optimize by not always aligning depth frame, this is pretty expensive
 
 class Robot:
     """The main class for %placeholder%"""
@@ -112,12 +127,16 @@ class Robot:
         self.drive_to_ball_deadzone = self.config["movement"]["drive2ball_deadzone"]
         # this is the distance we use for driving to the ball, it's slightly shorter so the robot wouldn't drive into the ball at full speed most of the time
         self.drive_to_ball_minus_drive_dist = self.drive_to_ball_deadzone * 0.85
-        self.robot = motion.OmniRobot(logger=self.logger, config=self.config)
+
+        if self.config["debug"]["fake_motion"]:
+            self.robot = FakeMotion(logger=self.logger, config=self.config)
+        else:
+            self.robot = OmniRobot(logger=self.logger, config=self.config)
         self.robot.open()
 
         # -- CAMERA --
-        self.cam = camera.RealsenseCamera(exposure=100)
-        self.processor = image_processor.ImageProcessor(
+        self.cam = RealsenseCamera(exposure=100)
+        self.processor = ImageProcessor(
             self.cam, logger=self.logger, debug=self.debug, config=self.config)
         self.processor.start()
         self.middle_point = self.cam.rgb_width // 2 + \
@@ -209,7 +228,7 @@ class Robot:
         elif self.no_balls_frames >= self.max_ball_miss:  # use old ball sometimes
             self.ball = None
 
-        # TODO - implement code to prevent our robot from driving over lines
+        # TODO - implement code to prevent our robot from driving over lines (we do have some basic "ignore out balls" logic in image_processor.py)
         self.baskets[Color.MAGENTA] = self.processed_data.basket_m
         self.baskets[Color.BLUE] = self.processed_data.basket_b
 
@@ -409,8 +428,6 @@ class Robot:
         x_speed = self.orbit_direction * 0.45
         y_delta = self.min_distance - self.ball.distance
         y_speed = -1 * y_delta * 0.002
-
-        # TODO - adjust this further, not sure if too much or too little currently
         rot_speed = 4 * (x_delta / self.middle_point)
 
         self.logger.log.info(
