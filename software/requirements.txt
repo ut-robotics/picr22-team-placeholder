@@ -1,0 +1,8 @@
+numba==0.56.4
+numpy==1.23.4
+opencv_python==4.6.0.66
+pyPS4Controller==1.2.5
+pyrealsense2==2.51.1.4348
+pyserial==3.5
+tomli==2.0.1
+websocket_client==1.4.2
