@@ -85,7 +85,7 @@ There were issues with calculating the distance to the opposite basket when anot
 I did like how our code was structured - we use a class, so variables are easily available. We also can't confuse local and global variables, which is a good thing. Whenever a variable is missing, it'll complain instead of letting it go through. I also implemented logging, which was actually very helpful in debugging certain issues. While printing lines to the terminal window works, there's just so much data that you won't be able to read it all. Saving it to a log let's you look back and see what was wrong. It didn't even take much time to implement.
 
 == Electronics
-## Board functionality
+### Board functionality
 
 - Consists of two isolated boards: mainboard with all the logic components and the motor driver boards
 
