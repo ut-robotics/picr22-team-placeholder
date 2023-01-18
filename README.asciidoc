@@ -88,7 +88,24 @@ I did like how our code was structured - we use a class, so variables are easily
 TODO
 
 == Mechanics
-TODO
+
+=== If you used something different from what was given at the start of the course or did something different, describe it.
+
+I'm not sure what this question means by "something different from what was given". Only custom equipment was Artur's controller, custom chassis and wheels. Rest of the parts which were given got used. We did replace one short-circuted motor though.
+
+=== Description of the main points of interest in your ball thrower design and construction process.
+
+The initial thrower had to fit the test robot chassis, which was the main constraint. Later on I decided to keep using the same thrower because it was already there and functional. Main point of interest however was the angle at which the ball was thrown out. For that we made 2 revisions, where the angles varied. We decided to keep using the first revision, since we had already done motor power/distance calculations on it (also read: sunk cost fallacy).
+
+=== Photos of your robot.
+
+todo
+
+
+=== A short analysis of what was good and bad in your mechanics and how to improve.
+
+First and foremost, the design was functional and served its purpose. I tried to make it simple (as in plug-and-play to assemble) and the parts interchangable (less designs overall).
+However nothing is perfect. I had to cut the upper plate, since it was in the way of the ball when throwing (maybe it was not so wise to make bottom and upper plates the same design). A major improvement would've been to make the thrower adjustable, so you could change between angles easily without having to make different different-angled parts. While we're at it, redesign the thrower entirely so it could've fit better with the "one plate to rule them all" philosophy.
 
 == Personal comments
 
@@ -152,27 +169,28 @@ TODO
 ''''
 ==== On which parts of the robot did you work on?
 
-TODO
+I dealt with the physical side - mechanics. If it didn't have any electronics in it, it was most likely under my supervision.
 
 ==== What did you learn?
 
-TODO
+I got to learn a new program and the usage of various powertools. The program was Fusion 360, which was used to sketch out and design the physical parts. Now to put the designs into reality, I got to learn and make use of the CNC machine and lathe. 
 
 ==== What would you do differently next time?
 
-TODO
+Maybe the philosophy of "I'll do it the night before deadline" was not so wise. (like writing this 8 hours before the deadline)
 
 ==== What did you like/did not like about the course/building a robot?
 
-TODO
+I liked Fusion 360 (over SolidWorks), most likely going to keep using it as long as the educational license lasts. Getting the Delta keycard was also neat. In general I got to learn new tools, both digital and physical, latter being a nice change of pace from the usual.
+However the course should've yielded more EAPs. :^)
 
 ==== Suggestions for next year students.
 
-TODO
+Just don't be lazy, it's not this hard.
 
 ==== Suggestions for instructors.
 
-TODO
+I got my things checked out in a reasonable timeframe and the instructions on using the powertools was clear. I don't really have anything to suggest.
 
 == Blog
 
