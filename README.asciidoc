@@ -1,7 +1,5 @@
 = %placeholder% 
 
-This is where we're going to write down what we've done so far.
-
 == Members
 
 [horizontal]
