@@ -8,7 +8,7 @@ Artur Salumäe:: electronics
 Jens Olaf Kukk:: mechanics
 
 == Repositories
-* Mechanics: https://a360.co/3SYDOoi
+* Mechanics: https://a360.co/3GVRLQ0
 
 == Programming
 
