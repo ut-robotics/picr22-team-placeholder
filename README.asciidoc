@@ -115,7 +115,31 @@ I did like how our code was structured - we use a class, so variables are easily
 
 - Motor driver can be limited by connecting resistors from ITRIP and PROP to MGND. Our maximum motor current is a bit above 2A selected by 47K resistor for ITRIP and 3K3 resistor for PROP
 
+### The good
+
+- The board worked well, there were no major problems (other than one encoder channel randomly dropping to half voltage)
+
+- Very happy about the look of the board, it is quite compact and looks pretty sexy
+
+- I feel this was the best board I could have designed with my current level of electronics knowledge
+
+### The bad
+
+- Not necessarily bad but would have also been cool to design the components for the ball holder and the ramp angle adjustment servo
+
+- The firmware works but it is quite poorly tested and PID is not tuned
+
+- Not the problem of board design but the board needed quite a lot of hacks because of my poor desicions during soldering
+
+### What to improve
+
+- I would probably add some redundancy in terms of having more connectors for the encoders, since it is still quite mysterious to me why the voltage drop happened
+
+- It would also be cool to try to make the robot with BLDC servos instead of current motors
+
 image::https://github.com/ut-robotics/picr22-team-placeholder/blob/electronics/electronics/Board_connectors.jpg[]
+
+
 
 == Mechanics
 
