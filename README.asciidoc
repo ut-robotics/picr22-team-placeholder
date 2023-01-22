@@ -139,12 +139,12 @@ I did like how our code was structured - we use a class, so variables are easily
 
 Board connectors
 
-image::https://github.com/ut-robotics/picr22-team-placeholder/blob/electronics/electronics/Board_connectors.jpg[]
+image::media/Board_connectors.jpg[Board connectors]
 
 
 Mainboard
 
-image::https://github.com/ut-robotics/picr22-team-placeholder/blob/documentation/media/Mainboard.jpg[]
+image::media/Mainboard.jpg[Mainboard]
 
 
 == Mechanics
