@@ -1,0 +1,14 @@
+# %placeholder% electronics
+## Data sent to the mainboard
+
+. 3 * 2 bytes speed commands for all motors
+
+. 2 bytes thrower speed
+
+. 2 bytes message delimiter
+
+## Data sent from the mainboard
+
+. 3 * 2 bytes speed feedback from all motors
+
+. 2 bytes feedback delimiter
