@@ -1,0 +1,351 @@
+= %placeholder% 
+
+== Members
+
+[horizontal]
+Timo Jairus:: programming
+Artur Salumäe:: electronics
+Jens Olaf Kukk:: mechanics
+
+== Repositories
+* Mechanics: https://a360.co/3GVRLQ0
+
+== Programming
+
+=== Used libraries
+
+[horizontal]
+numba:: used JIT to speed up our line detection
+numpy:: arrays, operations related to image processor
+opencv_python:: used for the camera
+pyrealsense2:: used for the camera
+pyPS4Controller:: using a DualShock 4 controller for remote control purposes
+pyserial:: used for serial connection with the mainboard
+tomli:: used for .toml configuration files to easily access and modify configurable variables
+websocket_client:: using websockets for getting referee commands
+random:: randomize some choices to make the game more interesting
+time:: get the current time in order to compare it to a previous time, mainly used for timeouts. Uses sleep in remote control for waiting.
+math:: used for PI and trigonometric functions in movement calculation code
+struct:: used to encode the movement speeds to send them to the mainboard
+enum:: used for enums to make the code cleaner and less error-prone
+json:: used for converting the referee command data into an easily parseable format
+multiprocessing:: used to run the referee command at the same time as the rest of the code
+queue:: to check whether the multiprocessing queue is empty
+logging:: used to print pretty logs to terminal and save them to a file
+datetime:: get the current time in a pretty format, used for log file names
+os:: checking whether directories exist and making them
+pathlib:: checking if a file exists and if not, then making it. This could've been done with "os" too, but I used pathlib for some reason.
+typing:: prettier function declarations for lists/tuples, shows what type it wants
+threading:: used to run the remote control code at the same time as the rest of the code
+_pickle:: serializing python objects
+segment:: C library from the example code, used for fast colour thresholding
+
+=== About the code
+The main components of the code are:
+
+* image processor
+* motion calculation
+* remote control
+* referee component
+* main state machine
+
+The image processor makes use of the camera to find baskets and balls in the current frame, giving us data that we can use to make decisions on where to go.
+
+Motion calculation part gets the speeds in metres, then converts them to mainboard units and sends them to the mainboard. 
+
+Remote control lets us use a DualShock 4 controller to shut down the robot at any time or to remote control it whenever we want to. The code makes use of threading to run at the same time as the main state machine, in case we need to quickly shut down the robot in an emergency.
+
+The referee component listens for any valid referee commands and adds them to the queue for the main state machine to check whenever necessary.
+
+The main state machine is where the magic happens. It gets the camera data from image processor and listens for any commands from referee server before entering a state. If the robot is not being remote controlled, it will enter into one of these states:
+
+[horizontal]
+Stopped:: the robot is stopped, it is not doing anything other than listening for commands.
+Searching:: the robot searches for a ball until it finds one, then it enters DriveToBall state
+DriveToBall:: the robot drives close enough to the ball until it is in Orbiting range
+Orbiting:: the robot starts to orbit around the ball to line it up with the basket. When the ball and basket are aligned, the robot will enter BallThrow state
+BallThrow:: the robot activates the thrower based on the current basket distance, keeps slightly adjusting the thrower speed for the first frames of a throw and then drives into the ball, hopefully throwing it into the basket. Afterwards, the robot enters Searching state again.
+EscapeFromBasket:: in case the robot gets too close to the basket, it will reverse and try to get away from the basket. Afterwards, it'll continue searching.
+RemoteControl:: this is the state when the robot is being remote controlled, it will not do anything else.
+
+Here's a block diagram of the game logic:
+
+image::/media/diagram.png[Diagram]
+
+=== Retrospective
+
+The performance could've been better - we always made use of aligning depth, even when we could've gotten away by using the Y coordinate instead. This was a major performance hit.
+
+Our line detection also wasn't perfect - it just checked how many black and white pixels there are around a ball. It did work well enough, but actual line detection would have been less error-prone. The current system also ignored balls close to opponents sometimes.
+
+There were issues with calculating the distance to the opposite basket when another robot was blocking the way. I did try to remedy it by getting the distance from higher up and checking only the correct colour pixels, but it still had issues sometimes.
+
+I did like how our code was structured - we use a class, so variables are easily available. We also can't confuse local and global variables, which is a good thing. Whenever a variable is missing, it'll complain instead of letting it go through. I also implemented logging, which was actually very helpful in debugging certain issues. While printing lines to the terminal window works, there's just so much data that you won't be able to read it all. Saving it to a log let's you look back and see what was wrong. It didn't even take much time to implement.
+
+== Electronics
+### Board functionality
+
+- Consists of two isolated boards: mainboard with all the logic components and the motor driver boards
+
+- Mainboard is powered through USB, motor driver board is powered from battery
+
+- Motor driver uses a transistor for reverse current protection
+
+- Mainboard has a voltage regulator to convert 5V to 3V3 with a POWER GOOD LED and motor driver board has a 16V to 5V regulator
+
+- Mainboard sends control signals to motor driver boards through digital isolators
+
+- Communication between STM32 controller and computer happens through microUSB
+
+- STM32 has a LED for indicating program status
+
+- Microcontroller can be programmed and debugged with the STLINK-V3MINI debugger/programmer through the SWD interface
+
+- Mainboard has three connectors for motor encoders
+
+- Mainboard controls the motors by sending a separate PWM and direction signal to each of the three motors, it also sends the motor sleep command to all of the motors
+
+- Mainboard also sends the PWM signal to the thrower motor
+
+- Motor driver board has three motor drivers which can be controlled either with two PWM signals or one PWM and one DIR signal, which is determined by the MODE pin, we use one PWM one DIR by connecting MODE to MGND through 0R
+
+- Motor SLEEP pin needs 20us low pulse before sending PWM
+
+- Motor drivers has SR for slew rate control and DIAG for debug, both of which are connected to MGND through 0R
+
+- Motor driver can be limited by connecting resistors from ITRIP and PROP to MGND. Our maximum motor current is a bit above 2A selected by 47K resistor for ITRIP and 3K3 resistor for PROP
+
+### The good
+
+- The board worked well, there were no major problems (other than one encoder channel randomly dropping to half voltage)
+
+- Very happy about the look of the board, it is quite compact and looks pretty sexy
+
+- I feel this was the best board I could have designed with my current level of electronics knowledge
+
+### The bad
+
+- Not necessarily bad but would have also been cool to design the components for the ball holder and the ramp angle adjustment servo
+
+- The firmware works but it is quite poorly tested and PID is not tuned
+
+- Not the problem of board design but the board needed quite a lot of hacks because of my poor desicions during soldering
+
+### What to improve
+
+- I would probably add some redundancy in terms of having more connectors for the encoders, since it is still quite mysterious to me why the voltage drop happened
+
+- It would also be cool to try to make the robot with BLDC servos instead of current motors
+
+Board connectors
+
+image::media/Board_connectors.jpg[Board connectors]
+
+
+Mainboard
+
+image::media/Mainboard.jpg[Mainboard]
+
+
+== Mechanics
+
+=== If you used something different from what was given at the start of the course or did something different, describe it.
+
+I'm not sure what this question means by "something different from what was given". Only custom equipment was Artur's controller, custom chassis and wheels. Rest of the parts which were given got used. We did replace one short-circuted motor though.
+
+=== Description of the main points of interest in your ball thrower design and construction process.
+
+The initial thrower had to fit the test robot chassis, which was the main constraint. Later on I decided to keep using the same thrower because it was already there and functional. Main point of interest however was the angle at which the ball was thrown out. For that we made 2 revisions, where the angles varied. We decided to keep using the first revision, since we had already done motor power/distance calculations on it (also read: sunk cost fallacy).
+
+=== Photos of your robot.
+
+image::/media/sketch.png[Fusion screenshot]
+image::/media/IMG_20221216_061926.jpg[Robot]
+
+=== A short analysis of what was good and bad in your mechanics and how to improve.
+
+First and foremost, the design was functional and served its purpose. I tried to make it simple (as in plug-and-play to assemble) and the parts interchangable (less designs overall).
+However nothing is perfect. I had to cut the upper plate, since it was in the way of the ball when throwing (maybe it was not so wise to make bottom and upper plates the same design). A major improvement would've been to make the thrower adjustable, so you could change between angles easily without having to make different different-angled parts. While we're at it, redesign the thrower entirely so it could've fit better with the "one plate to rule them all" philosophy.
+
+== Personal comments
+
+=== Timo
+''''
+==== On which parts of the robot did you work on?
+
+I mainly worked on the software side of things - programming. My job was to get the robot moving and actually compete with others. I also had to sometimes deal with mechanics ane electronics related things. I think I've disassembled the robot more times than the mechanic and electronic combined.
+
+==== What did you learn?
+
+I learned more about state machines, Python features that I hadn't used before, such as enums and overall tips on how to keep my code somewhat readable and functional. I also learned how to actually make a three wheeled robot move. I had some experience with image detection before, but I definitely gained some new knowledge on that. I had never used a depth camera before, so that was also a learning experience.
+
+==== What would you do differently next time?
+
+I would pester the mechanic and electronic more, so we could actually get a robot finished in time. We somehow qualified for the first test competition, even though we got a thrower 3 days before the competition, and got it attached to the robot properly only a day before the competition. We barely had any time to test how well it actually works. The same thing happened with Delta X - we got our robot assembled with old electronics only hours before the competition, which meant that I had no time to test and find any low hanging issues, such as the robot sending speeds that are too small. They were things that could've come out during testing, but I didn't have any time for that.
+
+==== What did you like/did not like about the course/building a robot?
+
+I liked when I wrote code that actually made the robot behave in the way I intended. It was fun making something that could actually compete with other groups robots, even though we only had 3 members. I did not like having mechanical issues - wheels falling off, the thrower falling off etc. I was a programmer, yet I had to deal with reattaching wheels countless times. At least for Delta X we finally got a robot that seemed to stay in one piece. 
+
+About the course itself, I feel like some planning could've been better. The date for Delta X shouldn't have had to be changed later on. There were also times when we got conflicting information from instructors and related parties regarding the event. There definitely were some communication issues somewhere.
+
+==== Suggestions for next year students.
+
+Try to get mechanics and electronics complete as soon as possible. Having new mechanics can change a lot how the robot behaves, so code needs to be adapted for that. Having new electronics would change it even more, most likely requiring rewrites in the code. We never got that far, though.
+
+Also, remember that "try: except(specific error): finally:" will eat any errors other than "specific error". Make sure you also turn off the motors when stopping the code (whenever possible), because you don't want your robot driving away in a random direction after it's been shut down. 
+
+==== Suggestions for instructors.
+
+The course was fine, the instructors were helpful.
+
+=== Artur
+''''
+==== On which parts of the robot did you work on?
+
+I worked on the electronics and firmware. I also helped out a bit with the software.
+
+==== What did you learn?
+
+I learned a lot about PCB design and electronics in general. This was the second PCB I had ever designed, so there was a lot to learn. I also learned a lot about firmware development on the STM32 platform.
+
+==== What would you do differently next time?
+
+I would start working hard on the electronics at the very beggining to have more time to work on firmware and to debug multitudes of electronics issues.
+
+==== What did you like/did not like about the course/building a robot?
+
+The course gave a lot of freedom to do fun stuff building and programming a robot almost from scratch and I learned a ton from this course. Negative was that I started putting a lot of time into doing the electronics and firmware way too late into the course, so the last two weeks were a massive crunch.
+
+==== Suggestions for next year students.
+
+Start doing stuff way way earlier. There is a lot more work to be done than it may seem at first glance.
+
+==== Suggestions for instructors.
+
+Communication with instructors could be better. At some points of time it took a lot of time to get a reply from them. Also there was some confusion in regards to how the competitions are organized.
+
+=== Jens
+''''
+==== On which parts of the robot did you work on?
+
+I dealt with the physical side - mechanics. If it didn't have any electronics in it, it was most likely under my supervision.
+
+==== What did you learn?
+
+I got to learn a new program and the usage of various powertools. The program was Fusion 360, which was used to sketch out and design the physical parts. Now to put the designs into reality, I got to learn and make use of the CNC machine and lathe. 
+
+==== What would you do differently next time?
+
+Maybe the philosophy of "I'll do it the night before deadline" was not so wise. (like writing this 8 hours before the deadline)
+
+==== What did you like/did not like about the course/building a robot?
+
+I liked Fusion 360 (over SolidWorks), most likely going to keep using it as long as the educational license lasts. Getting the Delta keycard was also neat. In general I got to learn new tools, both digital and physical, latter being a nice change of pace from the usual.
+However the course should've yielded more EAPs. :^)
+
+==== Suggestions for next year students.
+
+Just don't be lazy, it's not this hard.
+
+==== Suggestions for instructors.
+
+I got my things checked out in a reasonable timeframe and the instructions on using the powertools was clear. I don't really have anything to suggest.
+
+== Blog
+
+|====
+|Date |Person |Duration |Notes
+|8.09.2022 |Timo |2h |Creating the blog file, writing code to read response from mainboard and adding `robot.py` to GitHub.
+|11.09.2022 |Artur |4h |Assembling the test robot mechanics.
+|12.09.2022 |Timo |3h |Updating `robot.py` to switch to `while` loop, testing wheel moving.
+|12.09.2022 |Jens |3h |Debugging, helping with electronics. Found out why one of the motors didn't work - bolts were too long.
+|13.09.2022 |Artur |1h |Drilled a big hole for cable management.
+|15.09.2022 |Artur |1.5h |Debugged why one motor was not driving backwards.
+|19.09.2022 |Artur |2.5h |Finished debugging, turns out some isolation scraped off and it was getting shorted out in the backwards direction.
+|19.09.2022 |Timo |2h |Presented the project.
+|22.09.2022 |Artur |4h |Debugged thrower problems, turns out mainboard voltage regulator was broken, so no signal passed from the isolator to the thrower.
+|22.09.2022 |Timo |2h |Testing different remote control solutions to find the best one for our use case.
+|26.09.2022 |Artur |2.5h |Redid the robot wiring to fit the batteries better, and got the battery training.
+|26.09.2022 |Timo |2h |SSH setup, to control the computer remotely.
+|03.10.2022 |Timo |2h |Testing robot, doing the presentation.
+|03.10.2022 |Artur |2h |Testing robot, doing the presentation, debugging.
+|06.10.2022 |Timo |2h |More SSH setup, can now see camera via SSH. Screwed in some bolts so the robot wouldn't fall apart
+|13.10.2022 |Timo |6h |Movement code, DualShock 4 support
+|14.10.2022 |Timo |1.5h |Debugging movement, looking into camera code.
+|15.10.2022 |Timo |2.5h |Movement testing, rewriting controller code, putting wheels back on the robot.
+|15.10.2022 |Artur |5h |Checking robot MAC address, importing libraries, creating missing components, getting familiarised with Altium Designer.
+|16.10.2022 |Artur |4h |Working on the schematic, browsing through datasheets.
+|16.10.2022 |Jens |1.5h |Started work on thrower.
+|17.10.2022 |Artur |3.5h |Working on the schematic, browsing throught some more datasheets.
+|17.10.2022 |Jens |0.5h |Researched thrower design.
+|17.10.2022 |Timo |0.5h |Fixed one of the wheels falling off.
+|17.10.2022 |Jens |0.5h |Fixed one of the wheels falling off.
+|18.10.2022 |Timo |1.5h |Cleaned up and improved DS4 control code.
+|24.10.2022 |Timo |1.5h |Looking into camera stuff.
+|28.10.2022 |Jens |3h |Print out test parts.
+|30.10.2022 |Artur |6h |Fixing schematic issues.
+|31.10.2022 |Artur |8.5h |Starting with PCB design, debugging library footprint issues + resoldered a lot of the electronics.
+|01.11.2022 |Timo |3h |Fixing deadzone issues with DS4 controller. Fixed the basic autonomous code. Added mode switching to controller. Started work on a state machine.
+|02.11.2022 |Timo |2h |State machine fixes.
+|03.11.2022 |Jens |3h |Make millable design
+|03.11.2022 |Timo |6h |Code cleanup and fixes.
+|03.11.2022 |Artur |4h |Resoldered some more stuff, did some PCB design.
+|04.11.2022 |Timo |1h |Documenting functions and removing unused stuff.
+|05.11.2022 |Timo |6h |Working on robot code.
+|05.11.2022 |Artur |9h |Designed PCB, helped with robot software.
+|06.11.2022 |Artur |6h |Helped with robot software.
+|06.11.2022 |Timo |6.5h |Working on state machine.
+|06.11.2022 |Jens |2h |Fix designs
+|07.11.2022 |Jens |3h |Milling and assembling thrower
+|07.11.2022 |Timo |2h |Thrower testing.
+|08.11.2022 |Artur |8h |Redid the PCB, fixed PCB issues, did thrower regression.
+|08.11.2022 |Timo |5h |Thrower testing, gathering data and cleaning up code.
+|09.11.2022 |Timo |4h |Thrower testing, improving robot driving.
+|09.11.2022 |Jens |2h |Fixes
+|10.11.2022 |Timo |10h |Finally getting the robot code in a competitive state, qualifying and taking part of test competition.
+|10.11.2022 |Artur |4h |Helped with software, participated in the test competition.
+|12.11.2022 |Artur |2h |Fixed PCB issues, created PCB issues.
+|14.11.2022 |Timo |1h |Testing referee code.
+|17.11.2022 |Timo |2h |Testing movement, adding in more screws.
+|18.11.2022 |Timo |3h |Improved search function and ball detection.
+|19.11.2022 |Timo |2h |Code cleanup and switching referee code to multiprocessing.
+|20.11.2022 |Timo |1h |More code cleanup and fixes.
+|21.11.2022 |Timo |2h |Programming.
+|22.11.2022 |Timo |4h |More programming.
+|23.11.2022 |Timo |7h |Code cleanup, fixes, fixing mechanical problems, implementing logging.
+|24.11.2022 |Timo |8h |"Improving" code, taking part in test competition.
+|24.11.2022 |Artur |3h |Taking part in test competition.
+|25.11.2022 |Jens |5h |Made new baseplate design, new thrower design, etc
+|28.11.2022 |Artur |7h |Soldering the PCB, presentation.
+|28.11.2022 |Timo |5h |Bug fixes, presentation.
+|30.11.2022 |Artur |1h |Soldering the PCB.
+|01.12.2022 |Timo |2h |Code cleanup and fixes, getting code approved.
+|01.12.2022 |Artur |5h |Soldering the PCB, debugging stuff.
+|02.12.2022 |Timo |2.5h |Code cleanup.
+|03.12.2022 |Timo |2.5h |Fixes, code to hopefully save the robot when balls get stuck.
+|04.12.2022 |Jens |5h |Mechanics design and fixing issues
+|04.12.2022 |Timo |7h |Programming, fixing basket escape logic.
+|05.12.2022 |Timo |4h |Code adjustment and fixed orbiting with the help of Akustav.
+|05.12.2022 |Artur |4h |Debug the PCB, fix electronics solders.
+|06.12.2022 |Timo |3h |Variable adjusting, making use of white pixels in line detection.
+|07.12.2022 |Timo |7.5h |Calibrated thrower, cleaned the wheels, drilled a hole to attach rear wheel, attempts at improving basket distance detection.
+|08.12.2022 |Timo |5h |Adjusted some screws, code cleanup, won the test competition.
+|08.12.2022 |Artur |5h |Finished debugging PCB, started writing firmware.
+|09.12.2022 |Timo |1h |Minor code cleanup and experimenting with basket color detection.
+|10.12.2022 |Jens |2h |CAM design
+|11.12.2022 |Artur |6.5h |Did firmware, added a hack connection to PCB.
+|12.12.2022 |Timo |3h |Improved throwing by implementing better logic for basket distance detection and presenting.
+|12.12.2022 - 13.12.2022 |Jens |10h |Fabricating robot.
+|13.12.2022 |Artur |11h |Did firmware, debugged electronics.
+|13.12.2022 |Timo |1h |Minor bug and regression fixes.
+|13.12.2022 |Artur |11h |Did firmware, debugged electronics.
+|14.12.2022 |Timo |10h |Gathering ideas, assembling some of the robot, helping Kivipallur Jürto by reinstalling the OS on their NUC, minor code adjustments.
+|14.12.2022 |Artur |11h |Did firmware, debugged electronics.
+|15.12.2022 - 16.12.2022 |Timo |24h |Switching to old electronics, made code work with the new robot, assembled robot and customized the look of it and got 3rd place in Delta X.
+|15.12.2022 - 16.12.2022 |Jens |10h |Assembling the robot, making required fixes.
+|15.12.2022 |Artur |13h |Did firmware, debugged electronics.
+|16.12.2022 - 17.12.2022 |Artur |8h |Did firmware, debugged electronics, got firmware working on new robot.
+|17.12.2022 |Timo |11h |Attempt to switch electronics, try to somehow salvage the code enough to not lose right away, qualified and got some place at "we have Delta X at home" competition.
+
+|====
