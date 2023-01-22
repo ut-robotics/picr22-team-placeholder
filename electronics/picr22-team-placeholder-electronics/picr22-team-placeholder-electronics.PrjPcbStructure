@@ -1,0 +1,3 @@
+Record=TopLevelDocument|FileName=Mainboard.SchDoc|SheetNumber=1
+Record=SheetSymbol|SourceDocument=Mainboard.SchDoc|Designator=U_MicroController|SchDesignator=U_MicroController|FileName=MicroController.SchDoc|SheetNumber=3|SymbolType=Normal|RawFileName=MicroController.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 
+Record=SheetSymbol|SourceDocument=Mainboard.SchDoc|Designator=U_MotorControl|SchDesignator=U_MotorControl|FileName=MotorControl.SchDoc|SheetNumber=2|SymbolType=Normal|RawFileName=MotorControl.SchDoc|DesignItemId= |SourceLibraryName= |ObjectKind=Sheet Symbol|RevisionGUID= |ItemGUID= |VaultGUID= 

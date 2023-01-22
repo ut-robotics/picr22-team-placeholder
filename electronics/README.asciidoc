@@ -1,0 +1,34 @@
+# %placeholder% electronics
+## Board functionality
+
+- Consists of two isolated boards: mainboard with all the logic components and the motor driver boards
+
+- Mainboard is powered through USB, motor driver board is powered from battery
+
+- Motor driver uses a transistor for reverse current protection
+
+- Mainboard has a voltage regulator to convert 5V to 3V3 with a POWER GOOD LED and motor driver board has a 16V to 5V regulator
+
+- Mainboard sends control signals to motor driver boards through digital isolators
+
+- Communication between STM32 controller and computer happens through microUSB
+
+- STM32 has a LED for indicating program status
+
+- Microcontroller can be programmed and debugged with the STLINK-V3MINI debugger/programmer through the SWD interface
+
+- Mainboard has three connectors for motor encoders
+
+- Mainboard controls the motors by sending a separate PWM and direction signal to each of the three motors, it also sends the motor sleep command to all of the motors
+
+- Mainboard also sends the PWM signal to the thrower motor
+
+- Motor driver board has three motor drivers which can be controlled either with two PWM signals or one PWM and one DIR signal, which is determined by the MODE pin, we use one PWM one DIR by connecting MODE to MGND through 0R
+
+- Motor SLEEP pin needs 20us low pulse before sending PWM
+
+- Motor drivers has SR for slew rate control and DIAG for debug, both of which are connected to MGND through 0R
+
+- Motor driver can be limited by connecting resistors from ITRIP and PROP to MGND. Our maximum motor current is a bit above 2A selected by 47K resistor for ITRIP and 3K3 resistor for PROP
+
+image::Board_connectors.jpg[]
