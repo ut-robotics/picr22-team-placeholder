@@ -2,14 +2,14 @@
 
 ## Data sent to the mainboard
 
-. 3 * 2 bytes speed commands for all motors
+. 3 * signed 16 bit integer speed commands for all motors
 
-. 2 bytes thrower speed
+. unsigned 16 bit thrower speed
 
-. 2 bytes message delimiter
+. 2 bytes message delimiter, must be 0xAAAA for the command to be processed
 
 ## Data sent from the mainboard
 
-. 3 * 2 bytes speed feedback from all motors
+. 3 * signed 16 bit integer speed feedback from all motors
 
-. 2 bytes feedback delimiter
+. 2 bytes feedback delimiter, must be 0xAAAA, otherwise something went wrong
